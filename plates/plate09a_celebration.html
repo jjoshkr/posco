@@ -1243,19 +1243,33 @@ function heroWorker(ox, oy, s) {
   g.restore();
   stroke('rgba(255,206,150,.55)', .007, () => { M(-.08, .8); Cc(-.17, 1.02, -.2, 1.35, -.18, 1.7); }, 10);
 
-  /* ---- neck (in shadow under the jaw) ---- */
-  g.beginPath(); M(-.3, .41); Qc(-.22, .5, -.23, .7); L(.34, .58); L(.37, .06); L(.05, .2); L(-.2, .33); g.closePath();
-  { const q = g.createLinearGradient(0, Y(.28), 0, Y(.66)); q.addColorStop(0, '#B98A70'); q.addColorStop(1, '#DDB295'); g.fillStyle = q; g.fill(); }
-  stroke('rgba(150,100,78,.22)', .014, () => { M(-.12, .44); Qc(-.02, .51, .1, .6); }, 6);
-  stroke('rgba(255,200,150,.6)', .008, () => { M(-.25, .47); Qc(-.22, .52, -.23, .7); }, 8);
-  // collar stand wraps the neck
-  g.beginPath(); M(-.28, .52); Qc(.02, .6, .3, .38); L(.34, .54); Qc(.02, .78, -.31, .67); g.closePath(); g.fillStyle = lgH(-.31, .32, [[0, '#3466A8'], [.5, '#1F4479'], [1, '#132B50']]); g.fill();
-  stroke('rgba(255,206,150,.7)', .007, () => { M(-.28, .52); Qc(-.31, .6, -.31, .67); }, 8);
-  g.beginPath(); M(-.29, .6); Qc(-.12, .7, .08, .68); L(-.06, .86); Qc(-.2, .8, -.42, .84); Qc(-.36, .72, -.29, .6); g.closePath();
+  /* ---- collar back (behind the neck) ---- */
+  g.beginPath(); M(.1, .68); Qc(.16, .48, .26, .38); Qc(.37, .34, .45, .4); Qc(.48, .56, .4, .72); g.closePath();
+  g.fillStyle = lgH(.14, .45, [[0, '#1B3B69'], [.6, '#22487F'], [1, '#2A5590']]); g.fill();
+  stroke('rgba(150,180,225,.35)', .006, () => { M(.17, .48); Qc(.24, .4, .33, .36); Qc(.41, .34, .45, .4); });       // folded top edge
+
+  /* ---- neck: slimmer, shaded, flowing into the collar ---- */
+  const neck = () => { g.beginPath(); M(-.25, .4); Qc(-.236, .46, -.218, .5); Qc(-.206, .53, -.212, .57); Qc(-.214, .65, -.205, .74); L(.18, .72); Qc(.17, .45, .21, .22); L(.22, .1); L(-.05, .18); L(-.26, .35); g.closePath(); };
+  neck(); g.fillStyle = lgH(-.22, .2, [[0, '#EEC6AA'], [.35, '#DDAE91'], [.75, '#C4937A'], [1, '#A57861']]); g.fill();
+  g.save(); neck(); g.clip();
+  blob(-.06, .37, .32, .075, '125,82,62', .5, -.38);                                                   // shadow cast by the jaw
+  stroke('rgba(255,228,210,.1)', .09, () => { M(.06, .3); Qc(-.03, .46, -.14, .66); }, 30);          // sternocleidomastoid catching light
+  stroke('rgba(130,86,66,.1)', .08, () => { M(.15, .32); Qc(.08, .5, -.02, .7); }, 30);              // and the hollow behind it
+  blob(-.212, .52, .02, .03, '255,226,206', .35);                                                      // soft Adam's apple
+  blob(.0, .64, .28, .06, '95,58,42', .5, -.12);                                                      // collar shadow on the neck
+  g.restore();
+  stroke('rgba(255,214,180,.55)', .006, () => { M(-.25, .42); Qc(-.236, .46, -.218, .5); Qc(-.206, .53, -.212, .57); Qc(-.214, .65, -.205, .72); }, 8);
+
+  /* ---- collar front: wraps round the neck, then the shirt-style collar point ---- */
+  g.beginPath(); M(.24, .55); Qc(.04, .69, -.24, .66); L(-.28, .78); Qc(.03, .82, .38, .66); g.closePath();
+  g.fillStyle = lgH(-.28, .34, [[0, '#3466A8'], [.45, '#24508C'], [1, '#163360']]); g.fill();
+  stroke('rgba(170,200,240,.4)', .005, () => { M(.24, .55); Qc(.04, .69, -.24, .66); });                // rolled top edge catches light
+  stroke('rgba(5,12,25,.35)', .012, () => { M(.22, .57); Qc(.04, .7, -.22, .675); }, 6);              // shadow where the collar meets the neck
+  g.beginPath(); M(-.25, .67); Qc(-.1, .75, .08, .73); L(-.04, .89); Qc(-.2, .84, -.42, .87); Qc(-.33, .75, -.25, .67); g.closePath();
   g.fillStyle = lgH(-.42, .08, [[0, '#3F72B6'], [.5, '#2A5694'], [1, '#1A3A6A']]); g.fill();
-  g.save(); g.setLineDash([.01 * s, .008 * s]); stroke('rgba(255,255,255,.22)', .0025, () => { M(-.38, .82); Qc(-.2, .78, -.08, .82); }); g.restore();
-  stroke('rgba(0,0,0,.3)', .005, () => { M(-.42, .845); Qc(-.2, .81, -.06, .865); });
-  stroke('rgba(255,206,150,.6)', .005, () => { M(-.29, .6); Qc(-.36, .72, -.42, .84); }, 6);
+  g.save(); g.setLineDash([.01 * s, .008 * s]); stroke('rgba(255,255,255,.22)', .0025, () => { M(-.38, .85); Qc(-.2, .81, -.08, .85); }); g.restore();
+  stroke('rgba(0,0,0,.3)', .005, () => { M(-.42, .875); Qc(-.2, .84, -.05, .895); });
+  stroke('rgba(255,206,150,.6)', .005, () => { M(-.25, .67); Qc(-.33, .75, -.42, .87); }, 6);
 
   /* ---- head: young man, neutral expression (after the reference photo) ---- */
   const profile = () => {
@@ -1289,33 +1303,38 @@ function heroWorker(ox, oy, s) {
   stroke('rgba(255,236,226,.5)', .004, () => { M(-.452, .25); Qc(-.44, .258, -.424, .252); });
   blob(-.35, .1, .09, .06, '255,226,208', .35);                                                        // raised cheek
   blob(-.35, .135, .07, .05, '236,140,120', .14);
-  // eye: larger open eye in profile, happy lower lid, iris at the front
-  const eyeP = () => { g.beginPath(); M(-.423, -.072); Qc(-.385, -.098, -.333, -.07); Qc(-.36, -.036, -.405, -.04); Qc(-.428, -.05, -.423, -.072); g.closePath(); };
-  blob(-.375, -.075, .07, .04, '120,78,60', .25);
-  eyeP(); g.fillStyle = '#ECE2DA'; g.fill();
+  // eye in profile, drawn cleanly: rounded cornea at the front, lids meeting at the outer corner
+  blob(-.38, -.07, .065, .035, '150,100,80', .2);                                                      // soft socket shade
+  const eyeP = () => { g.beginPath(); M(-.417, -.082); Qc(-.384, -.088, -.352, -.068); Qc(-.382, -.05, -.411, -.049); Qc(-.425, -.065, -.417, -.082); g.closePath(); };
+  eyeP(); { const q = g.createLinearGradient(X(-.425), 0, X(-.35), 0); q.addColorStop(0, '#F4ECE7'); q.addColorStop(1, '#D9C7BD'); g.fillStyle = q; g.fill(); }
   g.save(); eyeP(); g.clip();
-  { const ix = X(-.404), iy = Y(-.064), q = g.createRadialGradient(ix, iy, 0, ix, iy, .028 * s); q.addColorStop(0, '#5A3A26'); q.addColorStop(.7, '#3A2417'); q.addColorStop(1, '#1E120B'); g.fillStyle = q; g.beginPath(); g.ellipse(ix, iy, .02 * s, .03 * s, 0, 0, 7); g.fill(); }
-  g.fillStyle = '#0D0705'; g.beginPath(); g.ellipse(X(-.408), Y(-.064), .008 * s, .014 * s, 0, 0, 7); g.fill();
-  g.fillStyle = 'rgba(255,255,255,.95)'; g.beginPath(); g.arc(X(-.412), Y(-.074), .005 * s, 0, 7); g.fill();
-  blob(-.38, -.084, .05, .014, '80,48,36', .45);                                                       // lid shadow on the eyeball
+  { const ix = X(-.409), iy = Y(-.066), q = g.createRadialGradient(ix, iy, 0, ix, iy, .02 * s); q.addColorStop(0, '#6A4630'); q.addColorStop(.75, '#3F2819'); q.addColorStop(1, '#22150D'); g.fillStyle = q; g.beginPath(); g.ellipse(ix, iy, .012 * s, .0175 * s, 0, 0, 7); g.fill(); }
+  g.fillStyle = '#0E0806'; g.beginPath(); g.ellipse(X(-.412), Y(-.066), .005 * s, .009 * s, 0, 0, 7); g.fill();
+  g.fillStyle = '#FFFFFF'; g.beginPath(); g.arc(X(-.414), Y(-.073), .0032 * s, 0, 7); g.fill();
+  blob(-.39, -.08, .04, .01, '110,70,55', .4);                                                         // upper lid shadow on the eyeball
   g.restore();
-  stroke('rgba(16,9,6,.95)', .011, () => { M(-.428, -.071); Qc(-.386, -.1, -.33, -.069); });              // upper lash line
-  stroke('rgba(140,90,70,.45)', .0035, () => { M(-.405, -.039); Qc(-.37, -.037, -.335, -.066); });       // happy lower lid
-  stroke('rgba(150,100,80,.35)', .004, () => { M(-.415, -.093); Qc(-.385, -.11, -.345, -.088); });        // soft double-lid crease
-  [[-.426, -.073], [-.418, -.08], [-.409, -.085], [-.4, -.088]].forEach(([x, y]) => stroke('rgba(16,9,6,.9)', .0032, () => { M(x, y); Qc(x - .008, y - .006, x - .016, y - .004); }));
+  // upper lid edge: crisp, slightly thicker at the front, tapering to the outer corner
+  g.fillStyle = '#1A100B'; g.beginPath(); M(-.42, -.083); Qc(-.384, -.093, -.35, -.068); Qc(-.384, -.086, -.417, -.079); g.closePath(); g.fill();
+  // lower lid: barely there
+  stroke('rgba(150,100,82,.3)', .0028, () => { M(-.41, -.049); Qc(-.38, -.05, -.354, -.066); });
+  // natural double-lid crease: a soft fold just above the lid, fading toward the front
+  stroke('rgba(150,98,78,.28)', .006, () => { M(-.404, -.094); Qc(-.38, -.101, -.352, -.077); }, 3);
+  stroke('rgba(255,236,224,.35)', .006, () => { M(-.408, -.088); Qc(-.384, -.094, -.358, -.074); }, 2);   // lid skin highlight
+  // lashes: a few short ones flicking forward at the front
+  [[-.418, -.083, -.03], [-.411, -.087, -.025], [-.404, -.089, -.02]].forEach(([x, y, d]) => stroke('rgba(20,12,8,.85)', .0026, () => { M(x, y); Qc(x - .006, y - .008, x + d * .45, y - .009); }));
   // hair: long fringe over the forehead, side hair over the ear top, shaggy back hair to the nape
   const HAIR = '#110C0A';
   g.fillStyle = HAIR; g.beginPath(); M(-.52, -.25); L(.02, -.262); L(.01, -.17); Qc(-.25, -.15, -.5, -.19); g.closePath(); g.fill();
   { const rs = rng(31); for (let k = 0; k < 26; k++) { const x0 = -.5 + k * .02 + (rs() - .5) * .01, tip = -.085 - rs() * .055 - (k > 22 ? .04 : 0) - (k < 2 ? .05 : 0), w = .018 + rs() * .014, lean = -.015 - rs() * .02; const tipC = (x0 > -.45 && x0 < -.31) ? Math.min(tip, -.122) : tip;
     g.fillStyle = k % 3 ? HAIR : '#1A1310'; g.beginPath(); M(x0 - w, -.2); Qc(x0 - w * .4 + lean * .4, (tipC - .2) / 2, x0 + lean, tipC); Qc(x0 + w * .5 + lean * .3, (tipC - .2) / 2, x0 + w, -.2); g.closePath(); g.fill(); }
-    for (let k = 0; k < 18; k++) { const x0 = -.48 + rs() * .46; stroke(`rgba(105,96,92,${.18 + rs() * .2})`, .003, () => { M(x0, -.24); Qc(x0 - .006, -.18, x0 - .016, -.12 - rs() * .02); }); } }
+    for (let k = 0; k < 18; k++) { const x0 = -.46 + rs() * .44; stroke(`rgba(105,96,92,${.18 + rs() * .2})`, .003, () => { M(x0, -.245); Qc(x0 - .004, -.21, x0 - .01, -.175); }); } }
   g.restore();
   // side + back hair (outside the head clip so it can stand off the skull)
   g.fillStyle = HAIR; g.beginPath(); M(-.08, -.26); L(.13, -.27); Qc(.12, -.17, .08, -.135); Qc(.02, -.15, -.01, -.12); Qc(-.03, -.04, -.045, .03); Qc(-.07, -.06, -.08, -.26); g.closePath(); g.fill();
   g.beginPath(); M(.1, -.27); L(.39, -.29); Qc(.45, -.12, .42, .04);
   [[.4, .14], [.37, .09], [.35, .2], [.31, .13], [.28, .22], [.24, .14], [.2, .19], [.16, .1]].forEach(([x, y], i, a) => { const p = i ? a[i - 1] : [.42, .08]; Qc((p[0] + x) / 2 + .01, Math.max(p[1], y) + .02, x, y); });
   Qc(.12, .05, .1, -.27); g.closePath(); g.fill();
-  for (let i = 0; i < 70; i++) { const back = i > 30, x = back ? .14 + r() * .26 : -.46 + r() * .44, y = -.25 + r() * .05, L2 = back ? .3 + r() * .12 : .1 + r() * .03;
+  for (let i = 0; i < 70; i++) { const back = i > 30, x = back ? .14 + r() * .26 : -.46 + r() * .44, y = -.25 + r() * .05, L2 = back ? .3 + r() * .12 : .04 + r() * .02;
     stroke(`rgba(95,88,84,${.15 + r() * .18})`, .004, () => { M(x, y); Qc(x + (back ? .02 : -.01), y + L2 * .5, x + (back ? .01 : -.02), y + L2); }); }
   // ear: helix, antihelix with crura, concha, ear canal behind the tragus, antitragus, fleshy lobe
   const ear = () => { g.beginPath(); M(.0, -.115); Cc(.03, -.172, .132, -.172, .147, -.06); Cc(.157, .02, .123, .08, .097, .11);
