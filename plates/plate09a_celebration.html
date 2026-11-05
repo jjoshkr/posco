@@ -1202,45 +1202,38 @@ function heroWorker(ox, oy, s) {
   const r = rng(808);
 
   /* ---- jacket: torso, near arm, collar ---- */
-  const torso = () => { g.beginPath(); M(-.3, .6); Cc(-.56, .7, -.7, .98, -.7, 1.7); L(.9, 1.7); Cc(.93, 1.35, .91, 1.0, .82, .8); Qc(.72, .63, .52, .56); Qc(.38, .5, .3, .46); Qc(0, .5, -.3, .6); g.closePath(); };
-  torso(); g.fillStyle = lgH(-.64, .82, [[0, '#3B6DB0'], [.14, '#26508C'], [.55, '#1B3B69'], [1, '#11264A']]); g.fill();
+  const torso = () => { g.beginPath(); M(-.3, .6); Cc(-.42, .68, -.5, .86, -.52, 1.7); L(.74, 1.7); Cc(.76, 1.3, .74, .95, .66, .74); Qc(.56, .6, .44, .54); Qc(.38, .5, .3, .46); Qc(0, .5, -.3, .6); g.closePath(); };
+  torso(); g.fillStyle = lgH(-.52, .76, [[0, '#2F62A6'], [.12, '#24508C'], [.6, '#204780'], [1, '#183A6C']]); g.fill();
   g.save(); torso(); g.clip();
   // chest reflective band + placket
   g.fillStyle = lgH(-.64, .2, [[0, '#F4F1E6'], [.5, '#BFC3BE'], [1, '#7E848A']]); g.beginPath(); M(-.7, 1.18); Qc(-.3, 1.12, .2, 1.16); L(.2, 1.26); Qc(-.3, 1.22, -.7, 1.28); g.closePath(); g.fill();
-  stroke('rgba(8,16,30,.55)', .006, () => { M(-.37, .66); Cc(-.52, .82, -.62, 1.1, -.66, 1.7); });
+  stroke('rgba(8,16,30,.55)', .006, () => { M(-.34, .66); Cc(-.42, .78, -.46, 1.0, -.48, 1.7); });
   for (let i = 0; i < 2600; i++) { const x = -.75 + r() * 1.75, y = .5 + r() * 1.25; stroke(r() > .5 ? 'rgba(255,255,255,.018)' : 'rgba(0,0,0,.035)', .0025, () => { M(x, y); L(x + .008, y - .008); }); }
   // chest pocket with flap, button and pen
-  g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); M(-.5, .9); L(-.24, .88); L(-.23, 1.1); L(-.5, 1.12); g.closePath(); g.fill();
-  stroke('rgba(255,255,255,.22)', .003, () => { M(-.49, .91); L(-.25, .89); L(-.24, 1.09); L(-.49, 1.11); g.closePath(); });
-  g.fillStyle = 'rgba(255,255,255,.06)'; g.beginPath(); M(-.51, .87); L(-.23, .85); L(-.23, .93); Qc(-.37, .97, -.51, .95); g.closePath(); g.fill();
-  stroke('rgba(0,0,0,.35)', .004, () => { M(-.51, .95); Qc(-.37, .97, -.23, .93); });
-  g.fillStyle = '#16304F'; g.beginPath(); g.arc(X(-.37), Y(.94), .013 * s, 0, 7); g.fill();
-  g.fillStyle = '#C9CFD6'; g.fillRect(X(-.3), Y(.8), .014 * s, .12 * s); g.fillStyle = '#1A1D22'; g.fillRect(X(-.302), Y(.78), .018 * s, .035 * s);
+  g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); M(-.42, .9); L(-.18, .88); L(-.17, 1.1); L(-.42, 1.12); g.closePath(); g.fill();
+  stroke('rgba(255,255,255,.22)', .003, () => { M(-.41, .91); L(-.19, .89); L(-.18, 1.09); L(-.41, 1.11); g.closePath(); });
+  g.fillStyle = 'rgba(255,255,255,.06)'; g.beginPath(); M(-.43, .87); L(-.17, .85); L(-.17, .93); Qc(-.3, .97, -.43, .95); g.closePath(); g.fill();
+  stroke('rgba(0,0,0,.35)', .004, () => { M(-.43, .95); Qc(-.3, .97, -.17, .93); });
+  g.fillStyle = '#16304F'; g.beginPath(); g.arc(X(-.3), Y(.94), .013 * s, 0, 7); g.fill();
+  g.fillStyle = '#C9CFD6'; g.fillRect(X(-.24), Y(.8), .014 * s, .12 * s); g.fillStyle = '#1A1D22'; g.fillRect(X(-.242), Y(.78), .018 * s, .035 * s);
   // buttons on the placket
-  [[-.43, .78], [-.56, 1.36], [-.62, 1.6]].forEach(([x, y]) => { g.fillStyle = '#14294A'; g.beginPath(); g.arc(X(x), Y(y), .014 * s, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.arc(X(x) - .004 * s, Y(y) - .004 * s, .004 * s, 0, 7); g.fill(); });
-  stroke('rgba(255,255,255,.16)', .003, () => { M(-.34, .66); Cc(-.49, .82, -.59, 1.1, -.63, 1.7); });
+  [[-.37, .78], [-.465, 1.38], [-.475, 1.6]].forEach(([x, y]) => { g.fillStyle = '#14294A'; g.beginPath(); g.arc(X(x), Y(y), .014 * s, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.arc(X(x) - .004 * s, Y(y) - .004 * s, .004 * s, 0, 7); g.fill(); });
+  stroke('rgba(255,255,255,.16)', .003, () => { M(-.31, .66); Cc(-.39, .78, -.43, 1.0, -.45, 1.7); });
   // stitched edges of the chest band
   g.save(); g.setLineDash([.012 * s, .01 * s]); stroke('rgba(60,60,60,.45)', .0025, () => { M(-.7, 1.19); Qc(-.3, 1.13, .2, 1.17); M(-.7, 1.27); Qc(-.3, 1.21, .2, 1.25); }); g.restore();
   // muscle volume under the jacket: trapezius ridge, lats, pecs
-  blob(.6, .66, .2, .06, '120,160,215', .22, .5);
-  blob(.72, 1.05, .14, .3, '90,130,190', .14);
-  blob(.84, 1.2, .06, .4, '5,12,25', .28);
-  blob(-.5, .95, .16, .12, '120,160,215', .16);
   // fabric folds
-  [[-.46, .92, -.36, 1.02, -.4, 1.1], [.7, .85, .78, 1.1, .76, 1.4]].forEach(([a, b, c, d, e, f]) => stroke('rgba(5,12,25,.1)', .03, () => { M(a, b); Qc(c, d, e, f); }, 10));
+  [[-.4, .92, -.3, 1.02, -.34, 1.1], [.6, .85, .66, 1.1, .64, 1.4]].forEach(([a, b, c, d, e, f]) => stroke('rgba(5,12,25,.1)', .03, () => { M(a, b); Qc(c, d, e, f); }, 10));
   g.restore();
-  stroke('rgba(255,206,150,.85)', .01, () => { M(-.3, .6); Cc(-.56, .7, -.7, .98, -.7, 1.7); }, 14);       // warm rim on the chest edge
+  stroke('rgba(255,206,150,.85)', .01, () => { M(-.3, .6); Cc(-.42, .68, -.5, .86, -.52, 1.7); }, 14);       // warm rim on the chest edge
   // near arm (sleeve) with reflective band
-  const arm = () => { g.beginPath(); M(-.1, .84); Cc(-.23, 1.0, -.25, 1.26, -.2, 1.7); L(.6, 1.7); Cc(.64, 1.3, .68, .98, .57, .76); Cc(.45, .57, .03, .59, -.1, .84); g.closePath(); };
-  arm(); g.fillStyle = lgH(-.2, .48, [[0, '#2F5E9E'], [.4, '#21477E'], [1, '#142E56']]); g.fill();
+  const arm = () => { g.beginPath(); M(-.08, .8); Cc(-.15, .98, -.16, 1.3, -.14, 1.7); L(.42, 1.7); Cc(.44, 1.3, .46, 1.0, .43, .8); Cc(.36, .64, .03, .63, -.08, .8); g.closePath(); };
+  arm(); g.fillStyle = lgH(-.16, .46, [[0, '#2B5B9C'], [.4, '#24508C'], [1, '#1B3F72']]); g.fill();
   g.save(); arm(); g.clip();
   g.fillStyle = lgH(-.2, .6, [[0, '#F1EEE4'], [.45, '#C3C6C1'], [1, '#6E747B']]); g.beginPath(); M(-.25, 1.14); Qc(.18, 1.22, .62, 1.12); L(.62, 1.22); Qc(.18, 1.32, -.25, 1.24); g.closePath(); g.fill();
   for (let i = 0; i < 900; i++) { const x = -.2 + r() * .8, y = .62 + r() * 1.1; stroke(r() > .5 ? 'rgba(255,255,255,.018)' : 'rgba(0,0,0,.035)', .0025, () => { M(x, y); L(x + .008, y - .008); }); }
   g.save(); g.setLineDash([.012 * s, .01 * s]); stroke('rgba(60,60,60,.45)', .0025, () => { M(-.25, 1.15); Qc(.18, 1.23, .62, 1.13); M(-.25, 1.23); Qc(.18, 1.31, .62, 1.21); });
-  stroke('rgba(255,255,255,.2)', .0028, () => { M(-.05, .84); Qc(.15, .72, .44, .8); M(.5, .9); Cc(.54, 1.1, .55, 1.4, .54, 1.7); }); g.restore();
-  blob(.24, .78, .2, .12, '130,170,225', .25);                       // rounded deltoid catching light
-  stroke('rgba(5,12,25,.22)', .03, () => { M(-.16, 1.02); Qc(.12, 1.1, .5, 1.0); }, 14);   // deltoid / biceps separation
-  blob(.05, 1.35, .14, .14, '120,160,215', .12);                     // biceps volume
+  stroke('rgba(255,255,255,.2)', .0028, () => { M(-.05, .84); Qc(.15, .72, .44, .8); M(.4, .9); Cc(.42, 1.1, .55, 1.4, .54, 1.7); }); g.restore();
   // embroidered safety patch (green cross) on the sleeve
   { const c = [X(.2), Y(.98)], R = .075 * s; g.fillStyle = '#E9E4D2'; g.beginPath(); g.arc(c[0], c[1], R, 0, 7); g.fill(); g.strokeStyle = '#2E7A48'; g.lineWidth = .008 * s; g.beginPath(); g.arc(c[0], c[1], R * .86, 0, 7); g.stroke();
     g.fillStyle = '#2E8A4E'; g.fillRect(c[0] - R * .16, c[1] - R * .55, R * .32, R * 1.1); g.fillRect(c[0] - R * .55, c[1] - R * .16, R * 1.1, R * .32);
@@ -1249,16 +1242,16 @@ function heroWorker(ox, oy, s) {
   [[.02, .9, .18, 1.02, .14, 1.1], [.36, .95, .3, 1.1, .38, 1.4]].forEach(([a, b, c, d, e, f]) => stroke('rgba(5,12,25,.1)', .03, () => { M(a, b); Qc(c, d, e, f); }, 10));
   stroke('rgba(150,180,220,.25)', .008, () => { M(-.06, .8); Qc(.12, .7, .3, .79); });     // shoulder seam catch-light
   g.restore();
-  stroke('rgba(255,206,150,.55)', .007, () => { M(-.1, .84); Cc(-.23, 1.0, -.25, 1.26, -.2, 1.7); }, 10);
+  stroke('rgba(255,206,150,.55)', .007, () => { M(-.08, .8); Cc(-.15, .98, -.16, 1.3, -.14, 1.7); }, 10);
 
   /* ---- collar back (behind the neck) ---- */
-  g.beginPath(); M(.1, .68); Qc(.16, .48, .26, .38); Qc(.37, .34, .45, .4); Qc(.48, .56, .4, .72); g.closePath();
+  g.beginPath(); M(.1, .7); Qc(.17, .55, .26, .5); Qc(.36, .47, .44, .52); Qc(.47, .62, .4, .74); g.closePath();
   g.fillStyle = lgH(.14, .45, [[0, '#1B3B69'], [.6, '#22487F'], [1, '#2A5590']]); g.fill();
-  stroke('rgba(150,180,225,.35)', .006, () => { M(.17, .48); Qc(.24, .4, .33, .36); Qc(.41, .34, .45, .4); });       // folded top edge
+  stroke('rgba(150,180,225,.35)', .006, () => { M(.17, .56); Qc(.24, .5, .33, .48); Qc(.41, .47, .44, .52); });       // folded top edge
 
   /* ---- neck: slimmer, shaded, flowing into the collar ---- */
-  const neck = () => { g.beginPath(); M(-.25, .4); Qc(-.236, .46, -.218, .5); Qc(-.206, .53, -.212, .57); Qc(-.214, .65, -.205, .74); L(.18, .72); Qc(.17, .45, .21, .22); L(.22, .1); L(-.05, .18); L(-.26, .35); g.closePath(); };
-  neck(); g.fillStyle = lgH(-.22, .2, [[0, '#EEC6AA'], [.35, '#DDAE91'], [.75, '#C4937A'], [1, '#A57861']]); g.fill();
+  const neck = () => { g.beginPath(); M(-.25, .4); Qc(-.236, .46, -.218, .5); Qc(-.206, .53, -.212, .57); Qc(-.214, .65, -.205, .74); L(.26, .72); Qc(.25, .36, .31, .12); L(.22, .06); L(-.05, .18); L(-.26, .35); g.closePath(); };
+  neck(); g.fillStyle = lgH(-.22, .28, [[0, '#EEC6AA'], [.35, '#DDAE91'], [.75, '#C4937A'], [1, '#A57861']]); g.fill();
   g.save(); neck(); g.clip();
   blob(-.06, .37, .32, .075, '125,82,62', .5, -.38);                                                   // shadow cast by the jaw
   stroke('rgba(255,228,210,.1)', .09, () => { M(.06, .3); Qc(-.03, .46, -.14, .66); }, 30);          // sternocleidomastoid catching light
@@ -1339,15 +1332,13 @@ function heroWorker(ox, oy, s) {
   g.restore();
   // side + back hair (outside the head clip so it can stand off the skull)
   g.fillStyle = HAIR; g.beginPath(); M(-.08, -.26); L(.13, -.27); Qc(.12, -.17, .08, -.135); Qc(.02, -.15, -.01, -.12); Qc(-.03, -.04, -.045, .03); Qc(-.07, -.06, -.08, -.26); g.closePath(); g.fill();
-  const backHair = () => { g.beginPath(); M(.08, -.27); L(.37, -.27); Qc(.42, -.16, .415, -.04); Qc(.41, .08, .34, .17); Qc(.3, .22, .25, .245);
-    Qc(.24, .19, .21, .165); Qc(.16, .12, .14, .06); Qc(.13, -.05, .12, -.12); Qc(.11, -.2, .08, -.27); g.closePath(); };
-  backHair(); g.fillStyle = HAIR; g.fill();
-  g.save(); backHair(); g.clip();
-  blob(.3, -.12, .1, .08, '120,112,108', .22);                                                         // soft sheen on the crown side
-  for (let i = 0; i < 90; i++) { const t = r(), x = .13 + t * .27, y = -.26 + r() * .06, L2 = .25 + r() * .2;
-    stroke(`rgba(105,98,94,${.12 + r() * .18})`, .0035, () => { M(x, y); Qc(x + .05 * t, y + L2 * .55, x - .02 + .02 * t, y + L2); }); }
+  // short back and sides: a close crop that follows the skull and fades out above the nape
+  g.save(); head(); g.clip();
+  g.beginPath(); M(.09, -.3); L(.45, -.32); L(.45, .22); L(.25, .2); Qc(.17, .13, .14, .05); Qc(.12, -.1, .09, -.3); g.closePath();
+  { const q = g.createLinearGradient(0, Y(-.3), 0, Y(.18)); q.addColorStop(0, 'rgba(18,13,11,.96)'); q.addColorStop(.45, 'rgba(22,17,15,.9)'); q.addColorStop(.72, 'rgba(45,42,46,.45)'); q.addColorStop(1, 'rgba(60,58,62,0)'); g.fillStyle = q; g.fill(); }
+  for (let i = 0; i < 700; i++) { const x = .12 + r() * .3, y = -.28 + r() * .36; g.fillStyle = `rgba(${r() > .5 ? '10,8,7' : '90,84,82'},${.12 + r() * .18})`; g.fillRect(X(x), Y(y), 1.4, 1.4); }
+  blob(.32, -.15, .08, .06, '140,132,128', .16);                                                         // soft sheen
   g.restore();
-  [[.26, .2, .245, .26], [.3, .17, .29, .225], [.22, .15, .205, .2]].forEach(([x, y, x2, y2]) => { g.fillStyle = HAIR; g.beginPath(); M(x - .015, y); Qc(x, y + .03, x2, y2); Qc(x + .01, y + .02, x + .02, y - .01); g.closePath(); g.fill(); });
   for (let i = 0; i < 30; i++) { const x = -.46 + r() * .44, y = -.25 + r() * .04;
     stroke(`rgba(95,88,84,${.15 + r() * .18})`, .004, () => { M(x, y); Qc(x - .01, y + .02, x - .02, y + .045); }); }
   // ear: helix, antihelix with crura, concha, ear canal behind the tragus, antitragus, fleshy lobe
@@ -1381,7 +1372,7 @@ function heroWorker(ox, oy, s) {
   g.save(); g.translate(X(-.205), Y(.385)); g.rotate(-1.0); g.fillStyle = '#44484F'; g.beginPath(); g.roundRect(-.022 * s, -.016 * s, .044 * s, .032 * s, .006 * s); g.fill(); g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(-.018 * s, -.012 * s, .036 * s, .006 * s); g.restore();
 
   /* ---- helmet ---- */
-  g.save(); g.translate(X(-.06), Y(-.235)); g.scale(.88, .88); g.translate(-X(-.06), -Y(-.25));
+  g.save(); g.translate(X(-.02), Y(-.245)); g.scale(.95, .95); g.translate(-X(-.06), -Y(-.25));
   const helmet = () => { g.beginPath(); M(-.6, -.255); Cc(-.58, -.55, -.36, -.82, -.02, -.82); Cc(.28, -.82, .46, -.6, .43, -.3); L(.41, -.235); Qc(0, -.27, -.38, -.232); Qc(-.5, -.236, -.6, -.255); g.closePath(); };
   helmet(); { const q = g.createLinearGradient(X(-.6), Y(-.8), X(.45), Y(-.25)); q.addColorStop(0, '#FFFFFF'); q.addColorStop(.45, '#F0F0EC'); q.addColorStop(.8, '#C6CBD1'); q.addColorStop(1, '#98A0AB'); g.fillStyle = q; g.fill(); }
   g.save(); helmet(); g.clip();
