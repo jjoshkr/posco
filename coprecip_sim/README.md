@@ -16,6 +16,20 @@ AI 노드 (Pi 5 + AI HAT+, RealSense)              I/O 노드 (Pi 5 + MCC 118 + 
                                                           │ 스톡 C/M/Y (2 L, 1 g/L)  →  반응기 5 L (heel 2 L)
 ```
 
+## 문서
+
+| 문서 | 내용 |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 두 노드 구조, 시뮬레이터 모델, 안전 체인, 데이터 흐름, 모듈 의존 관계 |
+| [docs/PROTOCOL.md](docs/PROTOCOL.md) | AI↔I/O 노드 명령·텔레메트리 JSON 스키마, 알람 목록 |
+| [docs/HARDWARE.md](docs/HARDWARE.md) | 보드 주소·핀 배정, 펌프 인터페이스, 펄스 펌프, 밸브, 계측, 로드셀, 카메라, 교정 절차 |
+| [docs/RECIPES.md](docs/RECIPES.md) | 레시피 YAML 스키마와 스텝 참조, 중단 규칙, 예시 목록 |
+| [docs/CONFIG.md](docs/CONFIG.md) | camera.json · io_node.json · loadcell.json · calibration.json · SystemConfig |
+| [docs/OPERATIONS.md](docs/OPERATIONS.md) | 워크스테이션 → 빵판 → 24 V → 카메라 → 연동 → 실운전 절차, 문제 해결표 |
+| [docs/API.md](docs/API.md) | 모듈·클래스·함수 참조 (`tools/gen_api_docs.py` 로 독스트링에서 생성) |
+| [docs/integration_report_example.md](docs/integration_report_example.md) | Tier C 통합 시험 보고서 예시 |
+| [CHANGELOG.md](CHANGELOG.md) | 변경 이력 |
+
 ## 빠른 시작
 
 ```bash
@@ -25,7 +39,7 @@ python -m cmysim run   --target "#5A8F7B" --mode closed --plot run.png --csv run
 python -m cmysim run   --target "#5A8F7B" --mode open  --fault stock_conc:P-101=900 --e-cal-err 0.03
 python -m cmysim sweep --target "#5A8F7B" --factors 0.7,0.85,1,1.15,1.3 --csv sweep.csv
 python -m cmysim calib                                           # MCC 152 이득오차 2점 교정 시연
-python -m pytest -q tests                                        # 10개 테스트
+python -m pytest -q tests                                        # 37개 테스트
 ```
 
 필요한 것: Python 3.10+, numpy. 그래프는 matplotlib(선택). 목표는 `--target '#RRGGBB'` 또는 `--cmy 30,10,25`(mg/L).
