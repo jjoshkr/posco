@@ -1208,8 +1208,21 @@ function heroWorker(ox, oy, s) {
   // chest reflective band + placket
   g.fillStyle = lgH(-.64, .2, [[0, '#F4F1E6'], [.5, '#BFC3BE'], [1, '#7E848A']]); g.beginPath(); M(-.7, 1.18); Qc(-.3, 1.12, .2, 1.16); L(.2, 1.26); Qc(-.3, 1.22, -.7, 1.28); g.closePath(); g.fill();
   stroke('rgba(8,16,30,.55)', .006, () => { M(-.37, .66); Cc(-.52, .82, -.62, 1.1, -.66, 1.7); });
+  for (let i = 0; i < 2600; i++) { const x = -.75 + r() * 1.75, y = .5 + r() * 1.25; stroke(r() > .5 ? 'rgba(255,255,255,.018)' : 'rgba(0,0,0,.035)', .0025, () => { M(x, y); L(x + .008, y - .008); }); }
+  // chest pocket with flap, button and pen
+  g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); M(-.5, .9); L(-.24, .88); L(-.23, 1.1); L(-.5, 1.12); g.closePath(); g.fill();
+  stroke('rgba(255,255,255,.22)', .003, () => { M(-.49, .91); L(-.25, .89); L(-.24, 1.09); L(-.49, 1.11); g.closePath(); });
+  g.fillStyle = 'rgba(255,255,255,.06)'; g.beginPath(); M(-.51, .87); L(-.23, .85); L(-.23, .93); Qc(-.37, .97, -.51, .95); g.closePath(); g.fill();
+  stroke('rgba(0,0,0,.35)', .004, () => { M(-.51, .95); Qc(-.37, .97, -.23, .93); });
+  g.fillStyle = '#16304F'; g.beginPath(); g.arc(X(-.37), Y(.94), .013 * s, 0, 7); g.fill();
+  g.fillStyle = '#C9CFD6'; g.fillRect(X(-.3), Y(.8), .014 * s, .12 * s); g.fillStyle = '#1A1D22'; g.fillRect(X(-.302), Y(.78), .018 * s, .035 * s);
+  // buttons on the placket
+  [[-.43, .78], [-.56, 1.36], [-.62, 1.6]].forEach(([x, y]) => { g.fillStyle = '#14294A'; g.beginPath(); g.arc(X(x), Y(y), .014 * s, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.arc(X(x) - .004 * s, Y(y) - .004 * s, .004 * s, 0, 7); g.fill(); });
+  stroke('rgba(255,255,255,.16)', .003, () => { M(-.34, .66); Cc(-.49, .82, -.59, 1.1, -.63, 1.7); });
+  // stitched edges of the chest band
+  g.save(); g.setLineDash([.012 * s, .01 * s]); stroke('rgba(60,60,60,.45)', .0025, () => { M(-.7, 1.19); Qc(-.3, 1.13, .2, 1.17); M(-.7, 1.27); Qc(-.3, 1.21, .2, 1.25); }); g.restore();
   // fabric folds
-  [[-.46, .92, -.36, 1.02, -.4, 1.1], [.7, .85, .78, 1.1, .76, 1.4]].forEach(([a, b, c, d, e, f]) => stroke('rgba(5,12,25,.22)', .02, () => { M(a, b); Qc(c, d, e, f); }, 6));
+  [[-.46, .92, -.36, 1.02, -.4, 1.1], [.7, .85, .78, 1.1, .76, 1.4]].forEach(([a, b, c, d, e, f]) => stroke('rgba(5,12,25,.1)', .03, () => { M(a, b); Qc(c, d, e, f); }, 10));
   g.restore();
   stroke('rgba(255,206,150,.85)', .01, () => { M(-.3, .6); Cc(-.5, .74, -.64, 1.05, -.72, 1.7); }, 14);       // warm rim on the chest edge
   // near arm (sleeve) with reflective band
@@ -1217,48 +1230,62 @@ function heroWorker(ox, oy, s) {
   arm(); g.fillStyle = lgH(-.2, .48, [[0, '#2F5E9E'], [.4, '#21477E'], [1, '#142E56']]); g.fill();
   g.save(); arm(); g.clip();
   g.fillStyle = lgH(-.2, .6, [[0, '#F1EEE4'], [.45, '#C3C6C1'], [1, '#6E747B']]); g.beginPath(); M(-.25, 1.14); Qc(.18, 1.22, .62, 1.12); L(.62, 1.22); Qc(.18, 1.32, -.25, 1.24); g.closePath(); g.fill();
-  [[.02, .9, .18, 1.02, .14, 1.1], [.36, .95, .3, 1.1, .38, 1.4]].forEach(([a, b, c, d, e, f]) => stroke('rgba(5,12,25,.25)', .02, () => { M(a, b); Qc(c, d, e, f); }, 6));
+  for (let i = 0; i < 900; i++) { const x = -.2 + r() * .8, y = .62 + r() * 1.1; stroke(r() > .5 ? 'rgba(255,255,255,.018)' : 'rgba(0,0,0,.035)', .0025, () => { M(x, y); L(x + .008, y - .008); }); }
+  g.save(); g.setLineDash([.012 * s, .01 * s]); stroke('rgba(60,60,60,.45)', .0025, () => { M(-.25, 1.15); Qc(.18, 1.23, .62, 1.13); M(-.25, 1.23); Qc(.18, 1.31, .62, 1.21); });
+  stroke('rgba(255,255,255,.2)', .0028, () => { M(-.05, .84); Qc(.15, .72, .44, .8); M(.5, .9); Cc(.54, 1.1, .55, 1.4, .54, 1.7); }); g.restore();
+  // embroidered safety patch (green cross) on the sleeve
+  { const c = [X(.2), Y(.98)], R = .075 * s; g.fillStyle = '#E9E4D2'; g.beginPath(); g.arc(c[0], c[1], R, 0, 7); g.fill(); g.strokeStyle = '#2E7A48'; g.lineWidth = .008 * s; g.beginPath(); g.arc(c[0], c[1], R * .86, 0, 7); g.stroke();
+    g.fillStyle = '#2E8A4E'; g.fillRect(c[0] - R * .16, c[1] - R * .55, R * .32, R * 1.1); g.fillRect(c[0] - R * .55, c[1] - R * .16, R * 1.1, R * .32);
+    g.save(); g.setLineDash([.006 * s, .005 * s]); g.strokeStyle = 'rgba(60,60,40,.5)'; g.lineWidth = .002 * s; g.beginPath(); g.arc(c[0], c[1], R * .98, 0, 7); g.stroke(); g.restore();
+    const q = g.createLinearGradient(c[0] - R, 0, c[0] + R, 0); q.addColorStop(0, 'rgba(255,255,255,.15)'); q.addColorStop(1, 'rgba(0,0,30,.35)'); g.fillStyle = q; g.beginPath(); g.arc(c[0], c[1], R, 0, 7); g.fill(); }
+  [[.02, .9, .18, 1.02, .14, 1.1], [.36, .95, .3, 1.1, .38, 1.4]].forEach(([a, b, c, d, e, f]) => stroke('rgba(5,12,25,.1)', .03, () => { M(a, b); Qc(c, d, e, f); }, 10));
   stroke('rgba(150,180,220,.25)', .008, () => { M(-.06, .8); Qc(.12, .7, .3, .79); });     // shoulder seam catch-light
   g.restore();
   stroke('rgba(255,206,150,.55)', .007, () => { M(-.08, .8); Cc(-.17, 1.02, -.2, 1.35, -.18, 1.7); }, 10);
 
   /* ---- neck (in shadow under the jaw) ---- */
   g.beginPath(); M(-.26, .44); Qc(-.22, .5, -.23, .7); L(.34, .58); L(.37, .08); L(.02, .3); g.closePath();
-  { const q = g.createLinearGradient(0, Y(.35), 0, Y(.66)); q.addColorStop(0, '#6E4834'); q.addColorStop(1, '#94684F'); g.fillStyle = q; g.fill(); }
-  stroke('rgba(60,36,24,.45)', .012, () => { M(-.12, .47); Qc(-.02, .54, .1, .62); }, 4);
+  { const q = g.createLinearGradient(0, Y(.3), 0, Y(.66)); q.addColorStop(0, '#9A7058'); q.addColorStop(1, '#C49A7E'); g.fillStyle = q; g.fill(); }
+  stroke('rgba(90,58,40,.35)', .012, () => { M(-.12, .45); Qc(-.02, .52, .1, .6); }, 4);
   stroke('rgba(255,200,150,.6)', .008, () => { M(-.25, .47); Qc(-.22, .52, -.23, .7); }, 8);
   // collar stand wraps the neck
   g.beginPath(); M(-.28, .52); Qc(.02, .6, .3, .38); L(.34, .54); Qc(.02, .78, -.31, .67); g.closePath(); g.fillStyle = lgH(-.31, .32, [[0, '#3466A8'], [.5, '#1F4479'], [1, '#132B50']]); g.fill();
   stroke('rgba(255,206,150,.7)', .007, () => { M(-.28, .52); Qc(-.31, .6, -.31, .67); }, 8);
+  g.beginPath(); M(-.29, .6); Qc(-.12, .7, .08, .68); L(-.06, .86); Qc(-.2, .8, -.42, .84); Qc(-.36, .72, -.29, .6); g.closePath();
+  g.fillStyle = lgH(-.42, .08, [[0, '#3F72B6'], [.5, '#2A5694'], [1, '#1A3A6A']]); g.fill();
+  g.save(); g.setLineDash([.01 * s, .008 * s]); stroke('rgba(255,255,255,.22)', .0025, () => { M(-.38, .82); Qc(-.2, .78, -.08, .82); }); g.restore();
+  stroke('rgba(0,0,0,.3)', .005, () => { M(-.42, .845); Qc(-.2, .81, -.06, .865); });
+  stroke('rgba(255,206,150,.6)', .005, () => { M(-.29, .6); Qc(-.36, .72, -.42, .84); }, 6);
 
   /* ---- head ---- */
   const profile = () => {                       // forehead -> brow -> nose -> lips -> chin -> under-jaw
     M(-.395, -.3); Qc(-.425, -.24, -.428, -.17); Qc(-.448, -.125, -.425, -.085);
-    Qc(-.47, -.005, -.528, .075); Qc(-.548, .118, -.494, .132); Qc(-.47, .146, -.447, .143);
+    Qc(-.465, -.005, -.515, .075); Qc(-.534, .116, -.49, .132); Qc(-.47, .146, -.447, .143);
     Qc(-.44, .176, -.457, .207); Qc(-.452, .226, -.432, .236); Qc(-.452, .25, -.447, .272);
-    Qc(-.43, .3, -.407, .322); Qc(-.428, .372, -.402, .42); Qc(-.386, .468, -.3, .47);
+    Qc(-.43, .3, -.407, .322); Qc(-.428, .372, -.405, .415); Qc(-.39, .452, -.32, .45);
   };
-  const head = () => { g.beginPath(); profile(); Qc(-.12, .45, .03, .31); Qc(.12, .27, .2, .22); Qc(.37, .16, .395, -.04); Qc(.4, -.22, .34, -.3); g.closePath(); };
-  head(); g.fillStyle = lgH(-.56, .4, [[0, '#F0CBAD'], [.18, '#DDAE8E'], [.55, '#B98B6E'], [1, '#86604A']]); g.fill();
+  const head = () => { g.beginPath(); profile(); Qc(-.16, .43, -.01, .27); Qc(.12, .27, .2, .22); Qc(.37, .16, .395, -.04); Qc(.4, -.22, .34, -.3); g.closePath(); };
+  head(); g.fillStyle = lgH(-.56, .4, [[0, '#F6D7BE'], [.18, '#EBC3A5'], [.55, '#C99D80'], [1, '#93705A']]); g.fill();
   g.save(); head(); g.clip();
   blob(-.39, -.21, .1, .07, '255,226,196', .35);                      // forehead highlight
-  blob(-.355, -.06, .08, .05, '96,52,34', .5);                        // eye socket
+  blob(-.355, -.06, .07, .045, '120,72,50', .28);                        // eye socket
   blob(-.32, .045, .11, .07, '255,214,182', .4);                      // cheekbone catches the sun
   blob(-.37, .12, .07, .06, '255,205,170', .25);                      // smiling cheek
-  blob(-.24, .2, .13, .11, '110,62,40', .32);                         // under the cheekbone
-  blob(-.1, .36, .26, .06, '90,52,34', .35, -.45);                    // jaw shadow
+  blob(-.22, .21, .13, .11, '140,90,66', .14);                         // under the cheekbone
+  blob(-.12, .33, .24, .05, '110,66,46', .3, -.5);
+  blob(-.25, .19, .1, .12, '150,100,76', .1);                    // jaw shadow
   blob(-.44, .158, .035, .02, '80,40,26', .55);                       // under the nose
   blob(-.42, .3, .04, .025, '90,48,32', .4);                          // under the lower lip
   blob(-.1, -.2, .2, .07, '60,34,22', .55);                           // helmet brim shadow
-  for (let i = 0; i < 900; i++) { const x = -.44 + r() * .4, y = .16 + r() * .32; if (x < -.43 + (y - .16) * .1 && y < .3) continue; g.fillStyle = `rgba(55,35,25,${.06 + r() * .1})`; g.fillRect(X(x), Y(y), 1.2, 1.2); }   // stubble
+  for (let i = 0; i < 0; i++) { const x = -.44 + r() * .4, y = .16 + r() * .32; if (x < -.43 + (y - .16) * .1 && y < .3) continue; g.fillStyle = `rgba(55,35,25,${.06 + r() * .1})`; g.fillRect(X(x), Y(y), 1.2, 1.2); }   // stubble
   // lips
-  g.fillStyle = 'rgba(176,88,72,.55)'; g.beginPath(); M(-.456, .207); Qc(-.43, .2, -.375, .225); L(-.432, .237); g.closePath(); g.fill();
-  g.fillStyle = 'rgba(192,98,82,.5)'; g.beginPath(); M(-.432, .238); Qc(-.39, .236, -.378, .232); Qc(-.41, .275, -.447, .27); g.closePath(); g.fill();
+  g.fillStyle = 'rgba(200,110,96,.5)'; g.beginPath(); M(-.456, .207); Qc(-.43, .2, -.375, .225); L(-.432, .237); g.closePath(); g.fill();
+  g.fillStyle = 'rgba(214,122,108,.48)'; g.beginPath(); M(-.432, .238); Qc(-.39, .236, -.378, .232); Qc(-.41, .275, -.447, .27); g.closePath(); g.fill();
   stroke('rgba(70,30,24,.85)', .006, () => { M(-.433, .237); Qc(-.4, .238, -.362, .218); });
   stroke('rgba(255,230,210,.5)', .005, () => { M(-.445, .262); Qc(-.43, .268, -.41, .262); });
   // smile fold, crow's feet
-  stroke('rgba(110,58,38,.5)', .008, () => { M(-.41, .118); Qc(-.36, .175, -.352, .262); });
-  [[-.31, -.06, -.27, -.075], [-.31, -.04, -.27, -.035], [-.315, -.022, -.28, -.005]].forEach(([a, b, c, d]) => stroke('rgba(110,62,42,.45)', .004, () => { M(a, b); L(c, d); }));
+  stroke('rgba(150,90,64,.16)', .01, () => { M(-.405, .13); Qc(-.375, .17, -.37, .22); }, 4);
+  
   // eye (smiling, slightly narrowed)
   const eye = () => { g.beginPath(); M(-.398, -.05); Qc(-.36, -.078, -.322, -.056); Qc(-.36, -.036, -.398, -.05); g.closePath(); };
   eye(); g.fillStyle = '#EDE2D6'; g.fill();
@@ -1274,8 +1301,10 @@ function heroWorker(ox, oy, s) {
   stroke('rgba(90,46,30,.55)', .006, () => { M(-.47, .128); Qc(-.445, .12, -.428, .132); });
   blob(-.42, .1, .035, .03, '120,64,42', .35);
   // hair: sideburn and short back hair under the helmet
-  g.fillStyle = '#17110D'; g.beginPath(); M(-.095, -.24); L(-.01, -.25); L(-.02, -.04); Qc(-.07, -.06, -.095, -.24); g.closePath(); g.fill();
-  g.beginPath(); M(.13, -.27); L(.36, -.29); Qc(.42, -.12, .39, .02); Qc(.36, .14, .3, .2); Qc(.22, .14, .17, .1); Qc(.13, -.05, .13, -.27); g.closePath(); g.fill();
+  g.fillStyle = '#120D0A'; g.beginPath(); M(-.11, -.25); L(.02, -.26); Qc(.0, -.12, -.015, -.02); Qc(-.07, -.05, -.09, -.12); Qc(-.12, -.18, -.11, -.25); g.closePath(); g.fill();
+  g.beginPath(); M(-.415, -.255); Qc(-.4, -.2, -.36, -.175); Qc(-.33, -.2, -.29, -.18); Qc(-.25, -.205, -.2, -.185); Qc(-.16, -.21, -.13, -.25); g.closePath(); g.fill();
+  for (let i = 0; i < 40; i++) { const x = -.4 + r() * .27; stroke(`rgba(60,44,34,${.3 + r() * .3})`, .003, () => { M(x, -.25); Qc(x - .01, -.22, x - .02, -.19 + r() * .015); }); }
+  g.beginPath(); M(.1, -.27); L(.37, -.29); Qc(.43, -.12, .4, .03); Qc(.37, .15, .3, .21); Qc(.22, .15, .16, .1); Qc(.1, -.05, .1, -.27); g.closePath(); g.fill();
   blob(.24, .18, .1, .06, '60,40,30', .5);
   for (let i = 0; i < 160; i++) { const x = .14 + r() * .23, y = -.26 + r() * .4; stroke(`rgba(70,52,40,${.25 + r() * .3})`, .003, () => { M(x, y); L(x + .01, y + .025); }); }
   g.restore();
@@ -1300,8 +1329,12 @@ function heroWorker(ox, oy, s) {
   stroke('rgba(150,158,168,.6)', .012, () => { M(-.48, -.44); Cc(-.4, -.72, -.15, -.78, .05, -.77); Cc(.25, -.76, .38, -.62, .4, -.42); });
   stroke('rgba(255,255,255,.9)', .006, () => { M(-.49, -.46); Cc(-.41, -.74, -.15, -.8, .05, -.79); });
   g.fillStyle = 'rgba(80,88,100,.25)'; g.beginPath(); M(-.6, -.255); Qc(-.5, -.236, -.38, -.232); Qc(0, -.27, .41, -.235); L(.42, -.28); Qc(0, -.31, -.38, -.27); Qc(-.5, -.272, -.59, -.29); g.closePath(); g.fill();
-  g.fillStyle = '#1BA39C'; g.beginPath(); g.roundRect(X(-.02), Y(-.56), .14 * s, .1 * s, .015 * s); g.fill();
-  g.fillStyle = 'rgba(255,255,255,.3)'; g.fillRect(X(-.02), Y(-.56), .14 * s, .025 * s);
+  g.save(); g.translate(X(.09), Y(-.5)); g.transform(1, .06, -.08, 1, 0, 0); g.font = font(600, .135 * s); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#0D3F7A'; g.fillText('POSCO', 0, 0); g.restore();
+  g.fillStyle = '#F2C230'; g.beginPath(); M(-.08, -.405); Qc(.1, -.39, .27, -.4); L(.27, -.36); Qc(.1, -.35, -.08, -.365); g.closePath(); g.fill();
+  g.fillStyle = 'rgba(120,90,10,.35)'; g.fillRect(X(-.08), Y(-.367), .35 * s, .005 * s);
+  { const c = [X(-.33), Y(-.47)], R = .045 * s; g.fillStyle = '#F7F7F2'; g.beginPath(); g.arc(c[0], c[1], R, 0, 7); g.fill(); g.strokeStyle = '#2E8A4E'; g.lineWidth = .006 * s; g.stroke();
+    g.fillStyle = '#2E8A4E'; g.fillRect(c[0] - R * .18, c[1] - R * .62, R * .36, R * 1.24); g.fillRect(c[0] - R * .62, c[1] - R * .18, R * 1.24, R * .36); }
+  
   g.restore();
   stroke('rgba(255,236,205,.9)', .006, () => { M(-.6, -.255); Cc(-.58, -.55, -.36, -.82, -.02, -.82); }, 12);
   g.fillStyle = '#2A2E36'; g.beginPath(); g.roundRect(X(.3), Y(-.255), .1 * s, .06 * s, .01 * s); g.fill();       // ratchet at the back
