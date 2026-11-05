@@ -33,6 +33,7 @@ class DacChainSpec:
     offset_V: float = 0.0
     mA_per_V: float = 4.016          # XTR111: I = 10·V/RSET
     i_max_mA: float = 24.0           # 전류 제한
+    calibrated: bool = False         # True: 시작 시 2점 교정 수행 (실제 절차 bench calib 과 동일)
 
 
 @dataclass

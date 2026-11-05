@@ -66,6 +66,10 @@ class SimPlant:
         self.rng = np.random.default_rng(cfg.seed)
         gain_errs = self.rng.uniform(-0.015, 0.015, 3) if cfg.dac.gain_err == 0 else [cfg.dac.gain_err] * 3
         self.channels = {pid: PumpChannel(cfg.dac, float(g)) for pid, g in zip(PUMP_IDS, gain_errs)}
+        self.adc = Mcc118(cfg.adc, self.rng)
+        if cfg.dac.calibrated:                       # 2점 교정 (루프백 션트로 실측) — 실제 bench calib 절차와 동일
+            for ch in self.channels.values():
+                ch.enable(True); ch.calibrate_two_point(lambda ch=ch: self.adc.read_mA_via_shunt(ch.actual_mA)); ch.enable(False)
         self.pumps = {pid: GammaXPump(cfg.pump, self.rng, pid) for pid in PUMP_IDS}
         self.valves = {vid: SolenoidValveNC(vid) for vid in VALVE_IDS}
         self.tanks = [StockTank(ts, d) for ts, d in zip(cfg.tanks, ("C", "M", "Y"))]
@@ -73,7 +77,6 @@ class SimPlant:
         self.stirrer = Stirrer(cfg.reactor.rpm_max)
         self.stirrer_mA = 4.0 + 16.0 * cfg.reactor.rpm / cfg.reactor.rpm_max
         self.stirrer.rpm = cfg.reactor.rpm
-        self.adc = Mcc118(cfg.adc, self.rng)
         self.tc = Mcc134(self.rng)
         self.camera = SyntheticCamera(cfg.camera, self.rng)
         self.run_enabled = False

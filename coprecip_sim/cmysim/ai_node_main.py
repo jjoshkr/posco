@@ -49,6 +49,7 @@ def main(argv=None):
     ap.add_argument("--hz", type=float, default=10.0, help="제어 루프 주기")
     ap.add_argument("--monitor", action="store_true"); ap.add_argument("--no-io", action="store_true")
     ap.add_argument("--preview", action="store_true", help="OpenCV 창에 ROI·색 견본 표시 (모니터 연결 시)")
+    ap.add_argument("--anomaly", help="anomaly train 이 저장한 모델 폴더. 0.5 s 마다 오토인코더 점수·CUSUM 을 내고 알람을 로그에 남김")
     ap.add_argument("--yolo", help="학습된 가중치 (.pt/.onnx/.hef). 기포·액체 상태를 로그에 남기고 기포가 많으면 트림을 보류")
     ap.add_argument("--yolo-every", type=int, default=5, help="몇 프레임마다 YOLO 를 돌릴지")
     ap.add_argument("--bubble-hold", type=int, default=3, help="이 개수 이상 기포가 보이면 카메라 추정을 믿지 않고 TRIM 을 미룸")
@@ -116,10 +117,18 @@ def main(argv=None):
         det = VisionEvents(a.yolo); print("YOLO 로드:", a.yolo, det.backend)
     yolo_res = dict(liquid=None, liquid_conf=0.0, bubbles=0, ms=0.0)
     frame_i = 0
+    adet = None
+    if a.anomaly:
+        from .anomaly import Detector
+        adet = Detector.load(a.anomaly); adet.fb.heel = cfg.reactor.heel_mL
+        adet.fb.c_stock = np.array([tk.conc_mg_L for tk in cfg.tanks], float)
+        print(f"이상탐지 로드 {a.anomaly}: {adet.model.kind}, 특징 {len(adet.features)}개, 창 {adet.W}×{adet.dt}s, 임계 {adet.thr:.4f}")
+    ad_res = dict(score=0.0, ratio=0.0, alarm=False, cusum=0.0, cusum_alarm=False, top=[])
+    next_ad = 0.0
     logf = open(a.log, "w", newline=""); w = csv.writer(logf)
     w.writerow(["t_s", "state", "R", "G", "B", "A_R", "A_G", "A_B", "cC_hat", "cM_hat", "cY_hat", "dE2000", "io_mode",
                 "mA_101", "mA_102", "mA_103", "spm_101", "spm_102", "spm_103", "ph", "p_bar", "temp_C",
-                "yolo_liquid", "yolo_conf", "yolo_bubbles", "yolo_ms"])
+                "yolo_liquid", "yolo_conf", "yolo_bubbles", "yolo_ms", "ad_ratio", "ad_cusum", "ad_alarm", "ad_top"])
     stop = {"flag": False}
     signal.signal(signal.SIGINT, lambda *_: stop.__setitem__("flag", True))
     signal.signal(signal.SIGTERM, lambda *_: stop.__setitem__("flag", True))
@@ -159,11 +168,24 @@ def main(argv=None):
                     print(f"{t:7.1f}s {ctl.state:8s} RGB {rgb.astype(int)} ĉ {np.round(c_hat,2)} ΔE {de_v:5.2f}"
                           + (f"  io={tele['mode']} V≈{tele['est_volume_mL']} mL" if tele else ""))
             pm = tele["pumps"] if tele else None
+            if adet is not None and t >= next_ad and pm:
+                next_ad = t + adet.dt
+                row_ad = dict(t=t, mA_101=pm["P-101"]["cmd_mA"], mA_102=pm["P-102"]["cmd_mA"], mA_103=pm["P-103"]["cmd_mA"],
+                              spm_101=pm["P-101"]["spm"], spm_102=pm["P-102"]["spm"], spm_103=pm["P-103"]["spm"],
+                              p_bar=tele["pressure_bar"], ph=tele["ph"], temp_C=tele["temp_C"], rpm=float("nan"),
+                              cC_hat=float(c_hat[0]), cM_hat=float(c_hat[1]), cY_hat=float(c_hat[2]), dE=float(de_v))
+                o = adet.push(row_ad)
+                if o:
+                    was = ad_res["alarm"] or ad_res["cusum_alarm"]; ad_res = o
+                    if (o["alarm"] or o["cusum_alarm"]) and not was:
+                        print(f"{t:7.1f}s 이상탐지 알람: 점수/임계 {o['ratio']:.2f} CUSUM {o['cusum']:.1f} 주요 특징 {o['top'][0][0]}")
             w.writerow([round(t, 2), row_state, *rgb.astype(int), *np.round(A, 4), *np.round(c_hat, 3), round(float(de_v), 3),
                         tele["mode"] if tele else "", *([pm[p]["cmd_mA"] for p in pm] if pm else ["", "", ""]),
                         *([pm[p]["spm"] for p in pm] if pm else ["", "", ""]),
                         *([tele["ph"], tele["pressure_bar"], tele["temp_C"]] if tele else ["", "", ""]),
-                        yolo_res["liquid"] or "", round(yolo_res["liquid_conf"], 3), yolo_res["bubbles"], round(yolo_res["ms"], 1)])
+                        yolo_res["liquid"] or "", round(yolo_res["liquid_conf"], 3), yolo_res["bubbles"], round(yolo_res["ms"], 1),
+                        round(ad_res["ratio"], 3), round(ad_res["cusum"], 2), int(ad_res["alarm"] or ad_res["cusum_alarm"]),
+                        ad_res["top"][0][0] if ad_res["top"] else ""])
             if ds:
                 ds.maybe_record(t, None, c_hat, None, rgb, rec.target_rgb8, de_v, run_id="real", image=frame)
             if a.preview:

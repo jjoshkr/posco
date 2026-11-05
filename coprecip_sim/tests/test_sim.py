@@ -335,3 +335,62 @@ def test_recipe_fault_step_and_target(tmp_path):
     res = run_once(cfg, ex.r, 300.0, controller=ex)
     assert any(k == "fault" for _, k, _ in ex.log) and ex.aborted.startswith("DOSE") and res["tank_mL"][0] <= 100.01
     assert ex.done and not ex.measurements                                # on_abort: stop → measure 생략
+
+
+# ---------------- 이상탐지
+from cmysim import anomaly as AD
+
+
+def _ad_dataset(tmp_path, n_normal=4, n_fault=2):
+    from cmysim.experiment import save_timeseries_csv
+    import json as _json
+    for i in range(n_normal + n_fault):
+        fault = i >= n_normal
+        cfg = SystemConfig(seed=20 + i); rec, _ = make_recipe(cfg, target_cmy=[20 + i, 8, 15], dose_minutes=1.0)
+        faults = ["tank_empty:P-101@30"] if fault else []
+        res = run_once(cfg, rec, 150.0, faults=faults, run_id=f"r{i}")
+        d = tmp_path / "ds" / ("fault" if fault else "normal") / f"r{i}"; d.mkdir(parents=True)
+        save_timeseries_csv(res, d / "timeseries.csv")
+        (d / "meta.json").write_text(_json.dumps(dict(fault_kind="tank_empty" if fault else "", fault_arg="P-101", t_fault=30.0 if fault else None)))
+    return tmp_path / "ds"
+
+
+def test_anomaly_features_offline_equals_online():
+    rows = [dict(t=0.5 * i, mA_101=12.0, mA_102=0.0, mA_103=8.0, spm_101=100.0, spm_102=0.0, spm_103=47.0, p_bar=0.8,
+                 ph=7.0, temp_C=25.0, rpm=300.0, cC_hat=0.1 * i, cM_hat=0.0, cY_hat=0.05 * i, dE=30 - i) for i in range(30)]
+    fb = AD.FeatureBuilder(); feats = fb.available_features(rows)
+    assert set(AD.FEATURES_OPT) <= set(feats)
+    X = fb.matrix(rows, feats)
+    fb.reset(); Y = np.array([[f[k] for k in feats] for f in (fb.push(r) for r in rows)])
+    assert np.allclose(X, Y)
+    j = feats.index("r_spm_101"); assert abs(X[-1, j] - (200 * (12 - 4.4) / 15.2 - 100)) < 1e-9
+    assert X[-1, feats.index("d_dE")] == -2.0                                   # (−1)/0.5
+
+
+def test_anomaly_pca_train_eval_online(tmp_path):
+    ds = _ad_dataset(tmp_path)
+    AD.main(["train", "--data", str(ds), "--model", "pca", "--out", str(tmp_path / "m"), "--val", "0.25", "--window", "10"])
+    det = AD.Detector.load(tmp_path / "m")
+    summary, res = AD.evaluate(det, ds, verbose=False)
+    assert summary["n_fault"] == 2 and summary["detected"] == 2 and summary["median_delay_s"] < 15
+    assert summary["false_alarm_rate"] < 0.05
+    # 온라인 push 와 오프라인 score_rows 가 같은 점수
+    rows = AD.resample(AD.canonical_rows(ds / "fault" / "r4" / "timeseries.csv"), 0.5)
+    s, _, t = det.score_rows(rows)
+    det.reset(); online = [o["score"] for o in (det.push(r) for r in rows) if o]
+    assert np.allclose(s, online, rtol=1e-6)
+    assert AD.fusion_score(dE=4.0, ae_ratio=2.0)[0] == 1.0 * 2.0 + 1.5 * 2.0
+
+
+def test_anomaly_conv_numpy_matches_torch():
+    try:
+        import torch  # noqa: F401
+    except ImportError:
+        import pytest; pytest.skip("torch 없음")
+    rng = np.random.default_rng(0)
+    Xw = rng.normal(size=(64, 10, 6))
+    m = AD.ConvAutoencoder(10, 6, latent=4, hidden=8).fit(Xw, epochs=2)
+    s_t, _ = m.score(Xw[:5])
+    m2 = AD.ConvAutoencoder(10, 6, latent=4, hidden=8); m2.np_weights = m.np_weights
+    s_n, _ = m2.score(Xw[:5])
+    assert np.allclose(s_t, s_n, rtol=1e-4, atol=1e-5)

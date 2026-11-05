@@ -39,6 +39,13 @@ def apply_fault(kind: str, arg: str, plant: SimPlant, ai: AINode, io: IONode):
     elif kind == "stock_conc":                    # 'P-101=900' 스톡 농도가 라벨과 다름 (칭량 오차)
         pid, v = arg.split("=")
         plant.tanks[PUMP_IDS.index(pid)].conc_mg_L = float(v)
+    elif kind == "ph_drift":                      # pH 프로브 오프셋 드리프트 (+0.3 등)
+        plant.reactor.ph += float(arg or 0.3)
+    elif kind == "pump_air":                      # 튜브 공기 유입: 스트로크는 세지만 토출이 절반
+        pid = arg or "P-101"
+        plant.pumps[pid].spec = replace(plant.pumps[pid].spec, stroke_mL=plant.pumps[pid].spec.stroke_mL * 0.5)
+    elif kind == "temp_step":                     # 칠러 이상: 반응기 온도 급변
+        plant.reactor.temp_C += float(arg or 5.0)
     else:
         raise ValueError(f"unknown fault {kind}")
 
@@ -60,7 +67,7 @@ def run_once(cfg: SystemConfig, recipe: Recipe, duration_s: float = 600.0, fault
     fault_list = sorted(parse_fault(f) for f in faults)
 
     hist = {k: [] for k in ("t", "c_true", "c_obs", "c_hat", "rgb", "dE", "dE_true", "cmd_mA", "fb_spm",
-                            "tank_mL", "V_mL", "state", "mode", "pressure")}
+                            "tank_mL", "V_mL", "state", "mode", "pressure", "ph", "temp", "rpm")}
     t, n = 0.0, int(round(duration_s / cfg.dt))
     t_done = None
     for k in range(n + 1):
@@ -91,6 +98,7 @@ def run_once(cfg: SystemConfig, recipe: Recipe, duration_s: float = 600.0, fault
             hist["state"].append(ctl.state)
             hist["mode"].append(io.mode)
             hist["pressure"].append(max(pp.s.pressure_bar for pp in plant.pumps.values()))
+            hist["ph"].append(io.hal.read_ph()); hist["temp"].append(io.hal.read_temp_C()); hist["rpm"].append(plant.reactor.rpm)
         if rec:
             rec.maybe_record(t, plant.reactor.c_true, ctl.c_hat, plant.reactor.c_obs, ctl.rgb,
                              recipe.target_rgb8, ctl.de, run_id)
@@ -103,7 +111,7 @@ def run_once(cfg: SystemConfig, recipe: Recipe, duration_s: float = 600.0, fault
 
     for key in ("c_true", "c_obs", "c_hat", "rgb", "cmd_mA", "fb_spm", "tank_mL"):
         hist[key] = np.array(hist[key])
-    for key in ("t", "dE", "dE_true", "V_mL", "pressure"):
+    for key in ("t", "dE", "dE_true", "V_mL", "pressure", "ph", "temp", "rpm"):
         hist[key] = np.array(hist[key], float)
 
     cam = cfg.camera
@@ -165,12 +173,14 @@ def save_timeseries_csv(res: dict, path):
         w = csv.writer(f)
         w.writerow(["t_s", "state", "io_mode", "cC_true", "cM_true", "cY_true", "cC_hat", "cM_hat", "cY_hat",
                     "R", "G", "B", "dE2000_cam", "dE2000_true", "mA_101", "mA_102", "mA_103",
-                    "spm_101", "spm_102", "spm_103", "tankC_mL", "tankM_mL", "tankY_mL", "reactor_mL", "p_bar"])
+                    "spm_101", "spm_102", "spm_103", "tankC_mL", "tankM_mL", "tankY_mL", "reactor_mL", "p_bar",
+                    "ph", "temp_C", "rpm"])
         for i in range(len(h["t"])):
             w.writerow([h["t"][i], h["state"][i], h["mode"][i], *np.round(h["c_true"][i], 3), *np.round(h["c_hat"][i], 3),
                         *np.round(h["rgb"][i], 1), round(h["dE"][i], 3), round(h["dE_true"][i], 3),
                         *np.round(h["cmd_mA"][i], 2), *np.round(h["fb_spm"][i], 1), *np.round(h["tank_mL"][i], 1),
-                        round(h["V_mL"][i], 1), round(h["pressure"][i], 2)])
+                        round(h["V_mL"][i], 1), round(h["pressure"][i], 2),
+                        round(h["ph"][i], 3), round(h["temp"][i], 2), round(h["rpm"][i], 1)])
 
 
 def plot_result(res: dict, path):

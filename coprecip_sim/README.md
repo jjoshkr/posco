@@ -256,6 +256,39 @@ python -m cmysim.yolo_train regress --csv yolo_ds/regression.csv         # 색�
 - `regress` 는 numpy 만으로 ROI RGB → 농도 릿지 회귀를 학습합니다. 시뮬레이션에서는 optics 역산과 비슷한 0.3~0.4 mg/L 수준이며,
   실제 장치에서 Beer–Lambert 선형 가정이 깨지는 짙은 농도 구간의 보정 곡선으로 쓸 수 있습니다.
 
+## 이상탐지: 다변량 시계열 오토인코더 (`anomaly.py`)
+
+대화의 AI 설계 세 번째 갈래입니다. 펌프 지령/피드백, 스트로크 잔차, 물질수지 잔차(스트로크로 기대되는 농도 − 카메라 추정),
+ĉ, ΔE, dΔE/dt, 압력, pH, 온도, rpm 을 0.5 s 간격으로 창(기본 20 = 10 s)으로 묶어 오토인코더가 복원하고,
+복원오차가 정상 분위수 임계를 넘으면 알람, 느린 드리프트는 CUSUM 으로 누적합니다.
+
+| 모델 | 구현 | 용도 |
+|---|---|---|
+| `pca` | numpy (창을 펼쳐 PCA 복원) | Pi 에서 기본. 의존성 없음 |
+| `conv` | PyTorch 1D-CNN 오토인코더 | 워크스테이션 학습. 가중치를 npz 로 저장해 Pi 에서 torch 없이 numpy 추론 |
+
+```bash
+python -m cmysim.anomaly gen   --out ad_ds --normal 24 --faults 16      # 시뮬레이션 정상/고장 시계열 (10종 고장 풀)
+python -m cmysim.anomaly train --data ad_ds --model conv --out ad_conv  # 학습 + 정상 val 분위수 임계 + 고장 평가
+python -m cmysim.anomaly score --csv results/run/timeseries.csv --model-dir ad_conv --plot score.png
+python -m cmysim.ai_node_main --io-ip 192.168.10.2 --recipe recipes/target_match.yaml --anomaly ad_conv
+```
+
+시뮬레이션 평가(정상 24 / 고장 16, 펌프 채널 2점 교정 후):
+
+| 모델 | 창 단위 오경보율 | 탐지 | 중앙 지연 |
+|---|---|---|---|
+| pca | 0.39 % | 16 / 16 | 0.9 s |
+| conv | 0.10 % | 14 / 16 | 0.6 s |
+
+온도 급변·pH 드리프트·탱크 고갈·신호 단선·카메라 드리프트는 1 s 안에, 교반 저하와 공기 유입은 스트로크 잔차·물질수지 잔차로
+10 s 안팎에 잡힙니다. 스톡 농도 오차(−15 %)는 물질수지 잔차가 천천히 커져 1~2 분 뒤에 잡히거나 놓칩니다(실제 로드셀 유량을
+특징에 넣으면 확실해집니다). 도징이 끝난 뒤의 밸브 고착처럼 증상이 없는 고장은 탐지 대상이 아닙니다.
+**펌프 채널 2점 교정이 전제**입니다. 교정 전에는 채널 이득오차(±1.5 %)가 스트로크 잔차에 그대로 들어가 정상 편차로 학습됩니다.
+실제 장치에서는 정상 실행 로그(`ai_node_log.csv`)를 `ad_ds/normal/<run>/timeseries.csv` 로 모아 같은 명령으로 다시 학습합니다.
+
+`fusion_score()` 는 대화의 융합 점수 S = Σ wᵢ·zᵢ (ΔE, AE 점수, pH 오차, 유량 잔차, YOLO 확률)를 계산합니다.
+
 ## 실제 보드로 옮길 때
 
 1. `daqhats_hal.DaqHatsHAL` 이 `io_node.json` 의 주소·핀 배정대로 daqhats 를 호출합니다. 실제 보드로는 실행하지 못했고,
@@ -290,6 +323,7 @@ coprecip_sim/
 │                      실물(Pi): camera, camera_tools, ai_node_main (AI 노드) / daqhats_hal, io_node_main (I/O 노드) / zmq_bridge
 │                      학습: yolo_train (gen/prepare/train/export/infer/regress), yolo_infer (VisionEvents: .pt/.onnx/.hef)
 │                      레시피: recipe (YAML → 스텝 실행기), recipe_cli (example/validate/expand/run)
+│                      이상탐지: anomaly (특징, PCA/1D-CNN 오토인코더, CUSUM, gen/train/eval/score, 온라인 Detector)
 ├── recipes/           예시 레시피 3개
 ├── tests/fake_daqhats.py  PC 에서 I/O 노드 코드를 시험하는 가짜 daqhats
 ├── tests/test_sim.py  물질수지·광학 역산·펌프 곡선·DAC 교정·인터록·워치독·폐루프·고장 테스트
