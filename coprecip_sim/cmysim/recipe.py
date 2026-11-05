@@ -36,7 +36,7 @@ from .ph_control import PHController, PHGains, PHSafety, flow_to_mA
 from . import optics
 
 STEP_KINDS = ("stir", "wait", "valve", "dose", "dose_to_target", "settle", "measure", "trim_to_target",
-              "hold", "log", "inject_fault", "ph_control", "acid_load", "stop")
+              "hold", "log", "inject_fault", "ph_control", "ph_hold_start", "ph_hold_stop", "acid_load", "stop")
 
 
 # ------------------------------------------------------------------ 로드 · 검증 · 매트릭스 전개
@@ -79,14 +79,14 @@ def validate(r: dict) -> list[str]:
             errs.append(f"steps[{i}] valve: 모르는 밸브 {s.get('id')}")
         if k == "stir" and not (0 <= float(s.get("rpm", 0)) <= 2000):
             errs.append(f"steps[{i}] stir: rpm 범위 밖")
-        if k == "ph_control":
+        if k in ("ph_control", "ph_hold_start"):
             if s.get("pump", "P-103") not in PUMP_IDS:
                 errs.append(f"steps[{i}] ph_control: 모르는 펌프 {s.get('pump')}")
             if "acid_pump" in s and s["acid_pump"] not in PUMP_IDS + PULSE_PUMP_IDS:
                 errs.append(f"steps[{i}] ph_control: 모르는 산 펌프 {s['acid_pump']}")
             if "setpoint" not in s and s.get("mode", "pid") != "titrate":
                 errs.append(f"steps[{i}] ph_control: setpoint 필요")
-            if not (0 < float(s.get("seconds", 0))):
+            if k == "ph_control" and not (0 < float(s.get("seconds", 0))):
                 errs.append(f"steps[{i}] ph_control: seconds > 0 필요")
     return errs
 
@@ -134,6 +134,19 @@ def apply_recipe_to_config(r: dict, cfg: SystemConfig) -> SystemConfig:
     for j, d in enumerate(DYES):
         if d in (r.get("stocks") or {}):
             cfg.tanks[j].conc_mg_L = float(r["stocks"][d])
+    # 펌프별 역할 지정: stocks: {P-101: {role: cacl2, mol_L: 0.2}, P-102: {role: na2co3, mol_L: 0.2}, P-104: {role: acid, mol_L: 0.1}}
+    for pid, spec in (r.get("stocks") or {}).items():
+        if isinstance(spec, dict) and pid in PUMP_IDS + PULSE_PUMP_IDS:
+            j = PUMP_IDS.index(pid) if pid in PUMP_IDS else 3 + list(PULSE_PUMP_IDS).index(pid)
+            cfg.tanks[j].role = spec.get("role", "dye")
+            if "mol_L" in spec:
+                cfg.tanks[j].conc_mol_L = float(spec["mol_L"])
+            if "mg_L" in spec:
+                cfg.tanks[j].conc_mg_L = float(spec["mg_L"])
+            if "volume_mL" in spec:
+                cfg.tanks[j].volume_mL = float(spec["volume_mL"])
+    if "dye_mg_L" in rx:
+        cfg.reactor.dye_mg_L = tuple(float(v) for v in rx["dye_mg_L"])
     # pH: 초기 pH, 완충계, NaOH 탱크 역할 (예: ph: {initial: 7, buffers: [[0.01, 4.8]], naoh_pump: P-103, naoh_mol_L: 0.1})
     ph = r.get("ph") or {}
     if "initial" in ph:
@@ -188,6 +201,8 @@ class RecipeExecutor(Controller):
         self.name = recipe.get("name", "recipe")
         self._trim_n = 0
         self._active_plan: list = []
+        self.bg_ph = None
+        self._last_tele = None
 
     # ---- 보조
     def _note(self, t, kind, detail=""):
@@ -206,6 +221,8 @@ class RecipeExecutor(Controller):
 
     def _finish(self, t, bus):
         if self.result is None:
+            if getattr(self, "bg_ph", None):
+                self._ph_finish(t, self.bg_ph["step"], bus, label="ph_hold"); self.bg_ph = None
             bus.send_cmd(dict(cmd="run_enable", on=False)); bus.send_cmd(dict(cmd="safe"))
             self.state = "DONE"
             self.result = dict(t_done=t, dE2000=self.de, c_hat=self.c_hat.copy(), rgb=self.rgb.copy(), trims=self.trims,
@@ -262,8 +279,10 @@ class RecipeExecutor(Controller):
         return False
 
     def _record_measurement(self, t, label):
+        tele = getattr(self, "_last_tele", None) or {}
         m = dict(t=round(t, 2), label=label, rgb=[int(v) for v in self.rgb], hex=optics.rgb8_to_hex(self.rgb),
-                 c_hat=[round(float(v), 3) for v in self.c_hat], dE2000=round(float(self.de), 3), V_est_mL=round(self.V_est, 1))
+                 c_hat=[round(float(v), 3) for v in self.c_hat], dE2000=round(float(self.de), 3), V_est_mL=round(self.V_est, 1),
+                 ph=tele.get("ph"), turbidity_ntu=tele.get("turbidity_ntu"), temp_C=tele.get("temp_C"))
         self.measurements.append(m)
         self._note(t, "measure", f"{label} ΔE={m['dE2000']} ĉ={m['c_hat']}")
         return m
@@ -296,7 +315,23 @@ class RecipeExecutor(Controller):
             if self.sim and self.fault_hook:
                 self.fault_hook("acid_load", str(s.get("mol_min", 0.0002)))
             self._note(t, "acid_load", f"{s.get('mol_min', 0.0002)} mol/min")
+        elif k == "ph_hold_start":                              # 백그라운드 pH 유지 시작 (다음 스텝들과 동시에 진행)
+            self._ph_setup(t, s, bus)
+            self.bg_ph = dict(step=s, next=t, last_mA=-1.0, last_acid=-1.0, t0=t)
+            self._note(t, "ph_hold", f"start sp={self.ph_ctl.sp}")
+        elif k == "ph_hold_stop":
+            if getattr(self, "bg_ph", None):
+                self._ph_finish(t, self.bg_ph["step"], bus, label=s.get("label", "ph_hold"))
+                self.bg_ph = None
         elif k == "ph_control":
+            self._ph_setup(t, s, bus)
+            self._ph_last_mA, self._ph_next, self._acid_last = -1.0, t, -1.0
+            self.phase = "PH"
+        elif k == "stop":
+            self._finish(t, bus)
+
+    def _ph_setup(self, t, s, bus):
+        if True:
             pid = s.get("pump", "P-103")
             j = PUMP_IDS.index(pid)
             gains = PHGains(**{k2: float(s[k2]) for k2 in ("Kp", "Ki", "Kd", "deadband", "out_max", "ff_gain") if k2 in s})
@@ -315,17 +350,58 @@ class RecipeExecutor(Controller):
             self._ph_pump, self._ph_valve = pid, VALVE_IDS[j]
             self._acid_pump = acid_pid
             self._acid_valve = (PULSE_VALVES[acid_pid] if acid_pid in PULSE_PUMP_IDS else VALVE_IDS[PUMP_IDS.index(acid_pid)]) if acid_pid else None
-            self._ph_last_mA, self._ph_next, self._acid_last = -1.0, t, -1.0
             bus.send_cmd(dict(cmd="valve", id=self._ph_valve, open=True))
             if self._acid_valve:
                 bus.send_cmd(dict(cmd="valve", id=self._acid_valve, open=True))
-            self.phase = "PH"
-        elif k == "stop":
-            self._finish(t, bus)
+
+    def _ph_apply(self, t, tele, bus, state: dict, done=False):
+        """텔레메트리 pH → 제어기 → 펌프 명령. state 는 last_mA/last_acid 를 보관하는 dict."""
+        ph = tele.get("ph")
+        flow = 0.0 if done or ph is None else self.ph_ctl.update(t, float(ph))
+        base, acid = max(flow, 0.0), max(-flow, 0.0)
+        mA = flow_to_mA(base, self.cfg.pump.stroke_mL, self.cfg.pump.stroke_length, self.cfg.pump.max_spm,
+                        self.cfg.pump.i_start_mA, self.cfg.pump.i_full_mA)
+        if abs(mA - state["last_mA"]) > 0.02 or done:
+            bus.send_cmd(dict(cmd="pump", id=self._ph_pump, mA=round(mA, 3)) if mA > 0 else dict(cmd="stop", id=self._ph_pump))
+            state["last_mA"] = mA
+        if self._acid_pump and (abs(acid - state["last_acid"]) > 0.02 or done):
+            if self._acid_pump in PULSE_PUMP_IDS:
+                spm = acid / (self.cfg.pulse_pump.stroke_mL * self.cfg.pulse_pump.stroke_length)
+                bus.send_cmd(dict(cmd="pulse_rate", id=self._acid_pump, spm=round(spm, 3)) if spm > 0 else dict(cmd="stop", id=self._acid_pump))
+            else:
+                mA_a = flow_to_mA(acid, self.cfg.pump.stroke_mL, self.cfg.pump.stroke_length, self.cfg.pump.max_spm,
+                                  self.cfg.pump.i_start_mA, self.cfg.pump.i_full_mA)
+                bus.send_cmd(dict(cmd="pump", id=self._acid_pump, mA=round(mA_a, 3)) if mA_a > 0 else dict(cmd="stop", id=self._acid_pump))
+            state["last_acid"] = acid
+        if self.ph_ctl.fault and not self.aborted:
+            self.aborted = "PH " + self.ph_ctl.fault; self._note(t, "abort", self.aborted)
+            return True
+        return False
+
+    def _ph_finish(self, t, s, bus, label=None):
+        bus.send_cmd(dict(cmd="stop", id=self._ph_pump)); bus.send_cmd(dict(cmd="valve", id=self._ph_valve, open=False))
+        if self._acid_pump:
+            bus.send_cmd(dict(cmd="stop", id=self._acid_pump)); bus.send_cmd(dict(cmd="valve", id=self._acid_valve, open=False))
+        m = self.ph_ctl.metrics(); m.update(label=label or s.get("label", f"ph{self.i}"), setpoint=self.ph_ctl.sp, t=round(t, 2),
+                                             beta_est_mmol_L_pH=round(self.ph_ctl.beta * 1000, 3))
+        if self.ph_ctl.mode == "relay":
+            m["autotune"] = self.ph_ctl.relay_result()
+        self.measurements.append(m); self.V_est += self.ph_ctl.total_mL + self.ph_ctl.acid_mL
+        self._note(t, "ph_done", f"sp={self.ph_ctl.sp:.2f} final_err={m.get('final_err')} NaOH={m.get('naoh_mL')} 산={m.get('acid_mL')} mL settle={m.get('settle_s')}")
+        self.ph_log = getattr(self, "ph_log", []) + self.ph_ctl.log
 
     # ---- 주기 실행
     def step(self, t, tele, rgb8, bus, A=None):
         self.estimate(rgb8, A)
+        self._last_tele = tele
+        if tele is not None and tele.get("mode") == "SAFE" and self.state not in ("INIT", "ARMED", "DONE") and t - self.t_state > 1.0:
+            # I/O 노드가 스스로 SAFE 가 됨 (워치독·부피 한계 등): 레시피를 중단하고 결과를 남긴다
+            self.aborted = self.aborted or f"IO node SAFE (alarms={tele.get('alarms')})"
+            self._note(t, "abort", self.aborted); self.bg_ph = None
+            self._finish(t, bus)
+            return dict(t=t, state=self.state, rgb=self.rgb.copy(), c_hat=self.c_hat.copy(), dE=self.de)
+        if getattr(self, "bg_ph", None) and self.state not in ("INIT", "ARMED", "DONE"):
+            self._bg_ph_tick(t, tele, bus)
         if self.state == "INIT":
             bus.send_cmd(dict(cmd="arm"))
             bus.send_cmd(dict(cmd="stirrer_rpm", rpm=self.r.rpm or self.cfg.reactor.rpm))
@@ -338,7 +414,7 @@ class RecipeExecutor(Controller):
             pass
         else:
             s = self.steps[self.i]; k = s["step"]
-            if k in ("stir", "valve", "log", "stop") or (k == "inject_fault" and not s.get("seconds")):
+            if k in ("stir", "valve", "log", "stop", "ph_hold_start", "ph_hold_stop") or (k == "inject_fault" and not s.get("seconds")):
                 if t - self.t_state >= 0.2:
                     self._next(t, bus)
             elif k in ("wait", "hold", "inject_fault"):
@@ -370,72 +446,27 @@ class RecipeExecutor(Controller):
         return dict(t=t, state=self.state, rgb=self.rgb.copy(), c_hat=self.c_hat.copy(), dE=self.de)
 
     def _ph_step(self, t, tele, s, bus):
-        """매 1 s: 텔레메트리 pH → 제어기 → NaOH 펌프 mA. 끝나면 펌프 정지·밸브 닫기·지표 기록."""
+        """ph_control 스텝 (블로킹): 매 period_s 제어, seconds 지나면 종료."""
         done = t - self.t_state >= float(s["seconds"])
         if tele is not None and (t >= self._ph_next or done):
             self._ph_next = t + float(s.get("period_s", 1.0))
-            ph = tele.get("ph")
-            flow = 0.0 if done or ph is None else self.ph_ctl.update(t, float(ph))
-            base, acid = max(flow, 0.0), max(-flow, 0.0)
-            mA = flow_to_mA(base, self.cfg.pump.stroke_mL, self.cfg.pump.stroke_length, self.cfg.pump.max_spm,
-                            self.cfg.pump.i_start_mA, self.cfg.pump.i_full_mA)
-            if abs(mA - self._ph_last_mA) > 0.02 or done:
-                bus.send_cmd(dict(cmd="pump", id=self._ph_pump, mA=round(mA, 3)) if mA > 0 else dict(cmd="stop", id=self._ph_pump))
-                self._ph_last_mA = mA
-            if self._acid_pump and (abs(acid - self._acid_last) > 0.02 or done):
-                if self._acid_pump in PULSE_PUMP_IDS:                        # 펄스 펌프: spm
-                    spm = acid / (self.cfg.pulse_pump.stroke_mL * self.cfg.pulse_pump.stroke_length)
-                    bus.send_cmd(dict(cmd="pulse_rate", id=self._acid_pump, spm=round(spm, 3)) if spm > 0 else dict(cmd="stop", id=self._acid_pump))
-                else:                                                        # 아날로그 펌프: mA
-                    mA_a = flow_to_mA(acid, self.cfg.pump.stroke_mL, self.cfg.pump.stroke_length, self.cfg.pump.max_spm,
-                                      self.cfg.pump.i_start_mA, self.cfg.pump.i_full_mA)
-                    bus.send_cmd(dict(cmd="pump", id=self._acid_pump, mA=round(mA_a, 3)) if mA_a > 0 else dict(cmd="stop", id=self._acid_pump))
-                self._acid_last = acid
-            if self.ph_ctl.fault and not self.aborted:
-                self.aborted = "PH " + self.ph_ctl.fault; self._note(t, "abort", self.aborted); done = True
+            state = dict(last_mA=self._ph_last_mA, last_acid=self._acid_last)
+            if self._ph_apply(t, tele, bus, state, done):
+                done = True
+            self._ph_last_mA, self._acid_last = state["last_mA"], state["last_acid"]
             if self.ph_ctl.mode == "relay" and self.ph_ctl.relay_result() and not getattr(self, "_relay_logged", False):
                 self._relay_logged = True; self._note(t, "autotune", str({k: round(v, 4) for k, v in self.ph_ctl.relay_result().items()}))
         if done:
-            bus.send_cmd(dict(cmd="stop", id=self._ph_pump)); bus.send_cmd(dict(cmd="valve", id=self._ph_valve, open=False))
-            if self._acid_pump:
-                bus.send_cmd(dict(cmd="stop", id=self._acid_pump)); bus.send_cmd(dict(cmd="valve", id=self._acid_valve, open=False))
-            m = self.ph_ctl.metrics(); m.update(label=s.get("label", f"ph{self.i}"), setpoint=self.ph_ctl.sp, t=round(t, 2),
-                                                 beta_est_mmol_L_pH=round(self.ph_ctl.beta * 1000, 3))
-            if self.ph_ctl.mode == "relay":
-                m["autotune"] = self.ph_ctl.relay_result()
-            self.measurements.append(m); self.V_est += self.ph_ctl.total_mL + self.ph_ctl.acid_mL
-            self._note(t, "ph_done", f"sp={self.ph_ctl.sp:.2f} final_err={m.get('final_err')} NaOH={m.get('naoh_mL')} mL settle={m.get('settle_s')}")
-            self.ph_log = getattr(self, "ph_log", []) + self.ph_ctl.log
+            self._ph_finish(t, s, bus)
             self._next(t, bus)
 
-    def _trim_step(self, t, tele, s, bus):
-        max_trims = int(s.get("max_trims", self.r.max_trims)); tol = float(s.get("tol_mg_L", self.r.trim_tol_mg_L))
-        de_ok = float(s.get("de", self.r.de_match))
-        if self.phase == "MEASURE":
-            if t - self.t_state >= 2.0:
-                self._record_measurement(t, f"trim{self._trim_n}")
-                err = self.r.c_target - self.c_hat
-                if self.de < de_ok or self._trim_n >= max_trims or self.aborted or not np.any(err > tol):
-                    if self.de >= de_ok and np.all(err <= tol):
-                        self._note(t, "trim", "오버슈트 또는 허용오차 내: 추가 투입 없음")
-                    self._next(t, bus); return
-                c_stock = np.array([tk.conc_mg_L for tk in self.cfg.tanks[:3]])
-                extra = np.where(err > tol, err * self.V_est / (c_stock - self.r.c_target), 0.0)
-                plan = []
-                for j, pid in enumerate(PUMP_IDS):
-                    strokes = extra[j] / (self.cfg.pump.stroke_mL * self.cfg.pump.stroke_length)
-                    rate = min(extra[j] / 0.5, pump_max_rate_mL_min(self.cfg))
-                    plan.append(dict(id=pid, valve=VALVE_IDS[j], volume_mL=float(extra[j]), strokes=float(strokes),
-                                     rate_mL_min=rate, mA=mA_for_rate(self.cfg, rate), minutes=0.5))
-                self._trim_n += 1; self.trims += 1
-                self._note(t, "trim", f"#{self._trim_n} extra mL=" + ", ".join(f"{d['volume_mL']:.2f}" for d in plan))
-                self._start_dose(t, plan, bus)
-        elif self.phase == "DOSE":
-            if self._dose_running(t, tele, bus):
-                self.phase, self.t_state = "SETTLE", t
-        elif self.phase == "SETTLE":
-            if t - self.t_state >= float(s.get("settle_factor", 3.0)) * self.mixing_time():
-                self.phase, self.t_state = "MEASURE", t
+    def _bg_ph_tick(self, t, tele, bus):
+        bg = self.bg_ph
+        if tele is None or t < bg["next"]:
+            return
+        bg["next"] = t + float(bg["step"].get("period_s", 1.0))
+        if self._ph_apply(t, tele, bus, bg, False):
+            self._note(t, "ph_hold", "abort → hold stopped"); self.bg_ph = None
 
     @property
     def done(self):

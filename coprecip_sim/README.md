@@ -318,6 +318,36 @@ python -m cmysim.ph_control sim --ph0 10 --acid 0.1 --titrate 10,4,0.5 --buffer 
 시뮬레이션(0.1 M NaOH / 0.1 M HCl, 2 L): 7 → 10.5 상승 후 400 s 에 8.0 으로 내리면 산 펌프가 약 26 mL 로 되돌리고,
 900 s 부터 염기성 외란이 들어와도 산 펌프가 유지합니다. 산/염기가 동시에 도는 일은 없습니다(부호 전환 사이 0 출력).
 
+## 전체 시스템 통합 시험: Tier C 공침 레시피 (`integration_test.py`)
+
+CaCl₂ + Na₂CO₃ → CaCO₃(+시안 염료 공동 담지) 반투입 공침을 끝에서 끝까지 돌리며 모든 구성 요소를 한 번에 검증합니다.
+
+| 역할 | 펌프 | 비고 |
+|---|---|---|
+| CaCl₂ 0.2 M | P-101 (아날로그) | 별도 투입구. Ca²⁺ 와 CO₃²⁻ 가 튜브 안에서 만나면 막히므로 프리믹싱 금지 |
+| Na₂CO₃ 0.2 M | P-102 (아날로그) | 〃 |
+| NaOH 0.1 M | P-103 (아날로그) | 백그라운드 pH 10.0 유지 (`ph_hold_start` … `ph_hold_stop`) |
+| HCl 0.1 M | P-104 (펄스) | 양방향 pH 제어의 산 쪽 |
+
+`recipes/tierC_coprecip.yaml`: heel 500 mL + 시안 10 mg/L, 교반 400 rpm → pH 유지 시작 → 기준 측정 → 두 피드 동시 3 mL/min × 20 min
+→ 측정 → 숙성 180 s → pH 유지 종료 → 최종 측정. 시뮬레이터의 침전 모델(`precip.py`)은 탄산 평형·과포화도·단순 침전 속도·탁도를
+정성적으로 재현하고, 탁도계(MCC 118 CH5)와 카메라의 백색 혼입에 반영됩니다. 입경 d50 은 자리표시자 proxy 입니다(실제 답은 현미경 + YOLO).
+
+```bash
+python -m cmysim.integration_test --out it_results              # A, B, C 전부 → it_results/report.md
+python -m cmysim.integration_test --only A                      # 단일 프로세스만 (약 20 s)
+```
+
+| 시나리오 | 내용 | 검증 |
+|---|---|---|
+| A. 단일 프로세스 | `run_once` + `RecipeExecutor`, 데이터셋 기록 | 4 펌프 사용, 인터록 없음, pH ±0.3 유지 ≥ 90 %, 탁도 > 50 NTU, DOSE 중단 없음, 로드셀 판정 정상, 종료 SAFE, 측정 라벨, 프레임·라벨 |
+| B. ZeroMQ 2프로세스 | `io_node_main run --sim --sim-camera --time-scale 20` + `ai_node_main --camera telemetry --recipe` | AI 노드 정상 종료, 텔레메트리·레시피 로드, 완료, I/O RUN→SAFE, 피드 2줄 스트로크, 로그 열, pH 유지 |
+| C. 고장 변형 | 피드 도중 Na₂CO₃ 탱크 고갈 | NO_STROKE/TANK_LOW 알람, DOSE 중단 라벨, pH 유지 계속, 종료 SAFE |
+
+B 는 `--time-scale` 로 시뮬레이션 시간을 가속합니다(기본 20배, 레시피 25 분 → 약 80 s). 실제 보드에서는 1 로 둡니다.
+실제 장치로 같은 시나리오를 돌릴 때는 I/O 노드를 `run`(보드), AI 노드를 실제 카메라 설정으로 띄우고 같은 레시피를 쓰면 됩니다.
+보고서 예시는 `docs/integration_report_example.md` 에 있습니다.
+
 ## 로드셀(HX711) 중량 유량 계측 (`loadcell.py`)
 
 스톡병마다 로드셀을 두고 무게 감소율로 **실제 유량**을 잽니다. 정량펌프는 개루프라 스트로크는 세는데 액이 안 나가는 고장
@@ -419,8 +449,9 @@ coprecip_sim/
 │                      이상탐지: anomaly (특징, PCA/1D-CNN 오토인코더, CUSUM, gen/train/eval/score, 온라인 Detector)
 │                      로드셀: loadcell (HX711 serial/gpio/sim, FlowEstimator, FlowCheck, tare/calib/flow CLI)
 │                      pH: ph_control (PHModel/PHProbe, PHController PID+캡+안전, 릴레이 동조, titrate, sim/autotune CLI)
+│                      공침: precip (CaCO₃ 침전·탁도 모델), integration_test (Tier C 시나리오 A/B/C + 보고서)
 ├── firmware/hx711_bridge.ino  Arduino HX711×3 → USB 시리얼 브리지
-├── recipes/           예시 레시피 6개 (색 매칭, 비율 스윕, 고장 주입, pH 스텝, pH 자동동조, 양방향 pH)
+├── recipes/           예시 레시피 8개 (색 매칭, 비율 스윕, 고장 주입, pH 스텝·자동동조·양방향, Tier C 공침·고장 변형)
 ├── tests/fake_daqhats.py  PC 에서 I/O 노드 코드를 시험하는 가짜 daqhats
 ├── tests/test_sim.py  물질수지·광학 역산·펌프 곡선·DAC 교정·인터록·워치독·폐루프·고장 테스트
 ├── docs/              예시 그래프

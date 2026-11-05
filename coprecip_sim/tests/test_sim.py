@@ -550,3 +550,30 @@ def test_recipe_bidirectional_ph_with_pulse_acid_pump():
     assert abs(labels["up"]["final_err"]) < 0.25 and abs(labels["down"]["final_err"]) < 0.25
     assert res["pulse_dosed_mL"]["P-104"] > 1.0 and res["acid_mL"] > 1.0 and labels["down"]["acid_mL"] > 1.0
     assert not any("INTERLOCK" in a[1] or "PULSE_IGNORED" in a[1] for a in res["alarms"])
+
+
+# ---------------- 통합 시험 (Tier C 공침)
+from cmysim import integration_test as IT
+
+
+def test_integration_tierC_inprocess_and_fault(tmp_path):
+    checks, res, ex = IT.scenario_A(tmp_path / "it", duration=2400.0)
+    failed = [c for c in checks if not c[1]]
+    assert not failed, failed
+    assert res["turbidity_ntu"] > 50 and res["feed_mL"]["cacl2"] > 50 and res["feed_mL"]["na2co3"] > 50
+    checks_c, res_c, ex_c = IT.scenario_C(tmp_path / "it", duration=1200.0)
+    failed = [c for c in checks_c if not c[1]]
+    assert not failed, failed
+    assert IT.write_report(tmp_path / "it", {"A": checks, "C": checks_c}) and (tmp_path / "it" / "report.md").exists()
+
+
+def test_precip_model_basics():
+    from cmysim.ph_control import PHModel
+    from cmysim.precip import PrecipModel
+    ph = PHModel(0.5, 7.0); pm = PrecipModel(ph)
+    pm.add_cacl2(10.0, 0.2); p1 = ph.pH()
+    pm.add_na2co3(10.0, 0.2); p2 = ph.pH()
+    assert p2 > p1 + 1.0                                      # Na2CO3 는 염기성
+    for _ in range(600):
+        st = pm.step(0.1, ph.pH())
+    assert st["solid_g_L"] > 0 and st["turbidity_ntu"] > 0 and pm.S >= 1.0 and ph.pH() < p2   # 침전 → 탁도, pH 하강

@@ -45,7 +45,8 @@ class IOConfig:
     ai: dict = field(default_factory=lambda: {
         "PH": {"ch": 0, "shunt_ohm": 250.0, "eu_lo": 0.0, "eu_hi": 14.0},
         "FB-101": {"ch": 1, "shunt_ohm": 250.0}, "FB-102": {"ch": 2, "shunt_ohm": 250.0}, "FB-103": {"ch": 3, "shunt_ohm": 250.0},
-        "PRESSURE": {"ch": 4, "shunt_ohm": 250.0, "eu_lo": 0.0, "eu_hi": 10.0}})
+        "PRESSURE": {"ch": 4, "shunt_ohm": 250.0, "eu_lo": 0.0, "eu_hi": 10.0},
+        "TURB": {"ch": 5, "shunt_ohm": 250.0, "eu_lo": 0.0, "eu_hi": 1000.0}})     # 탁도계 (Tier B/C)
     tc: dict = field(default_factory=lambda: {"TEMP": {"ch": 0, "type": "K"}})
     mA_per_V: float = 4.016          # XTR111 RSET 2.49 kΩ
     ao_max_V: float = 5.0
@@ -175,6 +176,9 @@ class DaqHatsHAL(HAL):
 
     def read_pressure_bar(self):
         return self._ai_eu("PRESSURE") if "PRESSURE" in self.io.ai else 0.0
+
+    def read_turbidity_ntu(self):
+        return self._ai_eu("TURB") if "TURB" in self.io.ai else float("nan")
 
     def read_temp_C(self):
         spec = self.io.tc.get("TEMP")

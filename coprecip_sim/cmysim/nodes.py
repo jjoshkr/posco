@@ -56,6 +56,7 @@ class HAL:
     def read_ph(self) -> float: ...
     def read_pressure_bar(self) -> float: ...
     def read_temp_C(self) -> float: ...
+    def read_turbidity_ntu(self) -> float: ...
     def pulse(self, pid: str) -> bool: ...
     def step(self, dt: float): ...
 
@@ -94,14 +95,20 @@ class SimPlant:
 
             def deliver(v, j=j, tank=tank):
                 drawn = tank.draw(v)
-                if tank.spec.role == "naoh":
+                role = tank.spec.role
+                if role == "naoh":
                     self.reactor.add_base(drawn, tank.spec.conc_mol_L)
+                elif role == "acid":
+                    self.reactor.add_acid_solution(drawn, tank.spec.conc_mol_L)
+                elif role in ("cacl2", "na2co3", "citrate"):
+                    self.reactor.add_feed(role, drawn, tank.spec.conc_mol_L)
                 else:
                     self.reactor.add(j, drawn, tank.conc_mg_L)
 
             pump.step(ch.actual_mA, dt, valve.is_open, deliver)
         self.reactor.rpm = self.stirrer.step(self.stirrer_mA, dt)
         self.reactor.step(dt)
+        self.camera.turbidity_ntu = self.reactor.turbidity_ntu
         self.loadcells.step(dt)
         self.t += dt
 
@@ -138,6 +145,9 @@ class SimHAL(HAL):
     def read_temp_C(self):
         return self.p.tc.read_C(self.p.reactor.temp_C)
 
+    def read_turbidity_ntu(self):   # 탁도계 4–20 mA ↔ 0–1000 NTU
+        return 1000.0 * (self.p.adc.read_mA_via_shunt(4.0 + 16.0 * min(self.p.reactor.turbidity_ntu, 1000.0) / 1000.0) - 4.0) / 16.0
+
     def read_tank_mass_g(self):
         return self.p.loadcells.read_g()
 
@@ -152,6 +162,8 @@ class SimHAL(HAL):
                 p.reactor.add_acid_solution(drawn, tank.spec.conc_mol_L)
             elif tank.spec.role == "naoh":
                 p.reactor.add_base(drawn, tank.spec.conc_mol_L)
+            elif tank.spec.role in ("cacl2", "na2co3", "citrate"):
+                p.reactor.add_feed(tank.spec.role, drawn, tank.spec.conc_mol_L)
             else:
                 p.reactor.add(min(j, 2), drawn, tank.conc_mg_L)
         return pump.pulse(p.t, p.valves[PULSE_VALVES[pid]].is_open, deliver)
@@ -183,6 +195,7 @@ class IONode:
         self.pulse_strokes = {pid: 0 for pid in PULSE_PUMP_IDS}
         self.pulse_dosed_mL = {pid: 0.0 for pid in PULSE_PUMP_IDS}
         self.has_pulse = hasattr(hal, "pulse")
+        self.publish_sim_camera = False          # io_node_main run --sim 에서 켠다
         self.alarms: list = []
         self.last_hb = 0.0
         self._last_tele = -1e9
@@ -393,11 +406,14 @@ class IONode:
                                  dosing=self.dose_target[pid] is not None) for pid in PUMP_IDS},
                 valves=dict(self.valve_on), ph=round(self.hal.read_ph(), 3),
                 pressure_bar=round(p_bar, 3), temp_C=round(self.hal.read_temp_C(), 2),
+                turbidity_ntu=round(self.hal.read_turbidity_ntu(), 1) if hasattr(self.hal, "read_turbidity_ntu") else None,
                 est_volume_mL=round(est_V, 1), alarms=len(self.alarms),
                 tanks={pid: dict(self.flow_state[pid]) for pid in PUMP_IDS} if self.has_loadcell else {},
                 pulse_pumps={pid: dict(spm=round(self.pulse_spm[pid], 2), strokes=self.pulse_strokes[pid],
                                        dosed_mL=round(self.pulse_dosed_mL[pid], 3), dosing=self.pulse_target[pid] is not None)
-                             for pid in PULSE_PUMP_IDS}))
+                             for pid in PULSE_PUMP_IDS},
+                sim_camera=(dict(rgb=[int(v) for v in self.hal.p.camera.roi_rgb8(self.hal.p.reactor.c_obs)])
+                            if hasattr(self.hal, "p") and self.publish_sim_camera else None)))
 
 
 

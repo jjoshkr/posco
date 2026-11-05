@@ -20,10 +20,14 @@ class SyntheticCamera:
         r = np.sqrt(((yy - cy) / cy) ** 2 + ((xx - cx) / cx) ** 2)
         self._vignette = 1.0 - 0.08 * r ** 2   # 조명 불균일 (PDF 8장 '픽셀별 기준 영상' 대책 대상)
 
+    turbidity_ntu: float = 0.0        # SimPlant 가 매 스텝 갱신
+
     def linear_mean(self, c_obs: np.ndarray) -> np.ndarray:
         s = self.spec
         A = optics.conc_to_absorbance(s.E, c_obs)
-        return optics.absorbance_to_linear(A, s.I0, s.glare) * self.exposure
+        I = optics.absorbance_to_linear(A, s.I0, s.glare)
+        w = self.turbidity_ntu / (self.turbidity_ntu + s.turb_K_ntu) if self.turbidity_ntu > 0 else 0.0
+        return (I * (1 - w) + 0.95 * w) * self.exposure         # 현탁 고체의 산란 = 흰색 혼입
 
     def roi_rgb8(self, c_obs: np.ndarray) -> np.ndarray:
         """ROI 평균 RGB 코드값 (픽셀 잡음은 √N 으로 줄어든다)."""

@@ -52,7 +52,7 @@ class PHModel:
 
     def pH(self, B=None) -> float:
         lo, hi = 0.0, 14.0
-        for _ in range(60):
+        for _ in range(40):                       # 14/2^40 ≈ 1e-11 pH
             mid = 0.5 * (lo + hi); h = 10 ** (-mid)
             if self._charge_residual(h, B) > 0:      # 양이온 과잉 → pH 가 더 높아야
                 lo = mid

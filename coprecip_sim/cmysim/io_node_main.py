@@ -84,17 +84,30 @@ def cmd_run(a, io: IOConfig):
     from .zmq_bridge import ZmqBus
     cfg = SystemConfig(dt=1.0 / a.hz)
     cfg.net.telemetry_hz = a.hz
+    scale = a.time_scale if a.sim else 1.0
+    cfg.net.heartbeat_timeout_s *= scale                 # 워치독은 벽시계 1 s 기준 (가속 시 시뮬레이션 시간으로 환산)
     if a.sim:
+        if a.recipe:
+            from .recipe import load_recipe, expand_matrix, apply_recipe_to_config
+            rr = expand_matrix(load_recipe(a.recipe))[0]
+            apply_recipe_to_config(rr, cfg)
+            print("레시피 적용(시뮬레이션 공정):", {f"tank{j}": (tk.role, tk.conc_mol_L if tk.role != "dye" else tk.conc_mg_L) for j, tk in enumerate(cfg.tanks)},
+                  f"heel {cfg.reactor.heel_mL} mL rpm {cfg.reactor.rpm} pH0 {cfg.reactor.ph}")
+        cfg.dac.calibrated = True
         plant = SimPlant(cfg); hal = SimHAL(plant)
-        print("보드 없이 시뮬레이션 공정으로 I/O 노드를 돌립니다 (AI 노드 연동 시험용).")
+        print(f"보드 없이 시뮬레이션 공정으로 I/O 노드를 돌립니다 (AI 노드 연동 시험용). 시간 배율 {scale:g}")
     else:
+        if a.time_scale != 1.0:
+            print("경고: --time-scale 은 --sim 에서만 유효합니다. 실제 보드에서는 1 로 둡니다.")
         plant, hal = None, DaqHatsHAL(io)
         print("보드 초기화 완료:", {k: v for k, v in io.addresses.items()})
     bus = ZmqBus("io", cmd_port=a.cmd_port, tele_port=a.tele_port)
     node = IONode(cfg, hal, bus)
+    node.publish_sim_camera = bool(a.sim and a.sim_camera)
     logf = open(a.log, "w", newline=""); w = csv.writer(logf)
     w.writerow(["t_s", "mode", "run_enable", *[f"cmd_mA_{p[-3:]}" for p in PUMP_IDS], *[f"spm_{p[-3:]}" for p in PUMP_IDS],
-                *[f"strokes_{p[-3:]}" for p in PUMP_IDS], "XV-101", "XV-102", "XV-103", "ph", "p_bar", "temp_C", "ef", "alarms"])
+                *[f"strokes_{p[-3:]}" for p in PUMP_IDS], "XV-101", "XV-102", "XV-103", "ph", "p_bar", "temp_C", "ef", "alarms",
+                "turb_ntu", "pulse_strokes_104"])
     stop = {"flag": False}
     signal.signal(signal.SIGINT, lambda *_: stop.__setitem__("flag", True))
     signal.signal(signal.SIGTERM, lambda *_: stop.__setitem__("flag", True))
@@ -102,10 +115,11 @@ def cmd_run(a, io: IOConfig):
     print(f"I/O 노드 시작: {a.hz} Hz, cmd PULL:{a.cmd_port}, tele PUB:{a.tele_port}. Ctrl+C 로 종료.")
     try:
         while not stop["flag"]:
-            t = time.monotonic() - t0
+            t = (time.monotonic() - t0) * scale
             node.tick(t)
             if plant is not None:
-                plant.step(cfg.dt)
+                for _ in range(max(1, int(round(scale)))):
+                    plant.step(cfg.dt)
             ef = hal.read_ef_faults() if hasattr(hal, "read_ef_faults") else {}
             for pid, bad in ef.items():
                 if bad and node.cmd_mA.get(pid, 0) > 0:
@@ -120,13 +134,14 @@ def cmd_run(a, io: IOConfig):
                             *[round(hal.read_feedback_mA(p), 2) for p in PUMP_IDS], *[round(node.strokes[p], 1) for p in PUMP_IDS],
                             *[int(node.valve_on[v]) for v in ("XV-101", "XV-102", "XV-103")],
                             round(hal.read_ph(), 2), round(hal.read_pressure_bar(), 2), round(hal.read_temp_C(), 2),
-                            ";".join(k for k, v in ef.items() if v), len(node.alarms)])
+                            ";".join(k for k, v in ef.items() if v), len(node.alarms),
+                            round(hal.read_turbidity_ntu(), 1) if hasattr(hal, "read_turbidity_ntu") else "", node.pulse_strokes.get("P-104", 0)])
                 logf.flush()
                 if a.verbose:
                     print(f"{t:7.1f}s {node.mode:4s} en={int(node.run_en)} mA={[round(node.cmd_mA[p],1) for p in PUMP_IDS]} "
                           f"str={[round(node.strokes[p]) for p in PUMP_IDS]} valves={[int(node.valve_on[v]) for v in node.valve_on]} "
                           f"hb_age={t - node.last_hb:.1f}s")
-            el = (time.monotonic() - t0) - t
+            el = (time.monotonic() - t0) - t / scale
             if el > period:
                 overrun += 1
             time.sleep(max(0.0, period - el))
@@ -145,6 +160,9 @@ def main(argv=None):
     sp = ap.add_subparsers(dest="cmd", required=True)
     sp.add_parser("list")
     p = sp.add_parser("run"); p.add_argument("--sim", action="store_true"); p.add_argument("--hz", type=float, default=10.0)
+    p.add_argument("--sim-camera", action="store_true", help="--sim 에서 카메라 관측(ROI RGB)을 텔레메트리에 실어 AI 노드가 telemetry 카메라로 보게 함")
+    p.add_argument("--time-scale", type=float, default=1.0, help="--sim 전용: 시뮬레이션 시간 가속 (텔레메트리 t 도 가속된 시간)")
+    p.add_argument("--recipe", help="--sim 전용: 레시피의 반응기·탱크 역할(naoh/acid/cacl2/na2co3)을 시뮬레이션 공정에 적용")
     p.add_argument("--log", default="io_log.csv"); p.add_argument("--cmd-port", type=int, default=5555); p.add_argument("--tele-port", type=int, default=5556)
     p.add_argument("--verbose", "-v", action="store_true")
     p = sp.add_parser("bench"); p.add_argument("args", nargs="+"); p.add_argument("--board", default="mcc152#1"); p.add_argument("--hold", type=float, default=3.0)

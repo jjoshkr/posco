@@ -63,7 +63,7 @@ class TankSpec:
     volume_mL: float = 2000.0        # GL45 2 L 스톡병
     conc_mg_L: float = 1000.0        # 스톡 1.00 g/L (role == "dye")
     low_level_mL: float = 100.0      # 수위 스위치 (펌프 수위 입력 → 자동 정지)
-    role: str = "dye"                # "dye" | "naoh" | "acid"  (naoh/acid 는 pH 제어용, conc_mol_L 사용)
+    role: str = "dye"                # "dye" | "naoh" | "acid" | "cacl2" | "na2co3" | "citrate"  (dye 외에는 conc_mol_L 사용)
     conc_mol_L: float = 0.1
 
 
@@ -79,6 +79,7 @@ class ReactorSpec:
     buffers: tuple = ((0.005, 6.35),)   # 완충종 (conc mol/L, pKa). Tier B 구연산: ((0.01, 4.8),)
     probe_tau_s: float = 8.0         # pH 프로브 1차 지연
     acid_load_mol_min: float = 0.0   # 산 부하 (금속염 피드가 OH− 를 소모하는 효과), 레시피/고장으로 바꿈
+    dye_mg_L: tuple = (0.0, 0.0, 0.0)  # heel 에 미리 녹여 둔 염료 (Tier C: 펌프는 피드에 쓰므로)
 
 
 @dataclass
@@ -95,6 +96,7 @@ class CameraSpec:
     pixel_noise: float = 0.02        # 픽셀 단위 선형 세기 잡음 (표준편차)
     roi_pixels: int = 4000           # ROI 평균에 쓰는 픽셀 수
     exposure_drift: float = 0.0      # 1.0 = 정상, 0.9 = 10 % 어두워짐 (고장 주입용)
+    turb_K_ntu: float = 300.0        # 탁도 → 백색 혼입 w = NTU/(NTU+K). 침전이 생기면 카메라가 흰빛으로 덮인다
     fps: float = 10.0
 
 

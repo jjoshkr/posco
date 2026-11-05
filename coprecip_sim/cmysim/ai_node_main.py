@@ -47,6 +47,7 @@ def main(argv=None):
     ap.add_argument("--max-minutes", type=float, default=30.0)
     ap.add_argument("--log", default="ai_node_log.csv"); ap.add_argument("--dataset")
     ap.add_argument("--hz", type=float, default=10.0, help="제어 루프 주기")
+    ap.add_argument("--time-scale", type=float, default=1.0, help="시뮬레이션 I/O 노드(--sim --time-scale)와 맞출 때만. 실물에서는 1")
     ap.add_argument("--monitor", action="store_true"); ap.add_argument("--no-io", action="store_true")
     ap.add_argument("--preview", action="store_true", help="OpenCV 창에 ROI·색 견본 표시 (모니터 연결 시)")
     ap.add_argument("--anomaly", help="anomaly train 이 저장한 모델 폴더. 0.5 s 마다 오토인코더 점수·CUSUM 을 내고 알람을 로그에 남김")
@@ -97,7 +98,9 @@ def main(argv=None):
         if bus.latest() is None:
             print("텔레메트리가 오지 않습니다. I/O 노드(python -m cmysim.io_node_main run) 와 이더넷 연결을 확인하세요.")
             cam.stop(); return 2
-        print("텔레메트리 수신:", bus.latest())
+        print("텔레메트리 수신:", {k: v for k, v in bus.latest().items() if k in ("t", "mode", "ph", "turbidity_ntu", "sim_camera")})
+    if hasattr(cam, "bus"):
+        cam.bus = bus                                  # TelemetryCamera: I/O 노드 텔레메트리의 관측을 카메라로
 
     if a.recipe:
         from .recipe import load_recipe, expand_matrix, RecipeExecutor
@@ -144,7 +147,7 @@ def main(argv=None):
     t_start, last_hb, period, next_print = time.monotonic(), -1.0, 1.0 / a.hz, 0.0
     try:
         while not stop["flag"]:
-            t = time.monotonic() - t_start
+            t = (time.monotonic() - t_start) * a.time_scale
             frame = cam.read()
             rgb, A = cam.roi_rgb8(frame), cam.roi_absorbance(frame, cfg.camera.I0)
             tele = bus.latest()
@@ -206,7 +209,7 @@ def main(argv=None):
                 break
             if t > a.max_minutes * 60:
                 print("최대 시간 초과"); break
-            time.sleep(max(0.0, period - ((time.monotonic() - t_start) - t)))
+            time.sleep(max(0.0, period - ((time.monotonic() - t_start) - t / a.time_scale)))
     except Exception as e:                      # 어떤 예외든 SAFE 로
         shutdown(f"예외 {e!r}"); raise
     finally:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 from .config import TankSpec, ReactorSpec, DYES
 from .ph_control import PHModel, PHProbe, BufferSpecies
+from .precip import PrecipModel
 
 
 class StockTank:
@@ -48,6 +49,11 @@ class Reactor:
         self.acid_load_mol_min = spec.acid_load_mol_min
         self.naoh_mL = 0.0
         self.acid_mL = 0.0
+        self.precip = PrecipModel(self.ph_model)
+        self.turbidity_ntu = 0.0
+        self.feed_mL = {"cacl2": 0.0, "na2co3": 0.0, "citrate": 0.0}
+        self.m_mg[:] = np.asarray(getattr(spec, "dye_mg_L", (0.0, 0.0, 0.0)), float) * spec.heel_mL / 1000.0   # heel 에 미리 넣은 염료
+        self.c_obs[:] = self.c_true
 
     def add(self, dye_idx: int, vol_mL: float, conc_mg_L: float):
         self.m_mg[dye_idx] += vol_mL * conc_mg_L / 1000.0
@@ -62,6 +68,14 @@ class Reactor:
         self.acid_mL = getattr(self, "acid_mL", 0.0) + vol_mL
         self.ph_model.add_acid(vol_mL / 1000.0 * conc_mol_L)
         self.ph_model.add_water(vol_mL)
+        if self.V_mL > self.spec.v_max_mL:
+            self.overflow = True
+
+    def add_feed(self, role: str, vol_mL: float, conc_mol_L: float):
+        """공침 피드: cacl2 | na2co3 | citrate (각 펌프는 별도 투입구 — 프리믹싱 금지)."""
+        self.V_mL += vol_mL
+        self.feed_mL[role] = self.feed_mL.get(role, 0.0) + vol_mL
+        {"cacl2": self.precip.add_cacl2, "na2co3": self.precip.add_na2co3, "citrate": self.precip.add_citrate}[role](vol_mL, conc_mol_L)
         if self.V_mL > self.spec.v_max_mL:
             self.overflow = True
 
@@ -85,6 +99,10 @@ class Reactor:
         if self.acid_load_mol_min > 0:
             self.ph_model.add_acid(self.acid_load_mol_min / 60.0 * dt)
         ph_true = self.ph_model.pH()
+        st = self.precip.step(dt, ph_true)
+        self.turbidity_ntu = st["turbidity_ntu"]
+        if self.precip.precip_rate_mol_s > 0:
+            ph_true = self.ph_model.pH()
         if np.isfinite(tm):
             tau = tm / 3.0
             self.c_obs += (self.c_true - self.c_obs) * (1 - np.exp(-dt / tau))

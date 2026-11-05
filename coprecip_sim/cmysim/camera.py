@@ -256,8 +256,37 @@ class FakeCamera(CameraBase):
         pass
 
 
+class TelemetryCamera(CameraBase):
+    """카메라 대신 I/O 노드(--sim --sim-camera) 텔레메트리의 'sim_camera' 관측을 쓴다. 2프로세스 통합시험용.
+    AI 노드가 start() 뒤에 .bus 를 붙여 준다."""
+
+    def start(self):
+        self.bus = None; self._rgb = np.array([242.0, 242.0, 242.0]); return self
+
+    def _grab(self):
+        tele = self.bus.latest() if self.bus is not None else None
+        sc = (tele or {}).get("sim_camera")
+        if sc and sc.get("rgb"):
+            self._rgb = np.array(sc["rgb"], float)
+        return np.tile(self._rgb.astype(np.uint8), (self.s.height, self.s.width, 1))
+
+    def roi_rgb8(self, frame=None):
+        if frame is None:
+            self.read()
+        return self._rgb.copy()
+
+    def roi_absorbance(self, frame=None, I0_vec=None):
+        I = code_to_linear(self._rgb, self.s.gamma)
+        I0 = np.asarray(I0_vec if I0_vec is not None else [0.9] * 3, float)
+        return np.clip(-np.log10(np.clip(I / I0, 1e-4, None)), 0, None)
+
+    def stop(self):
+        pass
+
+
 def open_camera(s: CameraSettings) -> CameraBase:
-    cls = {"realsense": RealSenseCamera, "picamera2": Picamera2Camera, "opencv": OpenCVCamera, "fake": FakeCamera}[s.kind]
+    cls = {"realsense": RealSenseCamera, "picamera2": Picamera2Camera, "opencv": OpenCVCamera, "fake": FakeCamera,
+           "telemetry": TelemetryCamera}[s.kind]
     return cls(s).start()
 
 
