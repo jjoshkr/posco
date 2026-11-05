@@ -181,6 +181,50 @@ python -m cmysim.ai_node_main --io-ip 192.168.10.2 --target-file target.json --m
 I/O 노드에 `run_enable OFF` 와 `safe` 를 보내고, I/O 노드는 하트비트가 1 초 끊기면 스스로 SAFE 가 됩니다.
 `--dataset` 을 주면 실제 프레임이 2 초마다 YOLO 라벨과 함께 저장됩니다(라벨의 c_true 는 실물에서는 null, 카메라 추정 ĉ 와 ΔE 만 기록).
 
+## 레시피 실행기 (`recipe.py`, `recipe_cli.py`)
+
+실험 절차를 YAML 로 적으면 그대로 도징 순서가 됩니다. 시뮬레이터와 실제 AI 노드 양쪽에서 `Controller` 자리에 끼워 씁니다.
+
+```yaml
+name: target_match
+reactor: {heel_mL: 2000, rpm: 300}
+stocks: {C: 1000, M: 1000, Y: 1000}
+target: {hex: "#5A8F7B"}            # 또는 {cmy: [30, 10, 25]} / {file: target.json}
+match: {de: 1.5, max_trims: 3}
+steps:
+  - {step: stir, rpm: 300}
+  - {step: dose_to_target, minutes: 2, flow_factor: [0.97, 0.97, 0.97]}
+  - {step: settle, factor: 3}
+  - {step: measure, label: feedforward}
+  - {step: trim_to_target, max_trims: 3}
+  - {step: hold, seconds: 30, label: final}
+  - {step: stop}
+matrix: {"reactor.rpm": [150, 300, 500]}   # 선택: 카르테시안 곱으로 실행 묶음 생성
+```
+
+| 스텝 | 인자 | 하는 일 |
+|---|---|---|
+| `stir` | rpm | 교반기 지령 |
+| `wait` / `hold` | seconds, label | 대기. hold 는 끝에 측정을 기록 |
+| `dose` | pump 또는 pumps, volume_mL / strokes / total_mL(+ratio), rate_mL_min / minutes / mA, on_abort | 명시 투입. 밸브 열기 → 스트로크 계수 도징 → 밸브 닫기 |
+| `dose_to_target` | minutes, flow_factor | 목표 농도에서 투입량을 계산해 세 펌프 동시 투입 |
+| `settle` | factor 또는 seconds | 혼합시간 × factor 만큼 대기 |
+| `measure` | seconds, label | 카메라 평균 → RGB·ĉ·ΔE 기록 |
+| `trim_to_target` | max_trims, tol_mg_L, de | 부족분 계산 → 투입 → 정착 → 측정 반복 |
+| `inject_fault` | kind, arg, seconds | 시뮬레이션: 고장 주입 + 라벨. 실물: 사람이 수행할 내용을 출력하고 대기 |
+| `valve` / `log` / `stop` | | 밸브 수동 조작, 메모, 종료(운전 허가 OFF + SAFE) |
+
+```bash
+python -m cmysim.recipe_cli example > my.yaml
+python -m cmysim.recipe_cli validate my.yaml
+python -m cmysim.recipe_cli run recipes/tierA_ratio_sweep.yaml --out results --plot    # matrix 9개 실행 + summary.csv
+python -m cmysim.ai_node_main --io-ip 192.168.10.2 --recipe recipes/target_match.yaml    # 실물 (matrix 면 첫 항목)
+```
+
+`recipes/` 에 세 가지 예시가 있습니다. `target_match.yaml`(목표색 매칭), `tierA_ratio_sweep.yaml`(비율 × rpm 매트릭스,
+대화의 Tier A 혼합 실험), `fault_injection.yaml`(이상탐지 라벨용 고장 주입). 모든 스텝 전이·측정·고장은 `log.json` 에
+시간과 함께 남아 이상탐지 학습의 라벨이 됩니다. 인터록(밸브 닫힌 채 펌프 금지 등)은 레시피가 아니라 I/O 노드가 지킵니다.
+
 ## YOLO 학습 (`yolo_train.py`)
 
 역할 분담은 대화에서 정리한 대로입니다. 색 → 농도 같은 연속값은 Beer–Lambert 역산(또는 작은 회귀)이 맡고,
@@ -245,6 +289,8 @@ coprecip_sim/
 ├── cmysim/            시뮬레이션: config, optics, hardware, process, vision, nodes, control, experiment, __main__
 │                      실물(Pi): camera, camera_tools, ai_node_main (AI 노드) / daqhats_hal, io_node_main (I/O 노드) / zmq_bridge
 │                      학습: yolo_train (gen/prepare/train/export/infer/regress), yolo_infer (VisionEvents: .pt/.onnx/.hef)
+│                      레시피: recipe (YAML → 스텝 실행기), recipe_cli (example/validate/expand/run)
+├── recipes/           예시 레시피 3개
 ├── tests/fake_daqhats.py  PC 에서 I/O 노드 코드를 시험하는 가짜 daqhats
 ├── tests/test_sim.py  물질수지·광학 역산·펌프 곡선·DAC 교정·인터록·워치독·폐루프·고장 테스트
 ├── docs/              예시 그래프

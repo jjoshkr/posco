@@ -284,3 +284,54 @@ def test_recorder_bubble_labels_and_prepare(tmp_path):
     assert (tmp_path / "yolo_cls/train/liquid_off_target").exists()
     ymain(["regress", "--csv", str(tmp_path / "yolo/regression.csv"), "--out", str(tmp_path / "w.npy")])
     assert (tmp_path / "w.npy").exists()
+
+
+# ---------------- 레시피 실행기
+from cmysim.recipe import validate as rvalidate, expand_matrix, RecipeExecutor, load_recipe, EXAMPLE
+import yaml as _yaml
+
+
+def test_recipe_validate_and_expand():
+    r = _yaml.safe_load(EXAMPLE)
+    assert rvalidate(r) == []
+    bad = {"steps": [{"step": "dose", "pump": "P-9"}, {"step": "fly"}, {"foo": 1}]}
+    errs = rvalidate(bad)
+    assert len(errs) >= 3 and any("P-9" in e for e in errs) and any("fly" in e for e in errs)
+    r["matrix"] = {"reactor.rpm": [150, 300], "steps[2].minutes": [1, 2]}
+    runs = expand_matrix(r)
+    assert len(runs) == 4 and runs[3]["reactor"]["rpm"] == 300 and runs[3]["steps"][2]["minutes"] == 2
+    assert "matrix" not in runs[0] and runs[0]["name"].startswith("target_match_closed__")
+
+
+def test_recipe_explicit_dose_and_measure():
+    r = {"name": "t", "reactor": {"heel_mL": 2000, "rpm": 300}, "stocks": {"C": 800},
+         "steps": [{"step": "stir", "rpm": 400},
+                   {"step": "dose", "pumps": ["P-101", "P-103"], "ratio": [1, 3], "total_mL": 40, "minutes": 1},
+                   {"step": "settle", "seconds": 15},
+                   {"step": "measure", "label": "a"},
+                   {"step": "dose", "pump": "P-102", "strokes": 50, "mA": 12.0},
+                   {"step": "hold", "seconds": 20, "label": "b"},
+                   {"step": "stop"}]}
+    cfg = SystemConfig(seed=7)
+    ex = RecipeExecutor(cfg, r)
+    assert cfg.tanks[0].conc_mg_L == 800 and cfg.reactor.rpm == 300
+    res = run_once(cfg, ex.r, 400.0, controller=ex)
+    d = res["dosed_mL"]
+    assert abs(d["P-101"] - 10) < 0.6 and abs(d["P-103"] - 30) < 1.0 and abs(d["P-102"] - 50 * 0.19) < 0.4
+    assert [m["label"] for m in ex.measurements] == ["a", "b"] and ex.done and res["io_mode"] == "SAFE"
+    assert abs(res["c_true"][0] - 10 * 800 / 2049.5) < 0.3                   # 800 mg/L 스톡 반영
+    kinds = [k for _, k, _ in ex.log]
+    assert kinds.count("step") == 7 and "done" in kinds
+
+
+def test_recipe_fault_step_and_target(tmp_path):
+    p = tmp_path / "f.yaml"
+    p.write_text(_yaml.safe_dump({"name": "f", "target": {"hex": "#5A8F7B"},
+                                  "steps": [{"step": "inject_fault", "kind": "tank_empty", "arg": "P-101"},
+                                            {"step": "dose_to_target", "minutes": 0.5, "on_abort": "stop"},
+                                            {"step": "measure", "label": "x"}, {"step": "stop"}]}))
+    cfg = SystemConfig(seed=8)
+    ex = RecipeExecutor(cfg, load_recipe(p))
+    res = run_once(cfg, ex.r, 300.0, controller=ex)
+    assert any(k == "fault" for _, k, _ in ex.log) and ex.aborted.startswith("DOSE") and res["tank_mL"][0] <= 100.01
+    assert ex.done and not ex.measurements                                # on_abort: stop → measure 생략

@@ -45,12 +45,16 @@ def apply_fault(kind: str, arg: str, plant: SimPlant, ai: AINode, io: IONode):
 
 # ------------------------------------------------------------------ 한 번 실행
 def run_once(cfg: SystemConfig, recipe: Recipe, duration_s: float = 600.0, faults=(), dataset_dir=None,
-             E_cal_err: float = 0.0, run_id="run", verbose=False) -> dict:
+             E_cal_err: float = 0.0, run_id="run", verbose=False, controller=None) -> dict:
     plant = SimPlant(cfg)
     bus = Bus()
     io = IONode(cfg, SimHAL(plant), bus)
     E_cal = cfg.camera.E * (1 + E_cal_err)       # AI 노드가 가진 보정 행렬이 실제와 다를 때
-    ctl = Controller(cfg, recipe, E_cal=E_cal)
+    ctl = controller if controller is not None else Controller(cfg, recipe, E_cal=E_cal)
+    if hasattr(ctl, "fault_hook"):               # 레시피 실행기의 inject_fault 스텝 → 공정 모델에 주입
+        def _hook(kind, arg, _plant=plant, _io=io):
+            apply_fault(kind, arg, _plant, ai, _io); _io.alarms.append((_io.t, f"FAULT_INJECTED {kind} {arg}"))
+        ctl.fault_hook = _hook
     ai = AINode(cfg, bus, plant.camera, ctl)
     rec = DatasetRecorder(dataset_dir, plant.camera, de_match=recipe.de_match) if dataset_dir else None
     fault_list = sorted(parse_fault(f) for f in faults)
@@ -118,11 +122,12 @@ def run_once(cfg: SystemConfig, recipe: Recipe, duration_s: float = 600.0, fault
         dE76_true=round(optics.delta_e76(rgb_final_ideal, recipe.target_rgb8), 3),
         matched=bool(de_true < recipe.de_match), t_first_match_s=t_match,
         t_done_s=t_done, trims=ctl.trims, aborted=ctl.aborted,
+        measurements=getattr(ctl, "measurements", None), recipe_log=getattr(ctl, "log", None),
         dosed_mL={p: round(plant.pumps[p].s.volume_total_mL, 2) for p in PUMP_IDS},
         strokes={p: plant.pumps[p].s.strokes_total for p in PUMP_IDS},
         reactor_mL=round(plant.reactor.V_mL, 1), tank_mL=[round(tk.volume_mL, 1) for tk in plant.tanks],
         io_mode=io.mode, alarms=[(round(a[0], 1), a[1]) for a in io.alarms],
-        events=ctl.events, plan=ctl.plan if recipe.mode == "open" else plan_doses(
+        events=ctl.events, plan=ctl.plan if (recipe.mode == "open" or controller is not None) else plan_doses(
             cfg, cfg.reactor.heel_mL, recipe.c_target, recipe.dose_minutes, recipe.flow_factor),
         overflow=plant.reactor.overflow, hist=hist,
     )

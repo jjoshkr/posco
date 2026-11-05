@@ -10,7 +10,7 @@
 종료(Ctrl+C, 예외, DONE) 시 반드시 run_enable OFF + safe 를 보낸다. I/O 노드는 하트비트가 1 s 끊겨도 스스로 SAFE 가 된다.
 """
 from __future__ import annotations
-import argparse, csv, signal, sys, time
+import argparse, csv, pathlib, signal, sys, time
 import numpy as np
 from .config import SystemConfig
 from .camera import CameraSettings, open_camera, Calibration
@@ -39,6 +39,7 @@ def main(argv=None):
     ap.add_argument("--camera", default="camera.json")
     ap.add_argument("--target"); ap.add_argument("--cmy")
     ap.add_argument("--target-file", help="camera_tools target 이 저장한 json (같은 카메라로 찍은 목표 시료)")
+    ap.add_argument("--recipe", help="YAML 레시피 (recipe_cli example 참고). 주면 --target/--mode 대신 레시피 스텝대로 실행")
     ap.add_argument("--mode", choices=("open", "closed"), default="closed")
     ap.add_argument("--heel", type=float, default=2000.0); ap.add_argument("--rpm", type=float, default=300.0)
     ap.add_argument("--dose-min", type=float, default=2.0); ap.add_argument("--de-match", type=float, default=1.5)
@@ -97,7 +98,17 @@ def main(argv=None):
             cam.stop(); return 2
         print("텔레메트리 수신:", bus.latest())
 
-    ctl = Controller(cfg, rec)
+    if a.recipe:
+        from .recipe import load_recipe, expand_matrix, RecipeExecutor
+        rr = load_recipe(a.recipe)
+        runs = expand_matrix(rr)
+        if len(runs) > 1:
+            print(f"matrix 레시피는 실물에서 한 번에 하나씩 실행합니다. 첫 번째({runs[0]['name']})를 실행합니다.")
+        ctl = RecipeExecutor(cfg, runs[0], sim=False)
+        rec = ctl.r
+        print(f"레시피 {ctl.name}: 스텝 {len(ctl.steps)}개, 목표 {optics.rgb8_to_hex(rec.target_rgb8)} c*={np.round(rec.c_target, 2)}")
+    else:
+        ctl = Controller(cfg, rec)
     ds = DatasetRecorder(a.dataset, cam, de_match=a.de_match, roi=cs.roi) if a.dataset else None
     det = None
     if a.yolo:
@@ -158,7 +169,13 @@ def main(argv=None):
             if a.preview:
                 _preview(frame, cs.roi, rgb, rec.target_rgb8, de_v, row_state)
             if not a.monitor and ctl.done:
-                print("완료:", ctl.result); break
+                print("완료:", {k: v for k, v in ctl.result.items() if k not in ("log", "measurements")})
+                if a.recipe:
+                    import json as _json
+                    lp = pathlib.Path(a.log).with_suffix(".recipe.json")
+                    lp.write_text(_json.dumps(dict(log=ctl.log, measurements=ctl.measurements), ensure_ascii=False, indent=1))
+                    print("레시피 로그:", lp)
+                break
             if t > a.max_minutes * 60:
                 print("최대 시간 초과"); break
             time.sleep(max(0.0, period - ((time.monotonic() - t_start) - t)))
