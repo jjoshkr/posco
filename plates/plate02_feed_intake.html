@@ -23,7 +23,7 @@ canvas{position:absolute;left:0;top:0;width:100%;height:100%}
 const W = 1920, H = 1080;
 const FONT = '"Pretendard","Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",sans-serif';
 const FONT_READY = (document.fonts ? Promise.all([300, 400, 500, 600, 700, 800, 900].map(w => document.fonts.load(`${w} 40px Pretendard`, '가A1'))) : Promise.resolve()).catch(() => {});
-const font = (w, s) => `${w} ${s}px ${FONT}`;
+const font = (w, s) => `${w >= 600 ? 600 : 500} ${s}px ${FONT}`;   // Pretendard Medium / SemiBold only
 const HORIZON = 238;
 const PAL = {
   pb:'#004490', pb2:'#5B7FB5', tq:'#1BA39C', tqL:'#5FD0C8', red:'#C0392B', heat:'#E8772E', green:'#2E9E6A',
@@ -633,27 +633,74 @@ add(46 + 74, () => { pylon(46, 74, 14); });
 shBox(220, 6, 8, 5, 3.2);
 add(220 + 6 + 10, () => { box(220, 6, 0, 8, 5, 3.2, '#F2F5F8', { top:'#C9D3DE' }); box(220, 10.6, 2.4, 8, .4, .5, PAL.tq, { edge:false }); });
 
-/* ---- ③ carbon separation + silos ---- */
+/* ---- ③ carbon separation + storage (detailed) ----
+   cyclones -> bag filter house -> gallery to silo tops; silos on legs discharge through
+   rotary valves onto an open belt that feeds the big-bag station; dust extraction hood over the transfer point */
+const SILOS = [[114, 82], [122, 82], [130, 82]];
 shCyl(93, 64, 2.2, 22); shCyl(99, 64, 2.2, 22); shBox(104, 54, 12, 9, 16);
-[[114, 82], [122, 82], [130, 82]].forEach(([x, y]) => shCyl(x, y, 3.6, 30));
+SILOS.forEach(([x, y]) => shCyl(x, y, 3.6, 35)); shBox(134.5, 79, 6, 6, 8);
 add(93 + 64 + 6, () => {
   frame(90, 60, 0, 12, 8, 12, 2, '#41679E');
   [[93, 64], [99, 64]].forEach(([x, y]) => { cyl(x, y, 14, 2.2, 7, STEEL, { cap:'flat' }); cone(x, y, 14, 2.2, 6, .5, STEEL); });
   box(104, 54, 0, 12, 9, 16, '#DDE4EB', { top:'#C9D3DE' });                // bag-filter house
   faceY(104, 63, 0, 12, 16, () => { g.fillStyle = 'rgba(110,125,145,.45)'; for (let i = 0; i < 6; i++) g.fillRect(1 + i * 1.8, 3, 1.1, 11); });
+  cyl(108, 52, 16, .5, 4, '#B9C4CF', { cap:'flat' });                      // clean-air stack
   pipe3([[96, 64, 21], [96, 64, 24], [110, 58, 24], [110, 58, 16]], 1.2, '#B7C3D0');
 });
 add(122 + 82 + 6, () => {
-  box(110, 76, 0, 24, 12, 1, '#AEB9C6');
-  [[114, 82], [122, 82], [130, 82]].forEach(([x, y]) => cyl(x, y, 1, 3.6, 24, '#E4EAF0', { cone:4, bands:[[3, '#8C99A8', .5], [21, PAL.tq, .6]] }));
-  box(112, 80.6, 29, 20, 2.8, 1, '#7F8FA3', { edge:false });               // roof catwalk
-  // inclined conveyor gallery from filter house to silo tops
-  poly3([[110, 62, 14], [112, 80, 29.5], [114, 80, 29.5], [112, 62, 14]], '#9DAAB9');
-  poly3([[110, 62, 16.5], [112, 80, 32], [114, 80, 32], [112, 62, 16.5]], '#C6D0DB');
-  poly3([[112, 62, 14], [114, 80, 29.5], [114, 80, 32], [112, 62, 16.5]], '#B3BFCC');
-  // carbon black truck under the silos
-  box(134, 78, 0, 9, 3.2, 2.6, '#2F353D'); box(143, 78.2, 0, 3, 2.8, 2.4, PAL.pb);
+  box(110, 76, 0, 24, 12, .6, '#AEB9C6');
+  SILOS.forEach(([x, y]) => {
+    [[-2.6, -2.6], [2.6, -2.6], [2.6, 2.6], [-2.6, 2.6]].forEach(([dx, dy]) => line3([x + dx, y + dy, .6], [x + dx, y + dy, 9.4], '#5B7FB5', Math.max(1.5, .35 * S(x, y, 5))));
+    line3([x - 2.6, y + 2.6, 2], [x + 2.6, y + 2.6, 8], 'rgba(91,127,181,.7)', 1.2); line3([x + 2.6, y - 2.6, 2], [x + 2.6, y + 2.6, 8], 'rgba(91,127,181,.7)', 1.2);
+    cone(x, y, 10, 3.6, 5, .6, '#D7DEE6');                                                     // discharge cone
+    box(x - .6, y - .6, 3.6, 1.2, 1.2, 1.4, '#4E5B6A', { top:'#6B7887' });                     // rotary valve
+    pipe3([[x, y, 3.6], [x, y, 2.6]], .7, '#8796A8');                                         // chute to belt
+    cyl(x, y, 10, 3.6, 21, '#E4EAF0', { cone:3.6, bands:[[1, '#8C99A8', .35], [12, '#3C434D', 1.0], [19, PAL.tq, .55]] });
+    // grounding strap (green/yellow) from the leg to an earth pit
+    { const a = P(x + 2.6, y + 2.6, 1.2), b = P(x + 3.6, y + 3.4, 0); g.save(); g.setLineDash([3, 3]); g.strokeStyle = '#E8C53A'; g.lineWidth = 2; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); g.lineDashOffset = 3; g.strokeStyle = '#2E9E6A'; g.stroke(); g.restore(); }
+  });
+  box(111, 80.6, 34.5, 22, 2.8, .8, '#7F8FA3', { edge:false });                               // roof catwalk
+  for (let x = 111; x <= 133; x += 2) line3([x, 83.4, 35.3], [x, 83.4, 36.4], 'rgba(242,193,78,.95)', 1);
+  line3([111, 83.4, 36.4], [133, 83.4, 36.4], 'rgba(242,193,78,.95)', 1.2);
+  // inclined enclosed gallery from the filter house to the silo tops
+  poly3([[110, 62, 14], [112, 80, 34.5], [114, 80, 34.5], [112, 62, 14]], '#9DAAB9');
+  poly3([[110, 62, 16.5], [112, 80, 37], [114, 80, 37], [112, 62, 16.5]], '#C6D0DB');
+  poly3([[112, 62, 14], [114, 80, 34.5], [114, 80, 37], [112, 62, 16.5]], '#B3BFCC');
 });
+// open belt conveyor under the silos, rising to the big-bag station
+const BELT = [[110.5, 82, 2.2], [128, 82, 2.2], [136.5, 82, 7.2]];
+add(124 + 84 + 8, () => {
+  // stringers + legs
+  for (let x = 111; x <= 128; x += 3.4) { line3([x, 81, 0], [x, 81, 2], '#6E7F93', 1.4); line3([x, 83, 0], [x, 83, 2], '#6E7F93', 1.4); }
+  [[131, 4], [134, 5.8]].forEach(([x, z]) => { line3([x, 81, 0], [x, 81, z - .2], '#6E7F93', 1.4); line3([x, 83, 0], [x, 83, z - .2], '#6E7F93', 1.4); });
+  for (let i = 0; i < BELT.length - 1; i++) { const [a, b] = [BELT[i], BELT[i + 1]];
+    poly3([[a[0], 81, a[2]], [b[0], 81, b[2]], [b[0], 83, b[2]], [a[0], 83, a[2]]], '#2A2F36');                     // belt
+    poly3([[a[0], 83, a[2] - .45], [b[0], 83, b[2] - .45], [b[0], 83, b[2]], [a[0], 83, a[2]]], '#7F8FA3');           // side stringer
+    poly3([[a[0], 81.55, a[2] + .12], [b[0], 81.55, b[2] + .12], [b[0], 82.45, b[2] + .12], [a[0], 82.45, a[2] + .12]], '#111317');   // carbon black on the belt
+    line3([a[0], 82.1, a[2] + .16], [b[0], 82.1, b[2] + .16], 'rgba(120,128,138,.35)', 1); }
+  for (let x = 112; x < 136; x += 3.6) { const z = x <= 128 ? 2.2 : 2.2 + (x - 128) / 8.5 * 5; cyl(x, 83.1, z - .5, .22, .01, '#9AA8B8', { cap:'flat' }); }
+});
+// big-bag (FIBC) filling station + filled bags on pallets
+add(137.5 + 86 + 8, () => {
+  frame(134.5, 79, 0, 6, 6, 8, 2, '#41679E', 'rgba(140,155,175,.55)', 'floors');
+  cone(137.5, 82, 8, 1.6, 2, .45, '#B9C4CF');                                                     // receiving hopper
+  box(136.9, 81.4, 4.2, 1.2, 1.2, 1.6, '#4E5B6A', { top:'#6B7887' });                             // filling head
+  box(136.4, 80.9, .2, 2.2, 2.2, 2.4, '#F2F2EE', { top:'#FFFFFF' });                               // bag being filled
+  frame(134.5, 79, 0, 6, 6, 8, 2, '#41679E', null, 'beams');
+  [[136, 87], [138.6, 87], [136, 89.6], [138.6, 89.6]].forEach(([x, y], i) => { if (i === 3) return;
+    box(x, y, 0, 2.2, 2.2, .25, '#B98B57', { top:'#CFA26A' }); box(x + .1, y + .1, .25, 2, 2, 1.9, '#ECEDE8', { top:'#F8F8F5' });
+    [[.4, .4], [1.6, .4], [.4, 1.6], [1.6, 1.6]].forEach(([dx, dy]) => line3([x + .1 + dx, y + .1 + dy, 2.15], [x + .1 + dx, y + .1 + dy, 2.55], '#D8D3C4', 1.2)); });
+  // dust sensor post
+  line3([133, 87, 0], [133, 87, 2.4], '#7F8FA3', 1.6); box(132.75, 86.75, 2.4, .5, .5, .5, '#F4F6F8', { edge:false });
+});
+// extraction hood over the belt -> hopper transfer, duct back to the filter house
+add(160, () => {
+  pipe3([[136.5, 82, 10.6], [136.5, 82, 13.5], [118, 75.5, 13.5], [112, 64, 13.5], [112, 62.5, 12]], .9, '#B7C3D0');
+  box(135.3, 80.8, 9.2, 2.4, 2.4, 1.4, '#9AA8B8', { top:'#B9C4CF' });
+  cone(136.5, 82, 9.2, 1.7, 1.1, 1.2, '#A9B5C2');
+  line3([118, 75.5, 13.5], [118, 75.5, 0], '#6E7F93', 1.2); line3([124, 77.5, 13.5], [124, 77.5, 0], '#6E7F93', 1.2);
+});
+add(134 + 88 + 3, () => { person(131.6, 88.6, -2.4, 'tablet'); person(140.6, 86.2, -2.0, 'stand'); });
 
 /* ---- ④ purification, compression, storage ---- */
 for (let i = 0; i < 8; i++) shCyl(142 + (i % 4) * 4, 56 + Math.floor(i / 4) * 5, 1.1, 12);
@@ -796,6 +843,7 @@ function grade(gg, hy) {
   gg.save(); gg.globalCompositeOperation = 'overlay'; gg.globalAlpha = .09; gg.fillStyle = gg.createPattern(grain, 'repeat'); gg.fillRect(0, 0, W, H); gg.restore();
 }
 function caption(gg, title, sub) {
+  { gg.save(); gg.translate(W - 300, H - 110); gg.scale(2.6, 1); const q = gg.createRadialGradient(0, 0, 0, 0, 0, 260); q.addColorStop(0, 'rgba(4,12,22,.5)'); q.addColorStop(1, 'rgba(4,12,22,0)'); gg.fillStyle = q; gg.fillRect(-300, -260, 600, 520); gg.restore(); }
   gg.save(); gg.fillStyle = '#FFFFFF'; gg.textAlign = 'right'; gg.shadowColor = 'rgba(0,0,0,.55)'; gg.shadowBlur = 8;
   gg.font = font(500, 40);
   const CN = '①②③④⑤⑥⑦⑧⑨', ci = CN.indexOf(title[0]);
@@ -831,6 +879,77 @@ function render() {
 }
 
 /* ============================================================
+   HUD — editorial style (after POSCO Studio films):
+   soft scrim, hairlines, Medium/SemiBold type, colour used sparingly
+   ============================================================ */
+const INK = '#FFFFFF', SOFT = 'rgba(255,255,255,.62)', HAIR = 'rgba(255,255,255,.42)';
+const ACC = { risk:'#FF9A8B', safe:'#8EE0BC', law:'#A9DDF5', warn:'#FFD978', tq:'#7FDCD3', heat:'#FFC08A' };
+function txt(gg, s, x, y, size, w = 500, col = INK, align = 'left', ls = 0) {
+  gg.save(); gg.shadowColor = 'rgba(0,8,18,.75)'; gg.shadowBlur = 8;
+  gg.font = font(w, size); gg.fillStyle = col; gg.textAlign = align; gg.textBaseline = 'alphabetic';
+  if ('letterSpacing' in gg) gg.letterSpacing = ls + 'px'; gg.fillText(s, x, y); if ('letterSpacing' in gg) gg.letterSpacing = '0px';
+  gg.restore();
+}
+function hudWrap(gg, text, maxW) {
+  const parts = text.split(' · '), out = []; let cur = '';
+  for (const p of parts) { const t = cur ? cur + ' · ' + p : p; if (gg.measureText(t).width > maxW && cur) { out.push(cur + ' ·'); cur = p; } else cur = t; }
+  if (cur) out.push(cur); return out;
+}
+function scrim(gg, x0) {                       // darkens the right side like a film lower-third, no box
+  const q = gg.createLinearGradient(x0, 0, W, 0); q.addColorStop(0, 'rgba(4,12,22,0)'); q.addColorStop(.32, 'rgba(4,12,22,.58)'); q.addColorStop(1, 'rgba(4,12,22,.74)');
+  gg.fillStyle = q; gg.fillRect(x0, 0, W - x0, H);
+}
+function hudTag(gg, text, wx, wy, wz, dx, dy) {
+  const [x, y] = P(wx, wy, wz); if (dx === 'auto') dx = x < 560 ? 110 : -110; const ex = x + dx, ey = y + dy, right = dx >= 0;
+  gg.save(); gg.shadowColor = 'rgba(0,8,18,.6)'; gg.shadowBlur = 6;
+  gg.strokeStyle = HAIR; gg.lineWidth = 1; gg.beginPath(); gg.moveTo(x, y); gg.lineTo(ex, ey); gg.lineTo(ex + (right ? 18 : -18), ey); gg.stroke();
+  gg.fillStyle = INK; gg.beginPath(); gg.arc(x, y, 3, 0, 7); gg.fill();
+  txt(gg, text, ex + (right ? 26 : -26), ey + 8, 25, 500, INK, right ? 'left' : 'right');
+  gg.restore(); return [x, y];
+}
+function hudMarker(gg, sx, sy, n, col = ACC.risk) {
+  gg.save(); gg.strokeStyle = col; gg.lineWidth = 1.6; gg.beginPath(); gg.arc(sx, sy, 24, 0, 7); gg.stroke();
+  gg.globalAlpha = .45; gg.lineWidth = 1; gg.beginPath(); gg.arc(sx, sy, 38, 0, 7); gg.stroke(); gg.globalAlpha = 1;
+  gg.fillStyle = col; gg.beginPath(); gg.arc(sx, sy, 3, 0, 7); gg.fill();
+  gg.lineWidth = 1; gg.beginPath(); gg.moveTo(sx + 27, sy - 27); gg.lineTo(sx + 44, sy - 44); gg.stroke();
+  txt(gg, String(n).padStart(2, '0'), sx + 50, sy - 44, 24, 600, col);
+  gg.restore();
+}
+// rows: [[label, text, kind]], laws: [..], badge: {text, kind}
+function hudPanel(gg, x, y, w, rows, laws, badge) {
+  gg.save();
+  let yy = y; const lineX = x - 22;
+  const sec = (label, kind) => { gg.fillStyle = ACC[kind] || SOFT; gg.beginPath(); gg.arc(x + 4, yy - 8, 3.5, 0, 7); gg.fill(); txt(gg, label, x + 18, yy, 22, 500, SOFT, 'left', 1); yy += 44; };
+  rows.forEach(([lab, text, kind]) => { sec(lab, kind); gg.font = font(500, 30); hudWrap(gg, text, w).forEach(l => { txt(gg, l, x, yy, 30, 500); yy += 42; }); yy += 26; });
+  sec('한국 적용 법령', 'law'); laws.forEach(l => { txt(gg, l, x, yy, 27, 500, 'rgba(255,255,255,.92)'); yy += 38; });
+  if (badge) { yy += 22; const c = ACC[badge.kind] || ACC.warn; gg.strokeStyle = c; gg.lineWidth = 1.5; gg.beginPath(); gg.moveTo(x, yy - 9); gg.lineTo(x + 22, yy - 9); gg.stroke(); txt(gg, badge.text, x + 34, yy, 26, 500, c); yy += 10; }
+  gg.strokeStyle = HAIR; gg.lineWidth = 1; gg.beginPath(); gg.moveTo(lineX, y - 30); gg.lineTo(lineX, yy + 4); gg.stroke();
+  gg.restore(); return yy - y;
+}
+function chevronsOn(gg, pts3, col, spacing = 34, back = false) {
+  const sp = pts3.map(p => P(...p)); gg.save(); gg.strokeStyle = col; gg.lineWidth = 2; gg.lineCap = 'round'; gg.lineJoin = 'round';
+  for (let i = 0; i < sp.length - 1; i++) { let [a, b] = [sp[i], sp[i + 1]]; if (back) [a, b] = [b, a];
+    const L = Math.hypot(b[0] - a[0], b[1] - a[1]), an = Math.atan2(b[1] - a[1], b[0] - a[0]);
+    for (let d = spacing / 2; d < L; d += spacing) { const x = a[0] + (b[0] - a[0]) * d / L, y = a[1] + (b[1] - a[1]) * d / L;
+      gg.save(); gg.translate(x, y); gg.rotate(an); gg.beginPath(); gg.moveTo(-5, -6); gg.lineTo(3, 0); gg.lineTo(-5, 6); gg.stroke(); gg.restore(); } }
+  gg.restore();
+}
+function iconPowerOff(gg, x, y, col = ACC.risk) {
+  gg.save(); gg.strokeStyle = col; gg.lineWidth = 1.8; gg.beginPath(); gg.arc(x, y, 22, 0, 7); gg.stroke();
+  gg.beginPath(); gg.moveTo(x + 3, y - 13); gg.lineTo(x - 6, y + 2); gg.lineTo(x + 2, y + 2); gg.lineTo(x - 3, y + 13); gg.stroke();
+  gg.beginPath(); gg.moveTo(x - 15, y - 15); gg.lineTo(x + 15, y + 15); gg.stroke(); gg.restore();
+}
+function iconShield(gg, x, y, col = ACC.safe) {
+  gg.save(); gg.strokeStyle = col; gg.lineWidth = 1.8; gg.beginPath(); gg.moveTo(x, y - 18); gg.lineTo(x + 15, y - 11); gg.lineTo(x + 13, y + 7); gg.lineTo(x, y + 18); gg.lineTo(x - 13, y + 7); gg.lineTo(x - 15, y - 11); gg.closePath(); gg.stroke();
+  gg.beginPath(); gg.moveTo(x - 6, y); gg.lineTo(x - 1, y + 5); gg.lineTo(x + 7, y - 5); gg.stroke(); gg.restore();
+}
+function readout(gg, s, x, y, col = ACC.heat) {          // value with a thin leader, no pill
+  gg.save(); gg.strokeStyle = col; gg.lineWidth = 1; gg.beginPath(); gg.moveTo(x, y); gg.lineTo(x + 46, y - 30); gg.lineTo(x + 70, y - 30); gg.stroke();
+  gg.fillStyle = col; gg.beginPath(); gg.arc(x, y, 3, 0, 7); gg.fill();
+  gg.shadowColor = 'rgba(0,8,18,.6)'; gg.shadowBlur = 6; txt(gg, s, x + 78, y - 20, 32, 500, col); gg.restore();
+}
+
+/* ============================================================
    PLATE 02 — ① feed intake & pretreatment (close drone shot + HUD)
    ============================================================ */
 SHOT = () => { const T = [23, 117, 1.5], dir = nrm([.42, .91, 0]), dist = 60, hgt = 30; setCam([T[0] + dir[0] * dist, T[1] + dir[1] * dist, hgt], T, 46); };
@@ -850,59 +969,19 @@ EXTRA_WORLD = () => {                                      // methane leak visua
     g.fillStyle = `rgba(150,240,250,${.7 * (1 - k)})`; g.beginPath(); g.arc(p[0], p[1], 1.6, 0, 7); g.fill(); }
   g.restore();
 };
-function hudTag(gg, text, wx, wy, wz, dx, dy, col = '#8FE3FF') {
-  const [x, y] = P(wx, wy, wz); if (dx === 'auto') dx = x < 560 ? 120 : -120; const ex = x + dx, ey = y + dy;
-  gg.save(); gg.strokeStyle = col; gg.fillStyle = col; gg.lineWidth = 1.6;
-  gg.beginPath(); gg.arc(x, y, 4, 0, 7); gg.fill();
-  gg.beginPath(); gg.moveTo(x, y); gg.lineTo(ex, ey); gg.lineTo(ex + (dx >= 0 ? 26 : -26), ey); gg.stroke();
-  gg.font = font(600, 28); gg.textBaseline = 'middle'; gg.textAlign = dx >= 0 ? 'left' : 'right';
-  gg.shadowColor = 'rgba(0,10,25,.85)'; gg.shadowBlur = 10; gg.fillStyle = '#FFFFFF';
-  gg.fillText(text, ex + (dx >= 0 ? 34 : -34), ey + 1); gg.restore();
-}
-function hudPanel(gg, x, y, w) {
-  const rows = [['위험', '메탄 누출 · 질식', '#FF7B6B'], ['안전조치', '가스검지기 · 환기 · 자동 차단밸브', '#6FE0A8']], laws = ['도시가스사업법', '산업안전보건법 PSM'];
-  const h = 52 + rows.length * 96 + 112;
-  gg.save();
-  gg.fillStyle = 'rgba(6,18,34,.84)'; gg.fillRect(x, y, w, h);
-  gg.strokeStyle = 'rgba(143,227,255,.55)'; gg.lineWidth = 1; gg.strokeRect(x + .5, y + .5, w - 1, h - 1);
-  gg.strokeStyle = '#8FE3FF'; gg.lineWidth = 3; const c = 22;                                   // corner brackets
-  [[x, y, 1, 1], [x + w, y, -1, 1], [x, y + h, 1, -1], [x + w, y + h, -1, -1]].forEach(([cx, cy, sx, sy]) => { gg.beginPath(); gg.moveTo(cx + sx * c, cy); gg.lineTo(cx, cy); gg.lineTo(cx, cy + sy * c); gg.stroke(); });
-  let yy = y + 44;
-  rows.forEach(([lab, val, col]) => {
-    gg.fillStyle = col; gg.font = font(700, 26); gg.textBaseline = 'alphabetic'; gg.textAlign = 'left'; gg.fillText(lab, x + 32, yy);
-    gg.fillStyle = '#FFFFFF'; gg.font = font(500, 34); gg.fillText(val, x + 32, yy + 46);
-    yy += 96;
-  });
-  gg.fillStyle = '#8FE3FF'; gg.font = font(700, 26); gg.fillText('한국 적용 법령', x + 32, yy);
-  let cx = x + 32; yy += 18;
-  laws.forEach(l => { gg.font = font(600, 28); const tw = gg.measureText(l).width + 32;
-    gg.strokeStyle = 'rgba(143,227,255,.9)'; gg.lineWidth = 1.5; gg.beginPath(); gg.roundRect(cx, yy, tw, 48, 24); gg.stroke();
-    gg.fillStyle = '#FFFFFF'; gg.textBaseline = 'middle'; gg.fillText(l, cx + 16, yy + 25); cx += tw + 12; });
-  gg.restore();
-  return h;
-}
 POST = gm => {
-  // detector alarm glow
+  scrim(gm, 970);
+  // detector alarm: small warm glow only
   gm.save(); gm.globalCompositeOperation = 'lighter';
-  const d = P(19.5, 114.41, 2.85); let q = gm.createRadialGradient(d[0], d[1], 0, d[0], d[1], 24); q.addColorStop(0, 'rgba(255,90,70,.9)'); q.addColorStop(.3, 'rgba(255,80,60,.35)'); q.addColorStop(1, 'rgba(255,80,60,0)');
-  gm.fillStyle = q; gm.beginPath(); gm.arc(d[0], d[1], 24, 0, 7); gm.fill(); gm.restore();
-  // leak marker on the flange
-  const m = P(20, 113, 1.2);
-  gm.save(); gm.strokeStyle = '#FF6B5B'; gm.lineWidth = 2.5; gm.beginPath(); gm.arc(m[0], m[1], 30, 0, 7); gm.stroke();
-  gm.globalAlpha = .55; gm.lineWidth = 1.5; gm.beginPath(); gm.arc(m[0], m[1], 46, 0, 7); gm.stroke(); gm.globalAlpha = 1;
-  for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + Math.PI / 4; gm.beginPath(); gm.moveTo(m[0] + Math.cos(a) * 34, m[1] + Math.sin(a) * 34); gm.lineTo(m[0] + Math.cos(a) * 42, m[1] + Math.sin(a) * 42); gm.stroke(); }
-  gm.fillStyle = '#FF6B5B'; gm.beginPath(); gm.arc(m[0] - 40, m[1] - 40, 21, 0, 7); gm.fill();
-  gm.fillStyle = '#FFFFFF'; gm.font = font(800, 26); gm.textAlign = 'center'; gm.textBaseline = 'middle'; gm.fillText('1', m[0] - 40, m[1] - 39);
-  gm.restore();
-  window.__anchors = { det: P(19.5, 114.2, 3.1), esd: P(18, 131.4, 2.4), fan: P(12.2, 116.7, 4.8), leak: P(20, 113, 1.2) };
+  const d = P(19.5, 114.41, 2.85); let q = gm.createRadialGradient(d[0], d[1], 0, d[0], d[1], 18); q.addColorStop(0, 'rgba(255,110,90,.85)'); q.addColorStop(1, 'rgba(255,90,70,0)');
+  gm.fillStyle = q; gm.beginPath(); gm.arc(d[0], d[1], 18, 0, 7); gm.fill(); gm.restore();
+  const m = P(20, 113, 1.2); hudMarker(gm, m[0], m[1], 1);
   hudTag(gm, '가스검지기', 19.5, 114.2, 3.1, 'auto', -150);
   hudTag(gm, '자동 차단밸브', 18, 131.4, 2.6, 'auto', -70);
   hudTag(gm, '환기', 12.2, 116.7, 4.8, 'auto', -110);
-  // info panel + leader from the marker
-  const px = 1250, py = 512, pw = 560;
-  gm.save(); gm.strokeStyle = 'rgba(255,107,91,.9)'; gm.lineWidth = 1.6; gm.setLineDash([6, 5]);
-  gm.beginPath(); gm.moveTo(m[0] + 28, m[1] + 12); gm.lineTo(px - 60, py + 40); gm.lineTo(px, py + 40); gm.stroke(); gm.restore();
-  hudPanel(gm, px, py, pw);
+  hudPanel(gm, 1300, 520, 500,
+    [['위험', '메탄 누출 · 질식', 'risk'], ['안전조치', '가스검지기 · 환기 · 자동 차단밸브', 'safe']],
+    ['도시가스사업법', '산업안전보건법 PSM']);
   caption(gm, '① 원료 인입·전처리', '');
 };
 addEventListener('resize', render);

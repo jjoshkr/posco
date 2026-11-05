@@ -23,7 +23,7 @@ canvas{position:absolute;left:0;top:0;width:100%;height:100%}
 const W = 1920, H = 1080;
 const FONT = '"Pretendard","Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",sans-serif';
 const FONT_READY = (document.fonts ? Promise.all([300, 400, 500, 600, 700, 800, 900].map(w => document.fonts.load(`${w} 40px Pretendard`, '가A1'))) : Promise.resolve()).catch(() => {});
-const font = (w, s) => `${w} ${s}px ${FONT}`;
+const font = (w, s) => `${w >= 600 ? 600 : 500} ${s}px ${FONT}`;   // Pretendard Medium / SemiBold only
 const HORIZON = 238;
 const PAL = {
   pb:'#004490', pb2:'#5B7FB5', tq:'#1BA39C', tqL:'#5FD0C8', red:'#C0392B', heat:'#E8772E', green:'#2E9E6A',
