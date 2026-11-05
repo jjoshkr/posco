@@ -186,11 +186,15 @@ function sphere(cx, cy, z, r, c) {
   const e = circ(cx, cy, z, r); g.strokeStyle = rgba(PAL.pb, .35); g.lineWidth = 1.2; g.beginPath(); g.ellipse(p[0], p[1], R, e[3], 0, 0, Math.PI); g.stroke();
 }
 function pipe3(pts, w, c, opt = {}) {
-  const sp = pts.map(p => P(...p)); const m = pts[Math.floor(pts.length / 2)], px = w * S(m[0], m[1], m[2]);
+  // drawn per segment so the width follows perspective (near segments thicker, far ones thinner)
+  const segs = [];
+  for (let i = 0; i < pts.length - 1; i++) { const a = pts[i], b = pts[i + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]), n = Math.max(1, Math.ceil(L / 6));
+    for (let k = 0; k < n; k++) { const t0 = k / n, t1 = (k + 1) / n, A = a.map((v, j) => v + (b[j] - v) * t0), B = a.map((v, j) => v + (b[j] - v) * t1), M = A.map((v, j) => (v + B[j]) / 2);
+      if (toCam(...A)[2] < NEAR && toCam(...B)[2] < NEAR) continue; segs.push([P(...A), P(...B), w * S(...M)]); } }
   g.lineJoin = 'round'; g.lineCap = 'round';
-  const st = (col, lw) => { g.beginPath(); sp.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.strokeStyle = col; g.lineWidth = lw; g.stroke(); };
-  if (HOLO) { st(HC, Math.max(.8, px * .45)); return; }
-  st(shade(c, -.35), px + 1.4); st(c, px); st(rgba('#FFFFFF', opt.gloss ?? .55), Math.max(.8, px * .28));
+  const pass = (col, f) => segs.forEach(([p, q, px]) => { g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.strokeStyle = col; g.lineWidth = f(px); g.stroke(); });
+  if (HOLO) { pass(HC, px => Math.max(.8, px * .45)); return; }
+  pass(shade(c, -.35), px => px + 1.4); pass(c, px => px); pass(rgba('#FFFFFF', opt.gloss ?? .55), px => Math.max(.8, px * .28));
 }
 function frame(x, y, z, w, d, h, levels, c = '#5B7FB5', floor = 'rgba(160,175,195,.9)', part = 'all') {
   const cols = [[x, y], [x + w, y], [x + w, y + d], [x, y + d]], lv = [];
@@ -438,7 +442,7 @@ add(142 + 8 + 30, () => {
   faceY(142, 18, 0, 26, 7, () => { g.fillStyle = 'rgba(80,95,115,.45)'; for (let i = 0; i < 26; i++) g.fillRect(i + .2, .6, .5, 5); });
 });
 add(144 + 24 + 20, () => { box(144, 24, 0, 12, 9, 6, '#EEF2F6'); windowsY(144, 33, 0, 12, 6, 1, 4); });
-add(186 + 20 + 6, () => { [[176, 10], [176, 18]].forEach(([x, y]) => { box(x + 2, y - 1.2, 0, 1, 2.4, 1.8, '#7F8FA3'); box(x + 15, y - 1.2, 0, 1, 2.4, 1.8, '#7F8FA3'); pipe3([[x, y, 3], [x + 19, y, 3]], 3, '#E8EDF2'); }); });
+add(186 + 20 + 6, () => { [[176, 10], [176, 18]].forEach(([x, y]) => { box(x + 2, y - 1.2, 0, 1, 2.4, 1.8, '#7F8FA3'); box(x + 12, y - 1.2, 0, 1, 2.4, 1.8, '#7F8FA3'); hcyl(x + .8, x + 14.8, y, 3, 1.5, '#E3E8EE', { bands:[x + 4, x + 12] }); }); });
 /* ---- solid-carbon product warehouse (back middle) ---- */
 shBox(90, 6, 36, 18, 11);
 add(90 + 6 + 40, () => {
@@ -771,12 +775,45 @@ const UVIR = [[162, 79.5, 3.6], [171.5, 82.5, 3.6]];
 UVIR.forEach(([x, y, h]) => add(x + y + 2, () => { line3([x, y, 0], [x, y, h], '#7F8FA3', Math.max(1.2, .14 * S(x, y, 2))); box(x - .3, y - .25, h, .6, .5, .45, '#2B3A4C', { edge:false, top:'#44566B' }); }));
 add(150 + 89 + 2, () => { person(160.5, 90.2, -2.6, 'tablet'); person(168.5, 88.5, -2.2, 'stand'); });
 
-/* ---- ⑤ hydrogen pipeline rack to the steel works ---- */
-add(140, () => {
-  for (let y = 48; y >= -32; y -= 9) { line3([196, y, 0], [196, y, 6], '#6E7F93', 1.4); line3([199, y, 0], [199, y, 6], '#6E7F93', 1.4); line3([196, y, 6], [199, y, 6], '#6E7F93', 1.4); }
-  pipe3([[186, 60, 6.5], [197.5, 54, 6.5], [197.5, -36, 6.5], [194, -40, 8]], 1.4, '#F4F7FA', { gloss:.8 });
-  pipe3([[157, 52.5, 12.6], [160, 52.5, 6.5], [160, 70, 6.5], [170, 70, 6.5], [186, 60, 6.5]], 1.0, '#F4F7FA');
+/* ---- ⑤ hydrogen pipeline: two-tier pipe rack to the HyREX steel works (detailed) ---- */
+const RACK = { x0:194.6, x1:200.4, y0:50, y1:-34, z1:5, z2:7.6, step:6 };
+const H2MAIN = [[186, 60, 8.1], [197.6, 54, 8.1], [197.6, -30, 8.1], [194, -38, 8.1], [184, -38, 8.1], [181, -42, 6]];
+const DETECT = [];
+for (let y = RACK.y0 - 3; y >= RACK.y1; y -= RACK.step * 3) DETECT.push([RACK.x1, y]);
+add(215, () => {
+  const { x0, x1, y0, y1, z1, z2, step } = RACK;
+  for (let y = y0; y >= y1; y -= step) {
+    const lw = Math.max(1.3, .22 * S((x0 + x1) / 2, y, 4));
+    line3([x0, y, 0], [x0, y, z2], '#5F7086', lw); line3([x1, y, 0], [x1, y, z2], '#5F7086', lw);
+    line3([x0, y, z1], [x1, y, z1], '#5F7086', lw * .9); line3([x0, y, z2], [x1, y, z2], '#5F7086', lw * .9);
+    line3([x0, y, 1.6], [x1, y, z1 - .6], 'rgba(95,112,134,.55)', lw * .5);
+    if (!HOLO) { const p = P(x0, y, 0), q = P(x1, y, 0); g.fillStyle = '#BFC6CD'; g.fillRect(p[0] - lw, p[1] - lw * .6, lw * 2, lw * 1.2); g.fillRect(q[0] - lw, q[1] - lw * .6, lw * 2, lw * 1.2); }
+  }
+  line3([x0, y0, z2], [x0, y1, z2], '#5F7086', 1.2); line3([x1, y0, z2], [x1, y1, z2], '#5F7086', 1.2);
+  line3([x0, y0, z1], [x0, y1, z1], '#5F7086', 1.1); line3([x1, y0, z1], [x1, y1, z1], '#5F7086', 1.1);
+  // lower tier: utilities + cable tray
+  pipe3([[195.6, y0, z1 + .45], [195.6, y1, z1 + .45]], .6, '#B7C3D0');
+  pipe3([[196.8, y0, z1 + .4], [196.8, y1, z1 + .4]], .5, '#5B7FB5');
+  box(198.4, y1, z1, 1.6, y0 - y1, .35, '#8E9AA7', { top:'#A9B4C0', edge:false });
+  // upper tier: hydrogen main (white, turquoise identification bands) + N2 line
+  pipe3(H2MAIN, 1.0, '#F4F7FA', { gloss:.8 });
+  for (let y = 46; y >= -26; y -= 12) { const a = P(197.6, y, 8.1), b = P(197.6, y - .8, 8.1), k = S(197.6, y, 8.1); if (HOLO) continue; g.strokeStyle = PAL.tq; g.lineWidth = 1.05 * k; g.lineCap = 'butt'; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); }
+  for (let y = 40; y >= -26; y -= 24) flange(197.6, y, 8.1, 'y', .62, '#9AA6B4');
+  pipe3([[199.4, y0, z2 + .35], [199.4, y1, z2 + .35]], .4, '#C9D3DE');
+  // gas (leak) detectors on the rack columns
+  DETECT.forEach(([x, y]) => { box(x - .05, y - .25, 6.2, .5, .5, .55, '#F4F6F8', { edge:false }); });
+  // pipe-route marker posts at ground level
+  for (let y = y0 - 9; y >= y1; y -= 18) { line3([201.5, y, 0], [201.5, y, 1.1], '#E8B42B', 1.2); box(201.25, y - .25, 1.1, .5, .5, .3, '#E8B42B', { edge:false }); }
 });
+// hydrogen receiving station at the steel works
+shBox(178, -46, 8, 7, 3.4);
+add(178 - 46 + 30, () => {
+  box(177.5, -46.5, 0, 9, 8, .5, '#AEB9C6');
+  box(178, -46, .5, 4, 7, 3, '#EEF2F6', { top:'#D6DEE6' }); box(178, -39.4, 2.8, 4, .4, .5, PAL.tq, { edge:false });
+  pipe3([[184, -38, 8.1], [184, -38, 2], [182.5, -40, 2], [182.5, -44, 2]], .55, '#F4F7FA');
+  [[183.4, -41], [183.4, -44]].forEach(([x, y]) => { box(x - .3, y - .3, 1.6, .6, .6, .8, '#5E6B7A', { edge:false }); handwheel(x, y, 2.6, .3, 'z'); });
+});
+add(141, () => pipe3([[157, 52.5, 12.6], [160, 52.5, 6.5], [160, 70, 6.5], [170, 70, 6.5], [186, 60, 8.1]], 1.0, '#F4F7FA'));
 
 KIND = 'env';
 /* ---- HyREX steel works (background, behind the site) ---- */
