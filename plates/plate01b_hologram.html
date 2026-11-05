@@ -702,31 +702,80 @@ add(160, () => {
 });
 add(134 + 88 + 3, () => { person(131.6, 88.6, -2.4, 'tablet'); person(140.6, 86.2, -2.0, 'stand'); });
 
-/* ---- ④ purification, compression, storage ---- */
+/* ---- ④ purification (PSA), compression, storage — detailed ---- */
+const SPH = [[172, 54], [186, 60], [176, 74]];
+const H2W = '#F1F4F7';
 for (let i = 0; i < 8; i++) shCyl(142 + (i % 4) * 4, 56 + Math.floor(i / 4) * 5, 1.1, 12);
-shBox(140, 72, 18, 11, 8);
-[[172, 54], [186, 60], [176, 74]].forEach(([x, y]) => shCyl(x, y, 6, 12));
+shBox(142, 70, 14, 10, 7); shBox(143, 84, 14, 7, 3.4);
+SPH.forEach(([x, y]) => shCyl(x, y, 6, 14));
 add(146 + 60, () => {
-  box(139, 53, 0, 18, 12, .8, '#AEB9C6');
-  for (let i = 0; i < 8; i++) { const x = 142 + (i % 4) * 4, y = 56 + Math.floor(i / 4) * 5; cyl(x, y, .8, 1.1, 11, '#E8EDF2', { dome:.8, bands:[[2, PAL.tq, .3]] }); }
-  pipe3([[141, 64, 2], [157, 64, 2]], .8, WHITE);
+  box(139, 53, 0, 18, 13, .8, '#AEB9C6');
+  pipe3([[141, 64.6, 1.4], [157, 64.6, 1.4]], .7, H2W);                                   // bottom header
+  for (let i = 0; i < 8; i++) { const x = 142 + (i % 4) * 4, y = 56 + Math.floor(i / 4) * 5;
+    cyl(x, y, .8, 1.1, 11, '#E8EDF2', { dome:.8, bands:[[2, PAL.tq, .3], [9.5, '#8C99A8', .15]] });
+    pipe3([[x, y + 1.1, 1.4], [x, 64.6, 1.4]], .35, H2W); }
+  pipe3([[141, 52.5, 12.6], [157, 52.5, 12.6]], .6, H2W);                                  // top (product) header
+  box(141, 65.6, .8, 15, 1.6, 1.8, '#5E6B7A', { top:'#7A8796' });                           // valve skid
+  for (let i = 0; i < 8; i++) { const x = 142.2 + i * 1.8; box(x, 65.9, 2.6, .8, .8, .6, '#C0392B', { edge:false, top:'#E05A4A' }); }
 });
 add(140 + 72 + 22, () => {
-  box(140, 72, 0, 18, 11, 8, '#EEF2F6', { top:'#D6DEE6' });               // compressor house
-  box(140, 82.4, 6.4, 18, .6, 1, PAL.pb, { edge:false });
-  faceY(140, 83, 0, 18, 8, () => { g.fillStyle = 'rgba(110,125,145,.5)'; for (let i = 0; i < 12; i++) g.fillRect(1 + i * 1.4, 1.6, .7, 3.6); });
-  box(144, 74, 8, 4, 4, 1.6, '#AEBBCA'); box(151, 75, 8, 4, 4, 1.6, '#AEBBCA');
+  box(142, 70, 0, 14, 10, 7, '#EEF2F6', { top:'#D6DEE6' });                                // MCC / control room
+  box(142, 79.4, 5.6, 14, .6, .9, PAL.pb, { edge:false });
+  windowsY(142, 80, 0, 14, 7, 1, 6, 'rgba(46,96,150,.6)');
+  box(145, 72, 7, 4, 4, 1.4, '#AEBBCA');
 });
-[[172, 54], [186, 60], [176, 74]].forEach(([x, y]) => add(x + y + 4, () => {
-  for (let a = 0; a < 6.283; a += 1.047) line3([x + Math.cos(a) * 4.4, y + Math.sin(a) * 4.4, 0], [x + Math.cos(a) * 4.4, y + Math.sin(a) * 4.4, 7], '#7F8FA3', 1.6);
+// outdoor diaphragm-compressor skid
+add(150 + 87 + 6, () => {
+  box(143, 84, 0, 14, 7, .6, '#5E6B7A', { top:'#7A8796' });
+  [[145, 85.2], [151, 85.2]].forEach(([x, y]) => {
+    box(x, y, .6, 4.2, 4.6, 2.4, '#3E6A9A', { top:'#5B86B8' });                             // crankcase + motor
+    hcyl(x + 4.2, x + 5.6, y + 1.2, 2.4, .7, '#C9D3DE'); hcyl(x + 4.2, x + 5.6, y + 3.4, 2.4, .7, '#C9D3DE');   // diaphragm heads
+    cyl(x + 1, y + 2.3, 3, .55, 2.6, '#E3E8EE', { dome:.35 });                               // pulsation damper
+  });
+  box(143.2, 89.4, .6, 13.6, 1.4, 2.6, '#AEBBCA', { top:'#8796A8' });                       // aftercooler
+  for (let i = 0; i < 4; i++) { ell(144.8 + i * 3.4, 90.1, 3.22, .6); g.fillStyle = '#4C5967'; g.fill(); }
+  pipe3([[156.4, 86.4, 2.4], [158.5, 86.4, 2.4], [158.5, 86.4, 1.4]], .4, H2W);
+});
+// high-pressure manifold to the spheres: valves, pressure gauge, flanges
+const HP = [[158.5, 86.4, 1.4], [166, 86.4, 1.4], [166, 74, 1.4], [170, 74, 1.4]];
+add(166 + 80 + 6, () => {
+  for (let y = 85; y >= 75; y -= 3.4) { line3([165.2, y, 0], [165.2, y, 1.1], '#6E7F93', 1.2); line3([166.8, y, 0], [166.8, y, 1.1], '#6E7F93', 1.2); line3([165.2, y, 1.1], [166.8, y, 1.1], '#6E7F93', 1.2); }
+  pipe3(HP, .45, H2W, { gloss:.8 });
+  [[162, 86.4], [166, 82.5], [166, 77.5]].forEach(([x, y]) => { const ax = x === 162 ? 'x' : 'y'; flange(x, y, 1.4, ax, .42, '#8C99A8'); });
+  [[160.4, 86.4], [166, 80.2]].forEach(([x, y]) => { box(x - .35, y - .35, 1.05, .7, .7, .7, '#5E6B7A', { edge:false }); line3([x, y, 1.75], [x, y, 2.3], '#5E6B7A', 1.2); handwheel(x, y, 2.35, .32, 'z'); });
+  // pressure gauge on its own post, facing the camera
+  line3([163.6, 87.6, 0], [163.6, 87.6, 2.1], '#7F8FA3', 1.4);
+  if (!HOLO) { const p = P(163.6, 87.6, 2.55), k = S(163.6, 87.6, 2.5), R = .42 * k;
+    g.fillStyle = '#2E3B4A'; g.beginPath(); g.arc(p[0], p[1], R * 1.15, 0, 7); g.fill(); g.fillStyle = '#FFFFFF'; g.beginPath(); g.arc(p[0], p[1], R, 0, 7); g.fill();
+    const arc = (a0, a1, c) => { g.strokeStyle = c; g.lineWidth = R * .2; g.beginPath(); g.arc(p[0], p[1], R * .78, a0, a1); g.stroke(); };
+    const A = t => Math.PI * .75 + t * Math.PI * 1.5; arc(A(0), A(.62), '#2E9E6A'); arc(A(.62), A(.8), '#E8B42B'); arc(A(.8), A(1), '#C0392B');
+    const an = A(.9); g.strokeStyle = '#16202B'; g.lineWidth = Math.max(1, R * .1); g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(p[0] + Math.cos(an) * R * .8, p[1] + Math.sin(an) * R * .8); g.stroke(); }
+});
+// spherical storage: legs, bracing, stair, PSV + vent stack on top
+SPH.forEach(([x, y], si) => add(x + y + 4, () => {
+  const legs = []; for (let a = .3; a < 6.283; a += 1.047) legs.push([x + Math.cos(a) * 4.6, y + Math.sin(a) * 4.6]);
+  legs.forEach(([lx, ly], i) => { line3([lx, ly, 0], [lx, ly, 11], '#6E7F93', Math.max(1.6, .3 * S(lx, ly, 5))); const [nx, ny] = legs[(i + 1) % legs.length]; line3([lx, ly, 1], [nx, ny, 7], 'rgba(110,127,147,.6)', 1); });
   sphere(x, y, 12, 6, '#DDE4EB');
-  const p = P(x, y, 12); g.fillStyle = PAL.tq; g.font = font(800, Math.max(7, 3.4 * S(x, y, 12))); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('H₂', p[0], p[1] + 2);
+  pipe3([[x, y, 6.1], [x, y, 2], [x - 4, y + 4, 1.4]], .35, H2W);
+  // PSV + vent stack
+  cyl(x, y, 17.9, .35, .9, '#C0392B', { capColor:'#E05A4A' });
+  pipe3([[x, y, 18.8], [x + .8, y, 19.4], [x + .8, y, 23]], .28, '#B9C4CF');
+  cyl(x + .8, y, 23, .32, .25, '#8796A8');
+  // top platform rail
+  if (!HOLO) { const e = circ(x, y, 18.1, 1.6); g.strokeStyle = 'rgba(242,193,78,.95)'; g.lineWidth = 1; g.beginPath(); g.ellipse(e[0], e[1], e[2], e[3], 0, 0, 7); g.stroke(); }
+  if (si === 2) for (let k = 0; k < 9; k++) { const a = 1.9 + k * .16, r = 6.15, z0 = 6 + k * 1.3; line3([x + Math.cos(a) * r, y + Math.sin(a) * r, z0], [x + Math.cos(a + .16) * r, y + Math.sin(a + .16) * r, z0 + 1.3], 'rgba(242,193,78,.95)', 1.2); }
+  const p = P(x, y, 12); if (!HOLO) { g.fillStyle = 'rgba(27,163,156,.75)'; g.font = font(600, Math.max(7, 2.1 * S(x, y, 12))); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('H₂', p[0], p[1] + 2); }
 }));
+// UV/IR flame detectors
+const UVIR = [[162, 79.5, 3.6], [171.5, 82.5, 3.6]];
+UVIR.forEach(([x, y, h]) => add(x + y + 2, () => { line3([x, y, 0], [x, y, h], '#7F8FA3', Math.max(1.2, .14 * S(x, y, 2))); box(x - .3, y - .25, h, .6, .5, .45, '#2B3A4C', { edge:false, top:'#44566B' }); }));
+add(150 + 89 + 2, () => { person(160.5, 90.2, -2.6, 'tablet'); person(168.5, 88.5, -2.2, 'stand'); });
+
 /* ---- ⑤ hydrogen pipeline rack to the steel works ---- */
 add(140, () => {
   for (let y = 48; y >= -32; y -= 9) { line3([196, y, 0], [196, y, 6], '#6E7F93', 1.4); line3([199, y, 0], [199, y, 6], '#6E7F93', 1.4); line3([196, y, 6], [199, y, 6], '#6E7F93', 1.4); }
   pipe3([[186, 60, 6.5], [197.5, 54, 6.5], [197.5, -36, 6.5], [194, -40, 8]], 1.4, '#F4F7FA', { gloss:.8 });
-  pipe3([[158, 70, 6.5], [170, 70, 6.5], [186, 60, 6.5]], 1.0, '#F4F7FA');
+  pipe3([[157, 52.5, 12.6], [160, 52.5, 6.5], [160, 70, 6.5], [170, 70, 6.5], [186, 60, 6.5]], 1.0, '#F4F7FA');
 });
 
 KIND = 'env';
