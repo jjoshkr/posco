@@ -8,7 +8,7 @@
 
 시뮬레이션에서는 Bus 가 ZeroMQ 를 대신한다. 메시지는 전부 JSON 직렬화 가능한 dict 라서
 zmq_bridge.py 처럼 PUB/SUB + PUSH/PULL 로 그대로 옮길 수 있다.
-HAL 은 '엔지니어링 단위' 인터페이스다. SimHAL 은 모델에, DaqHatsHAL 은 실제 보드에 붙는다.
+HAL 은 '엔지니어링 단위' 인터페이스다. SimHAL 은 모델에, daqhats_hal.DaqHatsHAL 은 실제 보드에 붙는다.
 """
 from __future__ import annotations
 from collections import deque
@@ -130,67 +130,7 @@ class SimHAL(HAL):
         self.p.step(dt)
 
 
-class DaqHatsHAL(HAL):
-    """실제 보드용 (Pi 5 + daqhats). 이 저장소에서는 실행하지 않았다. 채널 배정은 cfg.channel_map."""
-
-    def __init__(self, cfg: SystemConfig, addr=(0, 1, 2, 3)):
-        from daqhats import mcc152, mcc118, mcc134, DIOConfigItem  # noqa: F401  (Pi 에서만)
-        self.cfg = cfg
-        self.b = {"mcc152#1": mcc152(addr[0]), "mcc152#2": mcc152(addr[1]),
-                  "mcc118": mcc118(addr[2]), "mcc134": mcc134(addr[3])}
-        for k in ("mcc152#1", "mcc152#2"):
-            for ch in range(8):
-                self.b[k].dio_config_write_bit(ch, DIOConfigItem.DIRECTION, 0)  # 출력
-                self.b[k].dio_output_write_bit(ch, 1 if ch < 4 else 0)         # OD High(출력 꺼짐), 밸브 OFF
-        self.mA_per_V = cfg.dac.mA_per_V
-
-    def _ao(self, key):
-        board, ch = self.cfg.channel_map[key]
-        return self.b[board], int(ch[2:])
-
-    def _dio(self, key):
-        board, ch = self.cfg.channel_map[key]
-        return self.b[board], int(ch[3:])
-
-    def pump_set_mA(self, pid, mA):
-        b, ch = self._ao(pid)
-        b.a_out_write(ch, float(np.clip(mA / self.mA_per_V, 0, 5)))
-
-    def pump_enable(self, pid, on):
-        b, ch = self._ao(pid)             # OD 핀 = 같은 보드 DIO(2·ch): AO0→DIO0, AO1→DIO2 (보드 설계와 일치시킬 것)
-        b.dio_output_write_bit(2 * ch, 0 if on else 1)
-
-    def valve(self, vid, on):
-        b, ch = self._dio(vid)
-        b.dio_output_write_bit(ch, 1 if on else 0)
-
-    def run_enable(self, on):
-        b, ch = self._dio("RUN_ENABLE")
-        b.dio_output_write_bit(ch, 1 if on else 0)
-
-    def stirrer_set_mA(self, mA):
-        b, ch = self._ao("STIRRER")
-        b.a_out_write(ch, float(np.clip(mA / self.mA_per_V, 0, 5)))
-
-    def _ai_mA(self, key):
-        board, ch = self.cfg.channel_map[key]
-        return self.b[board].a_in_read(int(ch[2:])) * 1000.0 / self.cfg.adc.shunt_ohm
-
-    def read_feedback_mA(self, pid):
-        return self._ai_mA("FB-" + pid[-3:])
-
-    def read_ph(self):
-        return 14.0 * (self._ai_mA("PH") - 4.0) / 16.0
-
-    def read_pressure_bar(self):
-        return 10.0 * (self._ai_mA("PRESSURE") - 4.0) / 16.0
-
-    def read_temp_C(self):
-        board, ch = self.cfg.channel_map["TEMP"]
-        return self.b[board].t_in_read(int(ch[2:]))
-
-    def step(self, dt):
-        pass
+# 실제 보드용 HAL 은 daqhats_hal.DaqHatsHAL (MCC 152/118/134)
 
 
 # ------------------------------------------------------------------ I/O 노드

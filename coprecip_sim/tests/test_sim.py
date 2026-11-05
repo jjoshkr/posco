@@ -170,3 +170,93 @@ def test_dataset_recorder_accepts_real_frame(tmp_path):
     rec.close()
     assert (tmp_path / "ds/images/real_00000.png").stat().st_size > 100
     assert '"c_true": null' in (tmp_path / "ds/index.jsonl").read_text()
+
+
+# ---------------- I/O 노드 실제 보드 층 (가짜 daqhats 로 핀 배정·안전 순서 검증)
+import importlib
+import fake_daqhats as fdh
+from cmysim.daqhats_hal import DaqHatsHAL, IOConfig
+
+
+def _hal():
+    fdh.LOG.clear()
+    return DaqHatsHAL(IOConfig(ai_average=1), daqhats_module=fdh)
+
+
+def test_daqhats_boot_is_failsafe():
+    hal = _hal()
+    b1, b2 = hal.b["mcc152#1"], hal.b["mcc152#2"]
+    assert b1.ao == [0.0, 0.0] and b2.ao == [0.0, 0.0]
+    for b in (b1, b2):
+        assert b.direction[0] == 0 and b.pin_level(0) == 1          # OD(A) 출력, High = 꺼짐
+        assert b.direction[2] == 0 and b.pin_level(2) == 1          # OD(B)
+        assert b.direction[1] == 1 and b.direction[3] == 1          # EF 입력
+        assert b.direction[4] == 0 and b.pin_level(4) == 0          # 밸브 OFF
+    assert b2.pin_level(5) == 0                                     # RUN_ENABLE OFF
+    # AO 0 V 가 OD 방향 전환보다 먼저
+    ops = [(e[0], e[1]) for e in fdh.LOG]
+    assert ops.index((0, "ao_all")) < ops.index((0, "cfg"))
+    assert hal.b["mcc134"].types[0] == fdh.TcTypes.TYPE_K
+
+
+def test_daqhats_pump_valve_mapping():
+    hal = _hal()
+    b1, b2, adc = hal.b["mcc152#1"], hal.b["mcc152#2"], hal.b["mcc118"]
+    hal.pump_set_mA("P-102", 12.0)
+    assert abs(b1.ao[1] - 12.0 / 4.016) < 1e-9 and b1.ao[0] == 0.0
+    hal.pump_enable("P-102", True);  assert b1.pin_level(2) == 0        # OD(B) Low = 출력 켜짐
+    hal.pump_enable("P-102", False); assert b1.pin_level(2) == 1
+    hal.pump_set_mA("P-103", 24.0); assert b2.ao[0] == 5.0              # 클립
+    hal.valve("XV-103", True);  assert b2.pin_level(4) == 1
+    hal.valve("XV-101", True);  assert b1.pin_level(4) == 1 and b1.pin_level(5) == 0
+    hal.run_enable(True);       assert b2.pin_level(5) == 1
+    hal.stirrer_set_mA(12.0);   assert abs(b2.ao[1] - 12.0 / 4.016) < 1e-9 and b2.pin_level(2) == 0
+    adc.volts[1] = 3.0                                                  # 12 mA × 250 Ω
+    assert abs(hal.read_feedback_mA("P-101") - 12.0) < 1e-9
+    adc.volts[0] = 1.0 + 4.0 * 7.0 / 14.0                               # pH 7 → 12 mA → 3 V
+    assert abs(hal.read_ph() - 7.0) < 1e-9
+    adc.volts[4] = 1.0 + 4.0 * 0.3                                      # 3 bar → 8.8 mA → 2.2 V
+    assert abs(hal.read_pressure_bar() - 3.0) < 1e-9
+    b1.inputs[1] = 0
+    assert hal.read_ef_faults() == {"P-101": True, "P-102": False, "P-103": False, "STIRRER": False}
+    hal.b["mcc134"].temps[0] = fdh.mcc134.OPEN_TC_VALUE
+    assert hal.read_temp_C() != hal.read_temp_C()                       # NaN
+
+
+def test_daqhats_close_order_and_calibration():
+    hal = _hal()
+    hal.run_enable(True); hal.valve("XV-102", True); hal.pump_enable("P-101", True); hal.pump_set_mA("P-101", 15.0)
+    fdh.LOG.clear(); hal.close()
+    b1, b2 = hal.b["mcc152#1"], hal.b["mcc152#2"]
+    assert fdh.LOG[0] == (1, "dio", 5, 0)                               # RUN_ENABLE 먼저
+    assert b1.ao[0] == 0.0 and b1.pin_level(0) == 1 and b1.pin_level(5) == 0 and b2.pin_level(5) == 0
+    # 2점 교정: 실제 체인이 +2 % 많이 낸다고 가정
+    hal2 = _hal()
+    slope, gain, offset = hal2.calibrate_pump_channel("P-101", lambda: hal2.b["mcc152#1"].ao[0] * 4.016 * 1.02, settle=0)
+    assert abs(slope - 1.02) < 1e-9
+    hal2.pump_set_mA("P-101", 12.0)
+    assert abs(hal2.b["mcc152#1"].ao[0] * 4.016 * 1.02 - 12.0) < 1e-6
+
+
+def test_ionode_on_daqhats_hal_with_loopback():
+    """IONode 가 진짜 HAL 위에서 arm → 밸브 → dose 를 수행하고, 피드백 루프백으로 스트로크를 세는지."""
+    hal = _hal()
+    cfg = SystemConfig(); bus = Bus(); io = IONode(cfg, hal, bus)
+    b1, adc = hal.b["mcc152#1"], hal.b["mcc118"]
+    assert b1.pin_level(0) == 1 and b1.pin_level(5) == 0
+    bus.send_cmd(dict(cmd="arm")); bus.send_cmd(dict(cmd="run_enable", on=True))
+    bus.send_cmd(dict(cmd="valve", id="XV-101", open=True)); bus.send_cmd(dict(cmd="dose", id="P-101", mA=12.0, strokes=10))
+    t = 0.0
+    for _ in range(200):
+        t += 0.1
+        # 펌프 옵션 C 루프백: OD 켜지고 mA 가 걸리면 100 spm 에 해당하는 12 mA 피드백 (3 V)
+        adc.volts[1] = 3.0 if (b1.pin_level(0) == 0 and b1.ao[0] > 0) else 1.0
+        bus.send_cmd(dict(cmd="heartbeat"))
+        io.tick(t)
+        if io.dose_target["P-101"] is None and io.strokes["P-101"] > 0:
+            break
+    assert 10 <= io.strokes["P-101"] < 11.5                             # 계획 10 스트로크 (한 틱 지연 허용)
+    assert b1.ao[0] == 0.0 and b1.pin_level(0) == 1                     # 끝나면 0 mA + OD High
+    assert io.mode == "RUN" and b1.pin_level(4) == 1                    # 밸브는 AI 노드가 닫을 때까지 열림
+    io.tick(t + 2.0)                                                    # 하트비트 끊김
+    assert io.mode == "SAFE" and b1.pin_level(4) == 0 and hal.b["mcc152#2"].pin_level(5) == 0

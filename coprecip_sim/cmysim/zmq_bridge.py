@@ -57,16 +57,9 @@ class ZmqBus:
 
 
 def io_node_main(io_ip="0.0.0.0"):
-    """Pi(I/O 노드) 에서: python -m cmysim.zmq_bridge io"""
-    import time
-    from .config import SystemConfig
-    from .nodes import IONode, DaqHatsHAL
-    cfg = SystemConfig()
-    node = IONode(cfg, DaqHatsHAL(cfg), ZmqBus("io"))
-    t0 = time.monotonic()
-    while True:
-        node.tick(time.monotonic() - t0)
-        time.sleep(cfg.dt)
+    """하위 호환: python -m cmysim.io_node_main run 을 쓰세요."""
+    from .io_node_main import main
+    return main(["run"])
 
 
 if __name__ == "__main__":

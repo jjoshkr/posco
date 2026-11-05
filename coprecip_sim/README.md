@@ -104,8 +104,45 @@ RealSense 는 USB 3.0 포트(파란색)에 꽂고 `rs-enumerate-devices` 로 인
 임시로 `--kind opencv` 로 RealSense 를 UVC 웹캠처럼 열어 색만 읽을 수 있습니다. 라즈베리파이 전용 카메라를 사면
 `--kind picamera2` 로 바꾸면 됩니다(인터페이스 동일).
 
-I/O 노드(Pi 5 + MCC): `pip install daqhats pyzmq` 후 `python -m cmysim.zmq_bridge io`.
-두 Pi 는 이더넷 직결 + 고정 IP(예 I/O 192.168.10.2, AI 192.168.10.3)로 둡니다.
+두 Pi 는 이더넷 직결 + 고정 IP(예 I/O 192.168.10.2, AI 192.168.10.3)로 둡니다. I/O 노드 설치는 아래 절을 보세요.
+
+### I/O 노드 (Pi 5 + MCC 152 ×2 + MCC 118 + MCC 134)
+
+```bash
+sudo apt install -y git python3-pip python3-numpy python3-zmq
+git clone https://github.com/mccdaq/daqhats && cd daqhats && sudo ./install.sh      # MCC daqhats 라이브러리 + 파이썬 모듈
+daqhats_list_boards                                                                  # 주소 0,1 = MCC 152, 2 = MCC 118, 3 = MCC 134
+```
+
+주소는 보드의 A0~A2 점퍼로 정합니다(점퍼 없음 = 0, A0 = 1, A1 = 2, A0+A1 = 3). 다른 주소를 썼으면
+`python -m cmysim.io_node_main init-config` 로 만든 `io_node.json` 의 `addresses` 와 핀 배정을 고치면 됩니다.
+24 V 전원은 Pi 와 보드가 켜진 뒤에 넣습니다.
+
+빵판 단계(24 V 없이, 대화의 `mcc152_bench.py` 와 같은 점검):
+
+```bash
+cd coprecip_sim
+python -m cmysim.io_node_main list                       # 보드 인식
+python -m cmysim.io_node_main bench ramp 0               # AO0 0→5 V 계단, 멀티미터로 확인
+python -m cmysim.io_node_main bench dio 4 1              # DIO4 LED 켜기
+python -m cmysim.io_node_main bench blink 5              # DIO5 깜빡임 (PC817)
+python -m cmysim.io_node_main bench read                 # EF 핀·아날로그 입력·온도 연속 표시 (32번 줄 GND 시험)
+```
+
+펌프 인터페이스 보드(XTR111)와 24 V 를 붙인 뒤:
+
+```bash
+python -m cmysim.io_node_main bench pump P-101 12        # OD 켜고 12 mA, 피드백·EF 표시 (펌프는 Pause 상태로)
+python -m cmysim.io_node_main bench calib P-101          # 멀티미터 값으로 2점 교정 → io_node.json (MCC 152 이득오차 ±1.5 % 보정)
+python -m cmysim.io_node_main run -v                     # 본 운전: 10 Hz, ZeroMQ PULL 5555 / PUB 5556
+```
+
+`run` 중 I/O 노드가 스스로 하는 일: 밸브 닫힌 채 펌프 지령 거부, 운전허가 없이 펌프 거부, 압력 2.7 bar 초과 시 도징 펌프 정지,
+AI 노드 하트비트 1 s 끊기면 SAFE, 지령은 있는데 스트로크 피드백이 없으면 `NO_STROKE`, XTR111 EF 핀 Low 면 `EF` 알람.
+프로세스가 어떤 이유로 끝나도 `finally` 에서 RUN_ENABLE OFF → AO 0 V → OD High → 밸브 OFF 를 수행합니다.
+
+보드 없이 두 Pi(또는 PC 두 대)의 이더넷·ZeroMQ 연동만 시험하려면 I/O 쪽을 `run --sim` 으로 띄우면 됩니다.
+시뮬레이션 공정이 실제 I/O 노드처럼 텔레메트리를 내고 명령을 받습니다.
 
 ### 카메라 보정 순서 (PDF 8장 절차를 그대로 명령으로)
 
@@ -146,8 +183,8 @@ I/O 노드에 `run_enable OFF` 와 `safe` 를 보내고, I/O 노드는 하트비
 
 ## 실제 보드로 옮길 때
 
-1. `nodes.DaqHatsHAL` 이 `cfg.channel_map` 대로 daqhats 를 호출합니다(이 저장소에서는 실행 못 했으니 Pi 에서 `mcc152_bench.py` 로
-   먼저 핀을 확인한 뒤 OD 핀 번호를 맞추세요).
+1. `daqhats_hal.DaqHatsHAL` 이 `io_node.json` 의 주소·핀 배정대로 daqhats 를 호출합니다. 실제 보드로는 실행하지 못했고,
+   `tests/fake_daqhats.py` 로 핀 배정·안전 순서·루프백 도징을 검증했습니다. Pi 에서는 `io_node_main bench` 로 핀을 먼저 확인하세요.
 2. `zmq_bridge.ZmqBus` 가 `Bus` 와 같은 인터페이스로 PUSH/PULL + PUB/SUB 를 제공합니다. I/O 노드: `python -m cmysim.zmq_bridge io`.
 3. AI 노드는 `cmysim/ai_node_main.py` 가 완성본입니다. `camera.py` 의 RealSense/Picamera2/OpenCV 백엔드가 ROI 평균 RGB 와
    픽셀별 기준 영상 기반 흡광도를 `Controller.step(..., A=A)` 에 넣습니다.
@@ -175,7 +212,8 @@ I/O 노드에 `run_enable OFF` 와 `safe` 를 보내고, I/O 노드는 하트비
 ```
 coprecip_sim/
 ├── cmysim/            시뮬레이션: config, optics, hardware, process, vision, nodes, control, experiment, __main__
-│                      실물(Pi): camera (RealSense/Picamera2/OpenCV), camera_tools (보정 CLI), ai_node_main, zmq_bridge
+│                      실물(Pi): camera, camera_tools, ai_node_main (AI 노드) / daqhats_hal, io_node_main (I/O 노드) / zmq_bridge
+├── tests/fake_daqhats.py  PC 에서 I/O 노드 코드를 시험하는 가짜 daqhats
 ├── tests/test_sim.py  물질수지·광학 역산·펌프 곡선·DAC 교정·인터록·워치독·폐루프·고장 테스트
 ├── docs/              예시 그래프
 └── README.md

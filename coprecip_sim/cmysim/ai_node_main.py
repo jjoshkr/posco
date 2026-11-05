@@ -35,6 +35,7 @@ class NullBus:
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="ai_node_main", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--io-ip", default="192.168.10.2")
+    ap.add_argument("--cmd-port", type=int, default=5555); ap.add_argument("--tele-port", type=int, default=5556)
     ap.add_argument("--camera", default="camera.json")
     ap.add_argument("--target"); ap.add_argument("--cmy")
     ap.add_argument("--target-file", help="camera_tools target 이 저장한 json (같은 카메라로 찍은 목표 시료)")
@@ -83,13 +84,13 @@ def main(argv=None):
         bus = NullBus()
     else:
         from .zmq_bridge import ZmqBus
-        bus = ZmqBus("ai", a.io_ip)
+        bus = ZmqBus("ai", a.io_ip, a.cmd_port, a.tele_port)
         print(f"I/O 노드 {a.io_ip} 에 연결. 텔레메트리 대기...")
         t0 = time.time()
         while bus.latest() is None and time.time() - t0 < 10:
             bus.send_cmd(dict(cmd="heartbeat", t=0.0)); time.sleep(0.2)
         if bus.latest() is None:
-            print("텔레메트리가 오지 않습니다. I/O 노드(python -m cmysim.zmq_bridge io) 와 이더넷 연결을 확인하세요.")
+            print("텔레메트리가 오지 않습니다. I/O 노드(python -m cmysim.io_node_main run) 와 이더넷 연결을 확인하세요.")
             cam.stop(); return 2
         print("텔레메트리 수신:", bus.latest())
 
@@ -109,7 +110,7 @@ def main(argv=None):
                 bus.send_cmd(dict(cmd="run_enable", on=False)); bus.send_cmd(dict(cmd="safe")); time.sleep(0.1)
 
     # 3) 루프
-    t_start, last_hb, period = time.monotonic(), -1.0, 1.0 / a.hz
+    t_start, last_hb, period, next_print = time.monotonic(), -1.0, 1.0 / a.hz, 0.0
     try:
         while not stop["flag"]:
             t = time.monotonic() - t_start
@@ -126,7 +127,8 @@ def main(argv=None):
                     bus.send_cmd(dict(cmd="heartbeat", t=round(t, 2))); last_hb = t
                 ctl.step(t, tele, rgb, bus, A)
                 row_state, c_hat, de_v = ctl.state, ctl.c_hat, ctl.de
-                if int(t * a.hz) % int(a.hz) == 0:
+                if t >= next_print:
+                    next_print = t + 1.0
                     print(f"{t:7.1f}s {ctl.state:8s} RGB {rgb.astype(int)} ĉ {np.round(c_hat,2)} ΔE {de_v:5.2f}"
                           + (f"  io={tele['mode']} V≈{tele['est_volume_mL']} mL" if tele else ""))
             pm = tele["pumps"] if tele else None
