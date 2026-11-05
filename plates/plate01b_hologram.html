@@ -242,20 +242,21 @@ function handwheel(x, y, z, r, axis = 'z', col = '#C0392B') {
   const c = P(x, y, z); [0, 7, 14].forEach(i => { g.beginPath(); g.moveTo(c[0], c[1]); g.lineTo(pts[i][0], pts[i][1]); g.stroke(); });
 }
 // small person in coveralls + helmet, ~1.75 m tall; dir = facing angle in world (radians)
-function person(x, y, dir = 0, pose = 'stand', vest = '#2C6CB5') {
+function person(x, y, dir = 0, pose = 'stand', vest = '#2C6CB5', z0 = 0) {
   if (HOLO) return;
-  const k = S(x, y, 1), f = P(x, y, 0), hip = P(x, y, .9), sh = P(x, y, 1.42), hd = P(x, y, 1.62);
+  const Pz = (a, b, c) => P(a, b, c + z0);
+  const k = S(x, y, 1 + z0), f = Pz(x, y, 0), hip = Pz(x, y, .9), sh = Pz(x, y, 1.42), hd = Pz(x, y, 1.62);
   const sx = Math.cos(dir) * .22, sy = Math.sin(dir) * .22;                  // shoulder offset across the body
   const lw = Math.max(1.2, .16 * k);
   g.fillStyle = 'rgba(15,25,35,.32)'; g.beginPath(); g.ellipse(f[0] - .35 * k, f[1] + .05 * k, .5 * k, .2 * k, 0, 0, 7); g.fill();
   g.lineCap = 'round'; g.strokeStyle = '#1D3F6B'; g.lineWidth = lw;
-  const L1 = P(x - sy * .5, y + sx * .5, 0), L2 = P(x + sy * .5, y - sx * .5, 0);
+  const L1 = Pz(x - sy * .5, y + sx * .5, 0), L2 = Pz(x + sy * .5, y - sx * .5, 0);
   g.beginPath(); g.moveTo(hip[0], hip[1]); g.lineTo(L1[0], L1[1]); g.moveTo(hip[0], hip[1]); g.lineTo(L2[0], L2[1]); g.stroke();
   g.strokeStyle = vest; g.lineWidth = lw * 1.9; g.beginPath(); g.moveTo(hip[0], hip[1]); g.lineTo(sh[0], sh[1] + lw * .3); g.stroke();
-  const band = P(x, y, 1.15); g.strokeStyle = '#F2C14E'; g.lineWidth = lw * .45; g.beginPath(); g.moveTo(band[0] - lw * .9, band[1]); g.lineTo(band[0] + lw * .9, band[1]); g.stroke();
-  const A1 = P(x - sy, y + sx, 1.4), A2 = P(x + sy, y - sx, 1.4);
-  const H1 = pose === 'point' ? P(x - sy + Math.cos(dir) * .55, y + sx + Math.sin(dir) * .55, 1.55) : P(x - sy * 1.2, y + sx * 1.2, .85);
-  const H2 = pose === 'tablet' ? P(x + Math.cos(dir) * .35, y + Math.sin(dir) * .35, 1.1) : P(x + sy * 1.2, y - sx * 1.2, .85);
+  const band = Pz(x, y, 1.15); g.strokeStyle = '#F2C14E'; g.lineWidth = lw * .45; g.beginPath(); g.moveTo(band[0] - lw * .9, band[1]); g.lineTo(band[0] + lw * .9, band[1]); g.stroke();
+  const A1 = Pz(x - sy, y + sx, 1.4), A2 = Pz(x + sy, y - sx, 1.4);
+  const H1 = pose === 'point' ? Pz(x - sy + Math.cos(dir) * .55, y + sx + Math.sin(dir) * .55, 1.55) : Pz(x - sy * 1.2, y + sx * 1.2, .85);
+  const H2 = pose === 'tablet' ? Pz(x + Math.cos(dir) * .35, y + Math.sin(dir) * .35, 1.1) : Pz(x + sy * 1.2, y - sx * 1.2, .85);
   g.strokeStyle = vest; g.lineWidth = lw * .8; g.beginPath(); g.moveTo(A1[0], A1[1]); g.lineTo(H1[0], H1[1]); g.moveTo(A2[0], A2[1]); g.lineTo(H2[0], H2[1]); g.stroke();
   if (pose === 'tablet') { g.fillStyle = '#20303F'; g.fillRect(H2[0] - .12 * k, H2[1] - .1 * k, .24 * k, .17 * k); g.fillStyle = 'rgba(120,210,255,.9)'; g.fillRect(H2[0] - .1 * k, H2[1] - .08 * k, .2 * k, .12 * k); }
   g.fillStyle = '#E9C4A4'; g.beginPath(); g.arc(hd[0], hd[1], .13 * k, 0, 7); g.fill();
@@ -548,31 +549,72 @@ add(30 + 48 + 40, () => rack(30, 52, 47, 7, [[.6, PAL.tq, .9], [1.6, WHITE, .9],
 add(90 + 48 + 40, () => rack(78, 140, 47, 7, [[.6, PAL.tq, .9], [1.6, WHITE, .9], [2.5, '#B7C3D0', .7]]));
 add(30 + 100, () => { for (let y = 88; y >= 52; y -= 8) { line3([25, y, 0], [25, y, 7.5], '#6E7F93', 1.3); line3([27, y, 0], [27, y, 7.5], '#6E7F93', 1.3); line3([25, y, 7.5], [27, y, 7.5], '#6E7F93', 1.3); }
   [[25, 97], [36, 98]].forEach(([x, y]) => { line3([x, y, 0], [x, y, 11.2], '#6E7F93', 1.3); line3([x + 2, y, 0], [x + 2, y, 11.2], '#6E7F93', 1.3); line3([x, y, 11.2], [x + 2, y, 11.2], '#6E7F93', 1.3); });
-  pipe3([[26, 88, 7.5], [26, 50, 7.5], [52, 48, 7.5]], 1.1, GASY); });
+  pipe3([[26, 88, 7.5], [26, 50, 7.5], [30, 48.65, 7.5], [52, 48.65, 7.5]], 1.1, GASY); });
 
-/* ---- ② pyrolysis reactor block + power ---- */
-shBox(54, 56, 24, 18, 38); shBox(54, 78, 20, 12, 10);
+/* ---- ② pyrolysis reactor block (detailed) + plasma power ---- */
+const REACT = [[59, 61], [66, 61], [73, 61], [62.5, 68], [69.5, 68]];
+function facing(cx, cy, r) { const v = nrm([CAMR.p[0] - cx, CAMR.p[1] - cy, 0]); return [cx + v[0] * r, cy + v[1] * r]; }
+shBox(54, 56, 24, 18, 40); shBox(54, 78, 20, 12, 10); shBox(76, 79, 7, 10, 4);
 add(54 + 56 + 30, () => {
   box(52, 54, 0, 28, 22, .8, '#AEB9C6');
-  frame(54, 56, .8, 24, 18, 28, 3, '#41679E', 'rgba(150,165,185,.55)', 'floors');
-  [[59, 61], [66, 61], [73, 61], [62.5, 68], [69.5, 68]].forEach(([cx, cy], i) => {
-    cyl(cx, cy, .8, 2.6, i < 3 ? 36 : 33, '#E3E9EF', { dome:1.6, bands:[[7, PAL.tq, .5], [24, PAL.pb, .35], [30, PAL.tq, .3]] });
-    if (HOLO) return; const w = P(cx, cy + 2.4, 13); g.fillStyle = lg(0, w[1] - 40, 0, w[1] + 10, [[0, '#FFE2A0'], [.5, '#F08A32'], [1, '#C0472A']]);
-    g.beginPath(); g.ellipse(w[0] + 2, w[1] - 14, 3.2, 12, 0, 0, 7); g.fill();            // glowing sight window
+  frame(54, 56, .8, 24, 18, 28, 3, '#41679E', 'rgba(150,165,185,.5)', 'floors');
+  REACT.forEach(([cx, cy], i) => {
+    const h = i < 3 ? 36 : 33;
+    cyl(cx, cy, .8, 2.7, 13, '#A9B3BE', { cap:'none', bands:[[3, 'rgba(70,85,105,.5)', .12], [6.5, 'rgba(70,85,105,.5)', .12], [10, 'rgba(70,85,105,.5)', .12]] });   // refractory-lined hot zone
+    cyl(cx, cy, 13.8, 2.6, h - 13, '#E3E9EF', { dome:1.6, bands:[[0, PAL.tq, .5], [11, PAL.pb, .3], [17, PAL.tq, .25]] });
+    cyl(cx, cy, 13, 2.85, .8, '#7F8FA3', { cap:'none' });                                                    // flange ring
+    // plasma torch head + cable
+    cyl(cx, cy, h + 2.2, .7, 2.2, '#5E6B7A', { capColor:'#8796A8' });
+    if (HOLO) return;
+    // sight windows (glow is added in the scene pass)
+    const [fx, fy] = facing(cx, cy, 2.72);
+    [7.2, 10.6].forEach(z => { const p = P(fx, fy, z), k = S(fx, fy, z);
+      g.fillStyle = '#3B2A22'; g.beginPath(); g.ellipse(p[0], p[1], .55 * k, .75 * k, 0, 0, 7); g.fill();
+      g.fillStyle = lg(0, p[1] - .7 * k, 0, p[1] + .7 * k, [[0, '#FFF1C4'], [.45, '#FFA444'], [1, '#D3542A']]); g.beginPath(); g.ellipse(p[0], p[1], .42 * k, .6 * k, 0, 0, 7); g.fill(); });
+    // thermocouple ports at several heights
+    [4.5, 9, 16, 24].forEach(z => { const [tx, ty] = facing(cx, cy, 2.95); box(tx - .2, ty - .2, z, .4, .4, .35, '#2E3B4A', { edge:false }); });
   });
   frame(54, 56, .8, 24, 18, 28, 3, '#41679E', null, 'beams');
-  // stair tower on the front-right corner
+  // stair tower
   box(78.5, 70, .8, 4, 4, 30, '#5B7FB5', { top:'#7FA0CC', left:'rgba(60,95,150,.55)', right:'rgba(80,115,170,.45)' });
   for (let k = 0; k < 10; k++) line3([82.5, 70, 2 + k * 3], [82.5, 74, 3.5 + k * 3], 'rgba(242,193,78,.95)', 1);
-  pipe3([[56, 74.5, 6], [56, 74.5, 26], [62.5, 68, 30]], .8, PAL.tq);
-  line3([66, 61, 38.5], [66, 61, 42], '#C0392B', 1.4); g.fillStyle = '#FF5A4A'; const bp = P(66, 61, 42.4); g.beginPath(); g.arc(bp[0], bp[1], 2.2, 0, 7); g.fill();  // aviation beacon
+  // hot product header to the carbon separation unit (insulated)
+  REACT.forEach(([cx, cy]) => pipe3([[cx, cy, 2.2], [cx, 63.5, 2.2]], .9, '#D5DCE3'));
+  pipe3([[58, 63.5, 2.2], [86, 63.5, 2.2], [89, 64, 11], [91, 64, 16]], 1.3, '#D5DCE3', { gloss:.7 });
+  // feed riser and top header (yellow city gas after pretreatment)
+  pipe3([[52, 48.65, 7.5], [55.5, 50, 7.5], [55.5, 57, 7.5], [55.5, 57, 30.5], [76, 57, 30.5]], .55, GASY);
+  REACT.forEach(([cx, cy]) => pipe3([[cx, 57, 30.5], [cx, cy - 1.8, 30.5], [cx, cy - .6, 31.5]], .3, GASY));
+  // plasma DC bus duct from the power building to the reactor tops
+  pipe3([[64, 80, 10.2], [64, 76, 10.2], [64, 75, 32.5], [59, 75, 32.5], [59, 61, 38.6]], .4, '#4A5A6E', { gloss:.3 });
+  pipe3([[64, 75, 32.5], [73, 75, 32.5], [73, 61, 38.6]], .35, '#4A5A6E', { gloss:.3 });
+  [[62.5, 68], [69.5, 68]].forEach(([x, y]) => pipe3([[x, 75, 32.5], [x, y, 35.6]], .3, '#4A5A6E', { gloss:.3 }));
+  line3([66, 61, 38.5], [66, 61, 43], '#C0392B', 1.4); if (!HOLO) { g.fillStyle = '#FF5A4A'; const bp = P(66, 61, 43.4); g.beginPath(); g.arc(bp[0], bp[1], 2.2, 0, 7); g.fill(); }
 });
+// interlock shut-off valve + check valve on the feed line, upstream of the structure (clearly visible)
+add(132, () => {
+  box(41.9, 47.7, 6.4, 2.4, 1.9, 2.2, '#5E6B7A');                         // valve body
+  box(41.8, 47.6, 8.6, 2.6, 2.1, 1.6, '#C0392B', { top:'#E05A4A' });       // actuator
+  handwheel(43.1, 48.65, 10.5, .8, 'z');
+  flange(41.6, 48.65, 7.5, 'x', .75); flange(44.6, 48.65, 7.5, 'x', .75);
+  box(47.4, 47.9, 6.7, 1.8, 1.5, 1.7, '#4E6A86', { top:'#6F8DAA' });       // check valve (non-return)
+  { const a = P(47.4, 49.41, 7.55), b = P(49.2, 49.41, 7.55); g.strokeStyle = '#FFFFFF'; g.lineWidth = 2; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(b[0] - 5, b[1] - 4); g.moveTo(b[0], b[1]); g.lineTo(b[0] - 4, b[1] + 4); g.stroke(); }
+  flange(47.2, 48.65, 7.5, 'x', .7); flange(49.4, 48.65, 7.5, 'x', .7);
+  [[41.2, 47.6], [48, 47.6]].forEach(([x, y]) => { line3([x, y, 0], [x, y, 7], '#6E7F93', 1.4); line3([x, y + 2, 0], [x, y + 2, 7], '#6E7F93', 1.4); line3([x, y, 7], [x, y + 2, 7], '#6E7F93', 1.4); });
+});
+// people on the first platform level and at the base
+add(64 + 74 + 2, () => { person(60, 73.2, -1.6, 'tablet', '#2C6CB5', 10.13); person(62, 73.5, -2.0, 'point', '#2C6CB5', 10.13); person(76, 77, -2.4, 'stand'); });
 add(54 + 78 + 25, () => {
   box(54, 78, 0, 20, 12, 10, '#E9EEF3', { top:'#D2DAE3' });              // plasma power building
   box(54, 89.4, 8.6, 20, .6, 1.2, PAL.tq, { edge:false });
   windowsY(54, 90, 0, 20, 10, 2, 8, 'rgba(46,96,150,.6)');
-  faceX(74, 90, 0, 12, 10, () => { g.fillStyle = 'rgba(120,135,155,.55)'; for (let i = 0; i < 10; i++) g.fillRect(-11 + i * 1.05, 2, .5, 5); });  // louvres
+  faceX(74, 90, 0, 12, 10, () => { g.fillStyle = 'rgba(120,135,155,.55)'; for (let i = 0; i < 10; i++) g.fillRect(-11 + i * 1.05, 2, .5, 5); });
+  box(57, 80, 10, 5, 4, 1.6, '#AEBBCA'); box(66, 81, 10, 6, 5, 1.2, '#AEBBCA');
 });
+add(76 + 79 + 12, () => {                                                    // rectifier transformers
+  [[76.5, 79.5], [76.5, 83.5], [76.5, 87.5]].forEach(([x, y]) => { box(x, y, 0, 5.5, 3, 3.4, '#8797AB', { top:'#A6B3C2' }); for (let k = 0; k < 6; k++) line3([x + 5.5, y + .3 + k * .45, .5], [x + 5.5, y + .3 + k * .45, 3.1], '#6B7B8F', .8); cyl(x + 1.5, y + 1.5, 3.4, .25, .9, '#C9D3DE'); cyl(x + 3.8, y + 1.5, 3.4, .25, .9, '#C9D3DE'); });
+  pipe3([[76.5, 84, 2.5], [74, 84, 2.5]], .35, '#38475A');
+});
+
 // substation + lattice pylon + lines from the solar field
 shBox(30, 72, 12, 14, 4);
 add(30 + 72 + 22, () => {
