@@ -90,13 +90,69 @@ RGB, ΔE)을 남깁니다. `dataset.yaml` 은 Ultralytics 형식입니다. 나�
 쓰면 됩니다. 단, 색·농도 같은 연속값은 YOLO(탐지)보다 `index.jsonl` 로 회귀 모델을 학습하는 쪽이 맞고, YOLO 는
 기포·와류·침전·이물 같은 '사건' 탐지에 쓰는 것이 대화에서 정리한 역할 분담입니다.
 
+## 라즈베리파이에서 실행 (실제 카메라)
+
+### 설치 (AI 노드: Pi 5 + AI HAT+, Raspberry Pi OS 64-bit Bookworm)
+
+```bash
+sudo apt install -y python3-numpy python3-opencv python3-zmq python3-picamera2
+pip install pyrealsense2        # aarch64 휠이 없으면 librealsense 를 소스 빌드해야 합니다 (아래 링크)
+```
+
+RealSense 는 USB 3.0 포트(파란색)에 꽂고 `rs-enumerate-devices` 로 인식을 확인합니다. pyrealsense2 가 Pi 에서 바로
+안 깔리면 https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_raspbian.md 를 따라 빌드하거나,
+임시로 `--kind opencv` 로 RealSense 를 UVC 웹캠처럼 열어 색만 읽을 수 있습니다. 라즈베리파이 전용 카메라를 사면
+`--kind picamera2` 로 바꾸면 됩니다(인터페이스 동일).
+
+I/O 노드(Pi 5 + MCC): `pip install daqhats pyzmq` 후 `python -m cmysim.zmq_bridge io`.
+두 Pi 는 이더넷 직결 + 고정 IP(예 I/O 192.168.10.2, AI 192.168.10.3)로 둡니다.
+
+### 카메라 보정 순서 (PDF 8장 절차를 그대로 명령으로)
+
+```bash
+cd coprecip_sim
+python -m cmysim.camera_tools settings --kind realsense --exposure 120 --gain 16 --wb 4600   # 수동 고정
+python -m cmysim.camera_tools preview --save shot.png        # ROI 가 액체 안에 들어가는지 확인
+python -m cmysim.camera_tools roi --roi 220,140,200,200       # 또는 --pick (모니터 있을 때 마우스로)
+python -m cmysim.camera_tools reference                       # 물만 채운 반응기 → 픽셀별 기준 I0
+python -m cmysim.camera_tools sample --dye C --conc 5         # 시안 5 mg/L … 10, 15, 20 (염료마다 4~5점)
+python -m cmysim.camera_tools sample --dye M --conc 5
+python -m cmysim.camera_tools sample --dye Y --conc 5
+python -m cmysim.camera_tools fit                             # E 피팅 → calibration.json (조건수·R² 출력)
+python -m cmysim.camera_tools check --cmy 10,5,8              # 보정에 안 쓴 혼합액으로 검증
+python -m cmysim.camera_tools target --save target.json       # 목표 시료(기준 색 용액)를 같은 카메라로 촬영
+```
+
+카메라가 없는 워크스테이션에서는 `settings --kind fake` 로 위 명령을 전부 돌려 볼 수 있습니다
+(`CMYSIM_FAKE_CONC=10,5,8` 환경변수로 가짜 액체 농도를 바꿉니다).
+
+`reference` 에서 I0 가 0.95 를 넘으면 포화이니 노출을 줄이고, `sample` 에서 흡광도가 1 을 넘으면 더 묽게 잡습니다.
+조명·카메라 위치·노출을 바꾸면 reference 부터 다시 합니다.
+
+### 실험 실행
+
+```bash
+python -m cmysim.camera_tools monitor --target "#5A8F7B"      # 배선 전: 카메라만으로 ĉ, ΔE 확인
+python -m cmysim.ai_node_main --io-ip 192.168.10.2 --target-file target.json --mode closed \
+       --flow-factor 0.97,0.97,0.97 --log run1.csv --dataset ds_run1/ --preview
+```
+
+목표는 `--target '#hex'`, `--cmy`, `--target-file` 중 하나로 줍니다. ΔE 기준으로는 같은 카메라·조명으로 찍은
+`target.json` 이 가장 정확합니다(hex 는 모델을 거쳐 환산되므로 비네팅·글레어만큼 어긋날 수 있음).
+
+`ai_node_main` 은 시뮬레이터와 같은 `Controller` 를 쓰고 카메라 입력만 실물입니다. Ctrl+C·예외·완료 어느 경우에도
+I/O 노드에 `run_enable OFF` 와 `safe` 를 보내고, I/O 노드는 하트비트가 1 초 끊기면 스스로 SAFE 가 됩니다.
+`--dataset` 을 주면 실제 프레임이 2 초마다 YOLO 라벨과 함께 저장됩니다(라벨의 c_true 는 실물에서는 null, 카메라 추정 ĉ 와 ΔE 만 기록).
+
 ## 실제 보드로 옮길 때
 
 1. `nodes.DaqHatsHAL` 이 `cfg.channel_map` 대로 daqhats 를 호출합니다(이 저장소에서는 실행 못 했으니 Pi 에서 `mcc152_bench.py` 로
    먼저 핀을 확인한 뒤 OD 핀 번호를 맞추세요).
 2. `zmq_bridge.ZmqBus` 가 `Bus` 와 같은 인터페이스로 PUSH/PULL + PUB/SUB 를 제공합니다. I/O 노드: `python -m cmysim.zmq_bridge io`.
-3. AI 노드에서는 `SyntheticCamera.roi_rgb8()` 대신 RealSense 프레임의 ROI 평균 RGB 를 `Controller.step()` 에 넣으면 됩니다.
-4. 보정 행렬 E 와 I0 는 PDF 8장 절차(단일 염료 4~5점)로 실측해 `CameraSpec` 에 넣습니다. 지금 값은 설명용입니다.
+3. AI 노드는 `cmysim/ai_node_main.py` 가 완성본입니다. `camera.py` 의 RealSense/Picamera2/OpenCV 백엔드가 ROI 평균 RGB 와
+   픽셀별 기준 영상 기반 흡광도를 `Controller.step(..., A=A)` 에 넣습니다.
+4. 보정 행렬 E 와 I0 는 `camera_tools` 로 실측해 `calibration.json` 에 저장되고 `ai_node_main` 이 자동으로 읽습니다.
+   `config.py` 의 값은 시뮬레이션용 설명값입니다.
 
 ## 가정과 출처
 
@@ -118,7 +174,8 @@ RGB, ΔE)을 남깁니다. `dataset.yaml` 은 Ultralytics 형식입니다. 나�
 
 ```
 coprecip_sim/
-├── cmysim/            패키지 (config, optics, hardware, process, vision, nodes, control, experiment, zmq_bridge, __main__)
+├── cmysim/            시뮬레이션: config, optics, hardware, process, vision, nodes, control, experiment, __main__
+│                      실물(Pi): camera (RealSense/Picamera2/OpenCV), camera_tools (보정 CLI), ai_node_main, zmq_bridge
 ├── tests/test_sim.py  물질수지·광학 역산·펌프 곡선·DAC 교정·인터록·워치독·폐루프·고장 테스트
 ├── docs/              예시 그래프
 └── README.md

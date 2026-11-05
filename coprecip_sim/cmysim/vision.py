@@ -69,18 +69,22 @@ class DatasetRecorder:
         self._last, self.n = -1e9, 0
         self.index = []
 
-    def maybe_record(self, t: float, c_true, c_hat, c_obs, rgb8, target_rgb8, de, run_id="run"):
+    def maybe_record(self, t: float, c_true, c_hat, c_obs, rgb8, target_rgb8, de, run_id="run", image=None):
+        """image 를 주면(실제 카메라 프레임) 그대로 저장하고, 없으면 합성 프레임을 만든다. c_true 는 실물에서는 None."""
         if t - self._last < self.every:
             return
         self._last = t
         name = f"{run_id}_{self.n:05d}"
-        img = self.cam.frame(np.asarray(c_obs), bubbles=int(self.cam.rng.integers(0, 3)))
+        if image is not None:
+            img = np.ascontiguousarray(image[:, :, :3]).astype(np.uint8)
+        else:
+            img = self.cam.frame(np.asarray(c_obs), bubbles=int(self.cam.rng.integers(0, 3)))
         write_png(self.dir / "images" / f"{name}.png", img)
         h, w = img.shape[:2]
         cls = 0 if de < self.de_match else 1
         # 액체 ROI = 프레임 중앙 80 % 박스 (YOLO: cls cx cy w h, 정규화)
         (self.dir / "labels" / f"{name}.txt").write_text(f"{cls} 0.5 0.5 0.8 0.8\n")
-        rec = dict(frame=name, t=round(t, 2), c_true=[round(float(v), 3) for v in c_true],
+        rec = dict(frame=name, t=round(t, 2), c_true=(None if c_true is None else [round(float(v), 3) for v in c_true]),
                    c_hat=[round(float(v), 3) for v in c_hat], rgb=[int(v) for v in rgb8],
                    target_rgb=[int(v) for v in target_rgb8], dE2000=round(float(de), 3), cls=cls)
         self.index.append(rec)

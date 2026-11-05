@@ -87,17 +87,23 @@ class Controller:
         self.aborted: str = ""
         self._rgb_buf: list = []
         self._strokes0: dict = {}
+        self._A_buf: list = []
 
     # ---- 보조
     def _go(self, t, s):
         self.events.append((round(t, 2), f"{self.state} → {s}"))
         self.state, self.t_state = s, t
 
-    def estimate(self, rgb8):
-        self._rgb_buf.append(np.asarray(rgb8, float))
-        self._rgb_buf = self._rgb_buf[-int(self.cfg.camera.fps * 2):]      # 최근 2 s 평균
+    def estimate(self, rgb8, A=None):
+        """rgb8: ROI 평균 코드값 (ΔE 용). A: 실제 카메라가 픽셀별 기준 영상으로 구한 흡광도 (있으면 농도 역산에 우선)."""
+        n = int(self.cfg.camera.fps * 2)                                   # 최근 2 s 평균
+        self._rgb_buf.append(np.asarray(rgb8, float)); self._rgb_buf = self._rgb_buf[-n:]
         self.rgb = np.mean(self._rgb_buf, axis=0)
-        self.c_hat = optics.rgb8_to_conc(self.E, self.I0, self.rgb, self.cfg.camera.gamma, self.cfg.camera.glare)
+        if A is not None:
+            self._A_buf.append(np.asarray(A, float)); self._A_buf = self._A_buf[-n:]
+            self.c_hat = optics.nnls3(self.E, np.mean(self._A_buf, axis=0))
+        else:
+            self.c_hat = optics.rgb8_to_conc(self.E, self.I0, self.rgb, self.cfg.camera.gamma, self.cfg.camera.glare)
         self.de = optics.delta_e2000(self.rgb, self.r.target_rgb8)
 
     def _send_doses(self, bus, plan):
@@ -116,8 +122,8 @@ class Controller:
         return self.cfg.reactor.mix_K / max(rpm, 1.0)
 
     # ---- 주기 실행 (AI 노드에서 호출)
-    def step(self, t, tele, rgb8, bus):
-        self.estimate(rgb8)
+    def step(self, t, tele, rgb8, bus, A=None):
+        self.estimate(rgb8, A)
         r = self.r
         if self.state == "PLAN":
             self.plan = plan_doses(self.cfg, self.cfg.reactor.heel_mL, r.c_target, r.dose_minutes, r.flow_factor)

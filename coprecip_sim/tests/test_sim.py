@@ -98,3 +98,75 @@ def test_tank_empty_stops_pump_and_dose_times_out():
     res = run_once(cfg, rec, 400.0, faults=["tank_empty:P-101@10"])
     assert any("NO_STROKE P-101" in a[1] for a in res["alarms"]) and res["aborted"].startswith("DOSE timeout")
     assert res["tank_mL"][0] <= cfg.tanks[0].low_level_mL + 0.01 and not res["matched"]
+
+
+# ---------------- 실제 카메라 코드 (하드웨어 없이 검증 가능한 부분)
+from cmysim.camera import CameraBase, CameraSettings, fit_E, Calibration, code_to_linear
+
+
+class FakeCamera(CameraBase):
+    """optics 모델로 만든 가짜 프레임을 내는 카메라 (RealSense 자리)."""
+    def __init__(self, s, E, I0, c, noise=0.0, seed=0):
+        super().__init__(s); self.E, self.I0, self.c, self.noise = E, I0, np.asarray(c, float), noise
+        self.rng = np.random.default_rng(seed)
+        yy, xx = np.mgrid[0:s.height, 0:s.width]
+        self.vig = 1 - 0.1 * (((xx - s.width / 2) / s.width) ** 2 + ((yy - s.height / 2) / s.height) ** 2)
+
+    def start(self): return self
+    def stop(self): pass
+    def _grab(self):
+        I = optics.absorbance_to_linear(self.E @ self.c, self.I0)[None, None, :] * self.vig[:, :, None]
+        I = I + self.rng.normal(0, self.noise, I.shape)
+        return optics.linear_to_code(I, 2.2).astype(np.uint8)
+
+
+def test_camera_pixelwise_reference_corrects_vignetting(tmp_path):
+    cfg = SystemConfig(); E, I0 = cfg.camera.E, cfg.camera.I0
+    s = CameraSettings(width=64, height=48, roi=[8, 8, 48, 32], ref_path=str(tmp_path / "ref.npy"))
+    cam = FakeCamera(s, E, I0, [0, 0, 0], noise=0.004)
+    cam.capture_reference(n=5, delay=0)
+    cam.c = np.array([20.0, 8.0, 15.0])
+    _, A, _ = cam.average(n=5, delay=0)
+    c_hat = optics.nnls3(E, A)
+    assert np.allclose(c_hat, cam.c, atol=0.8)
+    assert cam.roi_rgb8().shape == (3,) and cam.roi_crop().shape == (32, 48, 3)
+
+
+def test_fit_E_recovers_matrix(tmp_path):
+    cfg = SystemConfig(); E, I0 = cfg.camera.E, cfg.camera.I0
+    s = CameraSettings(width=32, height=32, roi=[4, 4, 24, 24], ref_path=str(tmp_path / "ref.npy"))
+    cam = FakeCamera(s, E, I0, [0, 0, 0], noise=0.002); cam.capture_reference(n=5, delay=0)
+    samples = []
+    for j, d in enumerate("CMY"):
+        for conc in (5, 10, 15, 20):
+            cam.c = np.eye(3)[j] * conc
+            _, A, sd = cam.average(n=3, delay=0)
+            samples.append(dict(dye=d, conc=conc, A=A.tolist(), rgb=[0, 0, 0], std=sd.tolist()))
+    E_fit, rep = fit_E(samples)
+    assert np.allclose(E_fit, E, atol=0.0015)
+    assert all(min(r["r2"][k] for k in range(3) if E[k, "CMY".index(d)] > 0.01) > 0.99 for d, r in rep.items())
+    cal = Calibration(E=E_fit.tolist(), I0=I0.tolist()); cal.save(tmp_path / "cal.json")
+    cfg2 = Calibration.load(tmp_path / "cal.json").apply_to(SystemConfig())
+    assert np.allclose(cfg2.camera.E, E_fit)
+
+
+def test_controller_accepts_absorbance_directly():
+    from cmysim.control import Controller
+    cfg = SystemConfig(); rec, _ = make_recipe(cfg, "#5A8F7B")
+    ctl = Controller(cfg, rec)
+    c = np.array([10.0, 5.0, 7.0])
+    rgb = optics.conc_to_rgb8(cfg.camera.E, cfg.camera.I0, c, 2.2, cfg.camera.glare)
+    ctl.estimate(rgb, A=cfg.camera.E @ c)
+    assert np.allclose(ctl.c_hat, c, atol=1e-6)
+    assert code_to_linear(255, 0) == 1.0 and abs(code_to_linear(128, 2.2) - (128 / 255) ** 2.2) < 1e-12
+
+
+def test_dataset_recorder_accepts_real_frame(tmp_path):
+    from cmysim.vision import DatasetRecorder
+    cfg = SystemConfig(); plant = SimPlant(cfg)
+    rec = DatasetRecorder(tmp_path / "ds", plant.camera, every_s=0.0)
+    frame = np.full((48, 64, 3), 120, np.uint8)
+    rec.maybe_record(0.0, None, np.zeros(3), None, np.array([120, 120, 120]), np.array([90, 143, 123]), 10.0, "real", image=frame)
+    rec.close()
+    assert (tmp_path / "ds/images/real_00000.png").stat().st_size > 100
+    assert '"c_true": null' in (tmp_path / "ds/index.jsonl").read_text()
