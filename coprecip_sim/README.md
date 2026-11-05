@@ -196,8 +196,8 @@ python -m cmysim.yolo_train gen --out ds_sim --runs 12                  # 시뮬
 python -m cmysim.yolo_train prepare --src ds_sim/* ds_run1 --out yolo_ds # 실행 단위 train/val 분할, data.yaml, regression.csv
 python -m cmysim.yolo_train train --data yolo_ds/data.yaml --model yolo11n.pt --epochs 50 --imgsz 320 --device 0
 python -m cmysim.yolo_train train --data yolo_ds_cls --task classify --model yolo11n-cls.pt --epochs 30
-python -m cmysim.yolo_train infer --weights runs/cmy/weights/best.pt --source yolo_ds/images/val --save pred/
-python -m cmysim.yolo_train export --weights runs/cmy/weights/best.pt    # ONNX (NMS 없음, 고정 크기) → Hailo 컴파일
+python -m cmysim.yolo_train infer --weights runs/detect/cmy/weights/best.pt --source yolo_ds/images/val --save pred/
+python -m cmysim.yolo_train export --weights runs/detect/cmy/weights/best.pt    # ONNX (NMS 없음, 고정 크기) → Hailo 컴파일
 python -m cmysim.yolo_train regress --csv yolo_ds/regression.csv         # 색→농도 회귀 (optics 역산과 비교)
 ```
 

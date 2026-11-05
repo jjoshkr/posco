@@ -4,7 +4,7 @@
   python -m cmysim.yolo_train prepare  --src ds_sim/* ds_run1 --out yolo_ds        train/val 분할 + data.yaml + 회귀 CSV
   python -m cmysim.yolo_train train    --data yolo_ds/data.yaml --model yolo11n.pt --epochs 50 --imgsz 320
   python -m cmysim.yolo_train train    --data yolo_ds_cls --task classify --model yolo11n-cls.pt      (프레임 상태 분류)
-  python -m cmysim.yolo_train export   --weights runs/detect/train/weights/best.pt                 ONNX (Hailo 컴파일용)
+  python -m cmysim.yolo_train export   --weights runs/detect/cmy/weights/best.pt                   ONNX (Hailo 컴파일용)
   python -m cmysim.yolo_train infer    --weights best.pt --source yolo_ds/images/val                 또는 --source camera.json
   python -m cmysim.yolo_train regress  --csv yolo_ds/regression.csv                                 색→농도 회귀 (YOLO 보조)
 
@@ -43,12 +43,14 @@ def cmd_gen(a):
 def cmd_prepare(a):
     srcs = [pathlib.Path(s) for s in a.src]
     out = pathlib.Path(a.out)
-    if out.exists() and a.clean:
-        shutil.rmtree(out)
+    cls_out = pathlib.Path(a.out + "_cls")
+    if a.clean:
+        for d in (out, cls_out):
+            if d.exists():
+                shutil.rmtree(d)
     for sp in ("train", "val"):
         (out / "images" / sp).mkdir(parents=True, exist_ok=True)
         (out / "labels" / sp).mkdir(parents=True, exist_ok=True)
-    cls_out = pathlib.Path(a.out + "_cls")
     for sp in ("train", "val"):
         for c in CLASSES[:2]:
             (cls_out / sp / c).mkdir(parents=True, exist_ok=True)
@@ -120,7 +122,9 @@ def cmd_train(a):
     YOLO = _yolo()
     model = YOLO(a.model)
     kw = dict(data=a.data, epochs=a.epochs, imgsz=a.imgsz, batch=a.batch, device=a.device, workers=a.workers,
-              project=a.project, name=a.name, exist_ok=True, seed=a.seed, verbose=True, plots=True)
+              name=a.name, exist_ok=True, seed=a.seed, verbose=True, plots=True)
+    if a.project:
+        kw["project"] = a.project                      # 기본: runs/<task>/<name>
     if a.task == "detect":
         # 색이 라벨 자체(on/off_target)이므로 색상 증강은 끈다
         kw.update(hsv_h=0.0, hsv_s=0.0, hsv_v=0.1, fliplr=0.5, mosaic=0.5 if a.epochs > 5 else 0.0)
@@ -142,6 +146,10 @@ def cmd_train(a):
 
 def cmd_export(a):
     YOLO = _yolo()
+    try:
+        import onnx  # noqa: F401
+    except ImportError:
+        sys.exit("onnx 가 없습니다: pip install onnx onnxslim")
     model = YOLO(a.weights)
     # Hailo Dataflow Compiler 는 NMS 없는 ONNX(opset ≤ 17 권장), 고정 입력 크기를 원한다
     path = model.export(format="onnx", imgsz=a.imgsz, opset=a.opset, simplify=True, dynamic=False, nms=False)
@@ -241,7 +249,7 @@ def main(argv=None):
     p = sp.add_parser("train"); p.add_argument("--data", required=True); p.add_argument("--task", choices=("detect", "classify"), default="detect")
     p.add_argument("--model", default="yolo11n.pt"); p.add_argument("--epochs", type=int, default=50); p.add_argument("--imgsz", type=int, default=320)
     p.add_argument("--batch", type=int, default=16); p.add_argument("--device", default="cpu"); p.add_argument("--workers", type=int, default=2)
-    p.add_argument("--project", default="runs"); p.add_argument("--name", default="cmy"); p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--project", default=None); p.add_argument("--name", default="cmy"); p.add_argument("--seed", type=int, default=0)
     p = sp.add_parser("export"); p.add_argument("--weights", required=True); p.add_argument("--imgsz", type=int, default=320); p.add_argument("--opset", type=int, default=12)
     p = sp.add_parser("infer"); p.add_argument("--weights", required=True); p.add_argument("--source", required=True)
     p.add_argument("--conf", type=float, default=0.25); p.add_argument("--imgsz", type=int, default=320); p.add_argument("--limit", type=int, default=50); p.add_argument("--save")
