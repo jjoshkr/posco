@@ -359,7 +359,7 @@ def test_anomaly_features_offline_equals_online():
     rows = [dict(t=0.5 * i, mA_101=12.0, mA_102=0.0, mA_103=8.0, spm_101=100.0, spm_102=0.0, spm_103=47.0, p_bar=0.8,
                  ph=7.0, temp_C=25.0, rpm=300.0, cC_hat=0.1 * i, cM_hat=0.0, cY_hat=0.05 * i, dE=30 - i) for i in range(30)]
     fb = AD.FeatureBuilder(); feats = fb.available_features(rows)
-    assert set(AD.FEATURES_OPT) <= set(feats)
+    assert {"ph", "temp_C", "rpm"} <= set(feats) and "flow_101" not in feats       # 로드셀 열이 없으면 유량 특징 제외
     X = fb.matrix(rows, feats)
     fb.reset(); Y = np.array([[f[k] for k in feats] for f in (fb.push(r) for r in rows)])
     assert np.allclose(X, Y)
@@ -394,3 +394,52 @@ def test_anomaly_conv_numpy_matches_torch():
     m2 = AD.ConvAutoencoder(10, 6, latent=4, hidden=8); m2.np_weights = m.np_weights
     s_n, _ = m2.score(Xw[:5])
     assert np.allclose(s_t, s_n, rtol=1e-4, atol=1e-5)
+
+
+# ---------------- 로드셀 유량
+from cmysim.loadcell import LoadCellConfig, FlowEstimator, FlowCheck, SimLoadCell
+from cmysim.process import StockTank
+
+
+def test_flow_estimator_slope_and_disturbance():
+    lc = LoadCellConfig(backend="sim"); est = FlowEstimator(lc, 0); chk = FlowCheck()
+    rng = np.random.default_rng(1)
+    t, g = 0.0, 2000.0
+    for i in range(400):                               # 40 s @ 10 Hz, 20 mL/min = 0.3333 g/s
+        t = i * 0.1; g = 2000.0 - 20 / 60 * t
+        st = est.push(t, g + rng.normal(0, 0.05))
+    assert st["valid"] and abs(st["flow_mL_min"] - 20.0) < 0.6 and abs(st["delivered_mL"] - 13.3) < 0.4
+    assert chk.check(t, "P-101", 20.0, st)[0] == "OK"
+    st = est.push(t + 0.1, g + 15.0)                   # 병을 건드림 → 무효
+    assert not st["valid"] and est.n_disturb == 1 and chk.check(t + 0.1, "P-101", 20.0, st)[0] == "DISTURBED"
+    # 공기 유입: 질량은 절반 속도로만 줄어듦 → 6 s 유지 후 FLOW_LOW
+    est2 = FlowEstimator(lc, 0); chk2 = FlowCheck(); status = "OK"
+    for i in range(400):
+        tt = i * 0.1; st2 = est2.push(tt, 2000.0 - 10 / 60 * tt + rng.normal(0, 0.05))
+        status, ratio = chk2.check(tt, "P-101", 20.0, st2)
+    assert status == "FLOW_LOW" and abs(ratio - 0.5) < 0.1
+    assert chk2.check(0, "P-102", 20.0, dict(mass_g=50.0, low=True, valid=True, flow_mL_min=0))[0] == "TANK_LOW"
+
+
+def test_ionode_loadcell_telemetry_and_volume_mismatch():
+    cfg = SystemConfig(seed=11); rec, _ = make_recipe(cfg, target_cmy=[20, 8, 15], dose_minutes=1.0)
+    res = run_once(cfg, rec, 200.0, faults=["pump_air:P-101@20"])
+    h = res["hist"]
+    assert h["flow"].shape[1] == 3 and np.nanmax(h["mass"][:, 0]) > 1900           # 로드셀 질량 기록
+    valid = ~np.isnan(h["flow"][:, 1])
+    assert abs(np.nanmedian(h["flow"][valid & (h["cmd_mA"][:, 1] > 5), 1]) - np.nanmedian(
+        h["fb_spm"][valid & (h["cmd_mA"][:, 1] > 5), 1]) * 0.19) < 1.0                 # 정상 펌프: 로드셀 ≈ 스트로크 유량
+    al = " ".join(a[1] for a in res["alarms"])
+    assert "FLOW_LOW P-101" in al and "VOLUME_MISMATCH P-101" in al
+    assert "FLOW_LOW P-102" not in al and "FLOW_LOW P-103" not in al
+    # 이상탐지 특징에 로드셀 유량이 들어가는지
+    from cmysim.experiment import save_timeseries_csv
+    import tempfile, os
+    with tempfile.TemporaryDirectory() as d:
+        save_timeseries_csv(res, os.path.join(d, "ts.csv"))
+        rows = AD.resample(AD.canonical_rows(os.path.join(d, "ts.csv")), 0.5)
+    fb = AD.FeatureBuilder(); feats = fb.available_features(rows)
+    assert "flow_101" in feats and "r_flow_101" in feats
+    X = fb.matrix(rows, feats); j = feats.index("r_flow_101")
+    t = np.array([r["t"] for r in rows])
+    assert np.nanmean(X[(t > 40) & (t < 55), j]) > 5.0                               # 공기 유입 후 기대−실측 양수

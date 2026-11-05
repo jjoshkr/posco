@@ -18,6 +18,7 @@ from .config import SystemConfig, PUMP_IDS, VALVE_IDS
 from .hardware import PumpChannel, GammaXPump, SolenoidValveNC, Mcc118, Mcc134, Stirrer
 from .process import StockTank, Reactor
 from .vision import SyntheticCamera
+from .loadcell import LoadCellConfig, SimLoadCell, FlowEstimator, FlowCheck
 
 
 # ------------------------------------------------------------------ 메시지 버스
@@ -79,6 +80,7 @@ class SimPlant:
         self.stirrer.rpm = cfg.reactor.rpm
         self.tc = Mcc134(self.rng)
         self.camera = SyntheticCamera(cfg.camera, self.rng)
+        self.loadcells = SimLoadCell(LoadCellConfig(backend="sim"), self.tanks, self.rng)
         self.run_enabled = False
         self.t = 0.0
 
@@ -94,6 +96,7 @@ class SimPlant:
             pump.step(ch.actual_mA, dt, valve.is_open, deliver)
         self.reactor.rpm = self.stirrer.step(self.stirrer_mA, dt)
         self.reactor.step(dt)
+        self.loadcells.step(dt)
         self.t += dt
 
 
@@ -129,6 +132,9 @@ class SimHAL(HAL):
     def read_temp_C(self):
         return self.p.tc.read_C(self.p.reactor.temp_C)
 
+    def read_tank_mass_g(self):
+        return self.p.loadcells.read_g()
+
     def step(self, dt):
         self.p.step(dt)
 
@@ -155,6 +161,14 @@ class IONode:
         self.t = 0.0
         self.stirrer_mA = 4.0 + 16.0 * cfg.reactor.rpm / cfg.reactor.rpm_max
         self._cmd_t: dict = {}
+        # 로드셀 유량 감시 (HAL 이 read_tank_mass_g 를 주면 켜짐)
+        self.has_loadcell = hasattr(hal, "read_tank_mass_g")
+        self.lc_cfg = getattr(hal, "lc_cfg", None) or LoadCellConfig(backend="sim")
+        self.flow_est = {pid: FlowEstimator(self.lc_cfg, j) for j, pid in enumerate(PUMP_IDS)}
+        self.flow_chk = FlowCheck()
+        self.flow_state = {pid: dict(mass_g=None, flow_mL_min=0.0, delivered_mL=0.0, valid=False, low=False, status="NO_DATA", ratio=float("nan"))
+                           for pid in PUMP_IDS}
+        self._next_lc = 0.0
         self.safe("boot")
 
     # ---- 안전
@@ -202,6 +216,9 @@ class IONode:
             pid = m["id"]
             self.dose_target[pid] = float(m["strokes"])
             self._set_pump(pid, float(m["mA"]))
+        elif c == "batch_reset":                # 스트로크 누적·로드셀 누적 기준을 지금으로
+            for pid in PUMP_IDS:
+                self.dosed_mL[pid] = 0.0; self.strokes[pid] = 0.0; self.flow_est[pid].reset_batch()
         elif c == "stop":
             self._set_pump(m["id"], 0.0)
             self.dose_target[m["id"]] = None
@@ -257,6 +274,29 @@ class IONode:
             else:
                 self._cmd_t.pop(pid, None)
 
+        if self.has_loadcell and t >= self._next_lc:
+            self._next_lc = t + 1.0 / self.lc_cfg.rate_hz
+            try:
+                masses = self.hal.read_tank_mass_g()
+            except Exception as e:
+                masses = [None] * 3; self.alarm(f"LOADCELL read error: {e!r}")
+            for j, pid in enumerate(PUMP_IDS):
+                st = self.flow_est[pid].push(t, masses[j] if j < len(masses) else None)
+                exp_spm = self.cfg.pump.max_spm * max(0.0, (self.cmd_mA[pid] - self.cfg.pump.i_start_mA)) / (self.cfg.pump.i_full_mA - self.cfg.pump.i_start_mA) if self.cmd_mA[pid] >= self.cfg.pump.i_start_mA else 0.0
+                exp_flow = min(exp_spm, self.cfg.pump.max_spm) * self.cfg.pump.stroke_mL * self.cfg.pump.stroke_length
+                status, ratio = self.flow_chk.check(t, pid, exp_flow, st)
+                st.update(status=status, ratio=None if ratio != ratio else round(ratio, 3))
+                self.flow_state[pid] = st
+                if status == "FLOW_LOW":
+                    self.alarm(f"FLOW_LOW {pid}: loadcell {st['flow_mL_min']:.1f} vs expected {exp_flow:.1f} mL/min (air/tube wear/stall?)")
+                elif status == "FLOW_HIGH":
+                    self.alarm(f"FLOW_HIGH {pid}: loadcell {st['flow_mL_min']:.1f} vs expected {exp_flow:.1f} mL/min (siphon/leak?)")
+                elif status == "TANK_LOW":
+                    self.alarm(f"TANK_LOW {pid}: {st['mass_g']} g")
+                # 스트로크 계수 vs 로드셀 누적 (배치 기준)
+                if self.dosed_mL[pid] > 10.0 and st["valid"] and st["delivered_mL"] < 0.7 * self.dosed_mL[pid]:
+                    self.alarm(f"VOLUME_MISMATCH {pid}: strokes say {self.dosed_mL[pid]:.1f} mL, loadcell {st['delivered_mL']:.1f} mL")
+
         est_V = self.cfg.reactor.heel_mL + sum(self.dosed_mL.values())
         if est_V > self.cfg.reactor.v_max_mL * 0.98 and self.mode == "RUN":
             self.safe("reactor volume limit (stroke-count estimate)")
@@ -279,7 +319,8 @@ class IONode:
                                  dosing=self.dose_target[pid] is not None) for pid in PUMP_IDS},
                 valves=dict(self.valve_on), ph=round(self.hal.read_ph(), 3),
                 pressure_bar=round(p_bar, 3), temp_C=round(self.hal.read_temp_C(), 2),
-                est_volume_mL=round(est_V, 1), alarms=len(self.alarms)))
+                est_volume_mL=round(est_V, 1), alarms=len(self.alarms),
+                tanks={pid: dict(self.flow_state[pid]) for pid in PUMP_IDS} if self.has_loadcell else {}))
 
 
 

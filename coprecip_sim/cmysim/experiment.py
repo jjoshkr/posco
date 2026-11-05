@@ -67,7 +67,7 @@ def run_once(cfg: SystemConfig, recipe: Recipe, duration_s: float = 600.0, fault
     fault_list = sorted(parse_fault(f) for f in faults)
 
     hist = {k: [] for k in ("t", "c_true", "c_obs", "c_hat", "rgb", "dE", "dE_true", "cmd_mA", "fb_spm",
-                            "tank_mL", "V_mL", "state", "mode", "pressure", "ph", "temp", "rpm")}
+                            "tank_mL", "V_mL", "state", "mode", "pressure", "ph", "temp", "rpm", "flow", "mass")}
     t, n = 0.0, int(round(duration_s / cfg.dt))
     t_done = None
     for k in range(n + 1):
@@ -99,6 +99,8 @@ def run_once(cfg: SystemConfig, recipe: Recipe, duration_s: float = 600.0, fault
             hist["mode"].append(io.mode)
             hist["pressure"].append(max(pp.s.pressure_bar for pp in plant.pumps.values()))
             hist["ph"].append(io.hal.read_ph()); hist["temp"].append(io.hal.read_temp_C()); hist["rpm"].append(plant.reactor.rpm)
+            hist["flow"].append([io.flow_state[p]["flow_mL_min"] if io.flow_state[p]["valid"] else float("nan") for p in PUMP_IDS])
+            hist["mass"].append([io.flow_state[p]["mass_g"] if io.flow_state[p]["mass_g"] is not None else float("nan") for p in PUMP_IDS])
         if rec:
             rec.maybe_record(t, plant.reactor.c_true, ctl.c_hat, plant.reactor.c_obs, ctl.rgb,
                              recipe.target_rgb8, ctl.de, run_id)
@@ -109,8 +111,8 @@ def run_once(cfg: SystemConfig, recipe: Recipe, duration_s: float = 600.0, fault
     if rec:
         rec.close()
 
-    for key in ("c_true", "c_obs", "c_hat", "rgb", "cmd_mA", "fb_spm", "tank_mL"):
-        hist[key] = np.array(hist[key])
+    for key in ("c_true", "c_obs", "c_hat", "rgb", "cmd_mA", "fb_spm", "tank_mL", "flow", "mass"):
+        hist[key] = np.array(hist[key], float)
     for key in ("t", "dE", "dE_true", "V_mL", "pressure", "ph", "temp", "rpm"):
         hist[key] = np.array(hist[key], float)
 
@@ -174,13 +176,14 @@ def save_timeseries_csv(res: dict, path):
         w.writerow(["t_s", "state", "io_mode", "cC_true", "cM_true", "cY_true", "cC_hat", "cM_hat", "cY_hat",
                     "R", "G", "B", "dE2000_cam", "dE2000_true", "mA_101", "mA_102", "mA_103",
                     "spm_101", "spm_102", "spm_103", "tankC_mL", "tankM_mL", "tankY_mL", "reactor_mL", "p_bar",
-                    "ph", "temp_C", "rpm"])
+                    "ph", "temp_C", "rpm", "flow_101", "flow_102", "flow_103", "mass_101", "mass_102", "mass_103"])
         for i in range(len(h["t"])):
             w.writerow([h["t"][i], h["state"][i], h["mode"][i], *np.round(h["c_true"][i], 3), *np.round(h["c_hat"][i], 3),
                         *np.round(h["rgb"][i], 1), round(h["dE"][i], 3), round(h["dE_true"][i], 3),
                         *np.round(h["cmd_mA"][i], 2), *np.round(h["fb_spm"][i], 1), *np.round(h["tank_mL"][i], 1),
                         round(h["V_mL"][i], 1), round(h["pressure"][i], 2),
-                        round(h["ph"][i], 3), round(h["temp"][i], 2), round(h["rpm"][i], 1)])
+                        round(h["ph"][i], 3), round(h["temp"][i], 2), round(h["rpm"][i], 1),
+                        *np.round(h["flow"][i], 3), *np.round(h["mass"][i], 2)])
 
 
 def plot_result(res: dict, path):

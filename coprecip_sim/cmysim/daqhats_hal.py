@@ -52,6 +52,7 @@ class IOConfig:
     run_enable_active_high: bool = True
     ai_average: int = 4              # 잡음 줄이려고 a_in_read 평균 횟수
     cal: dict = field(default_factory=dict)   # 2점 교정 {"P-101": {"gain": 1.0, "offset": 0.0}}
+    loadcell: dict = field(default_factory=dict)  # {"config": "loadcell.json"} 이 있으면 HX711 리더를 붙인다 (serial/gpio)
 
     @classmethod
     def load(cls, path="io_node.json"):
@@ -72,6 +73,11 @@ class DaqHatsHAL(HAL):
         self.ao_cache: dict = {}
         self.dio_cache: dict = {}
         self.last_ef: dict = {}
+        self.lc = None; self.lc_cfg = None
+        if self.io.loadcell:
+            from .loadcell import LoadCellConfig, open_reader
+            self.lc_cfg = LoadCellConfig.load(self.io.loadcell.get("config", "loadcell.json"))
+            self.lc = open_reader(self.lc_cfg)
         if open_boards:
             self.open()
 
@@ -177,6 +183,11 @@ class DaqHatsHAL(HAL):
                getattr(self.dh.mcc134, "COMMON_MODE_TC_VALUE", -7777.0)}
         return float("nan") if v in bad else float(v)
 
+    def read_tank_mass_g(self):
+        if self.lc is None:
+            raise AttributeError("loadcell not configured")
+        return self.lc.read_g()
+
     def read_ef_faults(self) -> dict:
         """XTR111 EF 핀: Low = 부하 단선/과열. {'P-101': True(고장), ...}"""
         out = {}
@@ -190,6 +201,11 @@ class DaqHatsHAL(HAL):
 
     def close(self):
         """모든 출력을 안전 상태로 (safe 와 같은 순서)."""
+        if self.lc is not None:
+            try:
+                self.lc.stop()
+            except Exception:
+                pass
         try:
             self.run_enable(False)
             for pid in self.io.ao:

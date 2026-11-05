@@ -256,6 +256,36 @@ python -m cmysim.yolo_train regress --csv yolo_ds/regression.csv         # 색�
 - `regress` 는 numpy 만으로 ROI RGB → 농도 릿지 회귀를 학습합니다. 시뮬레이션에서는 optics 역산과 비슷한 0.3~0.4 mg/L 수준이며,
   실제 장치에서 Beer–Lambert 선형 가정이 깨지는 짙은 농도 구간의 보정 곡선으로 쓸 수 있습니다.
 
+## 로드셀(HX711) 중량 유량 계측 (`loadcell.py`)
+
+스톡병마다 로드셀을 두고 무게 감소율로 **실제 유량**을 잽니다. 정량펌프는 개루프라 스트로크는 세는데 액이 안 나가는 고장
+(공기 유입, 튜브 마모, 체크밸브 역류)을 펌프 피드백만으로는 알 수 없고, 이 질량유량과 지령 유량·스트로크 부피의 차이가
+그 고장 신호이자 이상탐지의 정답 라벨이 됩니다.
+
+| 연결 | 설명 |
+|---|---|
+| `serial` (권장) | Arduino/ESP32 가 HX711 3개를 읽어 USB 시리얼로 `ms,raw0,raw1,raw2` 를 10 Hz 로 보냄. 스케치 `firmware/hx711_bridge.ino`. I/O 노드 USB 에 꽂음 |
+| `gpio` | Pi 5 GPIO 직결(lgpio). MCC HAT 이 안 쓰는 GPIO(5, 6, 22~25, 27)를 스태킹 헤더로 빼야 하고 타이밍이 민감 |
+| `sim` | 시뮬레이터 탱크에서 raw 생성(잡음·드리프트·병 건드림) |
+
+```bash
+python -m cmysim.loadcell read  --backend serial --port /dev/ttyUSB0   # raw 확인
+python -m cmysim.loadcell tare  --ch 0                                  # 빈 병 상태를 0 으로 (채널마다)
+python -m cmysim.loadcell calib --ch 0 --mass 500                       # 기준 분동 500 g → counts_per_g
+python -m cmysim.loadcell flow                                          # 질량·유량·누적 실시간
+python -m cmysim.loadcell demo                                          # 시뮬레이션: 50 s 공기 유입, 80 s 병 건드림
+```
+
+처리는 raw → 질량(g) → 밀도로 mL → 10 s 이동창 최소제곱 기울기 = 유량입니다. 병을 건드리면(회귀 예측에서 3 g 이상 점프)
+그 창을 무효 처리하고 3 s 뒤 다시 쌓습니다. I/O 노드는 1 Hz 마다 로드셀을 읽어 텔레메트리 `tanks` 에 질량·유량·누적·상태를
+싣고, 지령 유량 대비 60 % 미만이 6 s 이상 이어지면 `FLOW_LOW`, 스트로크 누적 대비 로드셀 누적이 70 % 미만이면
+`VOLUME_MISMATCH`, 질량이 기준 아래면 `TANK_LOW` 알람을 냅니다. 실제 보드에서는 `io_node.json` 에
+`"loadcell": {"config": "loadcell.json"}` 을 넣으면 붙습니다. 이상탐지 특징에도 `flow_*`, `r_flow_*`(기대 − 실측)가
+자동으로 들어갑니다(로드셀 열이 있는 로그에서만).
+
+주의: 로드셀 한 대당 5 kg 급이면 HX711 24 bit 에서 분해능은 충분하지만, 교반기 진동·튜브 장력이 병에 전달되면 잡음이
+됩니다. 병을 받침대 위에 두고 튜브를 느슨하게 고정하세요. 계측 간격 10 Hz 에 창 10 s 면 1 mL/min 수준 유량 차이가 보입니다.
+
 ## 이상탐지: 다변량 시계열 오토인코더 (`anomaly.py`)
 
 대화의 AI 설계 세 번째 갈래입니다. 펌프 지령/피드백, 스트로크 잔차, 물질수지 잔차(스트로크로 기대되는 농도 − 카메라 추정),
@@ -281,9 +311,10 @@ python -m cmysim.ai_node_main --io-ip 192.168.10.2 --recipe recipes/target_match
 | pca | 0.39 % | 16 / 16 | 0.9 s |
 | conv | 0.10 % | 14 / 16 | 0.6 s |
 
-온도 급변·pH 드리프트·탱크 고갈·신호 단선·카메라 드리프트는 1 s 안에, 교반 저하와 공기 유입은 스트로크 잔차·물질수지 잔차로
-10 s 안팎에 잡힙니다. 스톡 농도 오차(−15 %)는 물질수지 잔차가 천천히 커져 1~2 분 뒤에 잡히거나 놓칩니다(실제 로드셀 유량을
-특징에 넣으면 확실해집니다). 도징이 끝난 뒤의 밸브 고착처럼 증상이 없는 고장은 탐지 대상이 아닙니다.
+온도 급변·pH 드리프트·탱크 고갈·신호 단선·카메라 드리프트는 1 s 안에, 교반 저하는 스트로크 잔차·물질수지 잔차로 10 s
+안팎에 잡힙니다. 공기 유입은 카메라 물질수지만으로는 12 s 걸렸지만 로드셀 유량 특징(`r_flow_*`)을 넣으면 0 s 에 잡힙니다.
+스톡 농도 오차(−15 %)는 스톡 자체가 묽은 것이라 유량은 정상이고 물질수지 잔차만 천천히 커져 1~2 분 뒤에 잡히거나 놓칩니다.
+도징이 끝난 뒤의 밸브 고착처럼 증상이 없는 고장은 탐지 대상이 아닙니다.
 **펌프 채널 2점 교정이 전제**입니다. 교정 전에는 채널 이득오차(±1.5 %)가 스트로크 잔차에 그대로 들어가 정상 편차로 학습됩니다.
 실제 장치에서는 정상 실행 로그(`ai_node_log.csv`)를 `ad_ds/normal/<run>/timeseries.csv` 로 모아 같은 명령으로 다시 학습합니다.
 
@@ -324,6 +355,8 @@ coprecip_sim/
 │                      학습: yolo_train (gen/prepare/train/export/infer/regress), yolo_infer (VisionEvents: .pt/.onnx/.hef)
 │                      레시피: recipe (YAML → 스텝 실행기), recipe_cli (example/validate/expand/run)
 │                      이상탐지: anomaly (특징, PCA/1D-CNN 오토인코더, CUSUM, gen/train/eval/score, 온라인 Detector)
+│                      로드셀: loadcell (HX711 serial/gpio/sim, FlowEstimator, FlowCheck, tare/calib/flow CLI)
+├── firmware/hx711_bridge.ino  Arduino HX711×3 → USB 시리얼 브리지
 ├── recipes/           예시 레시피 3개
 ├── tests/fake_daqhats.py  PC 에서 I/O 노드 코드를 시험하는 가짜 daqhats
 ├── tests/test_sim.py  물질수지·광학 역산·펌프 곡선·DAC 교정·인터록·워치독·폐루프·고장 테스트

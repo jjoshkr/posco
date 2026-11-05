@@ -128,7 +128,8 @@ def main(argv=None):
     logf = open(a.log, "w", newline=""); w = csv.writer(logf)
     w.writerow(["t_s", "state", "R", "G", "B", "A_R", "A_G", "A_B", "cC_hat", "cM_hat", "cY_hat", "dE2000", "io_mode",
                 "mA_101", "mA_102", "mA_103", "spm_101", "spm_102", "spm_103", "ph", "p_bar", "temp_C",
-                "yolo_liquid", "yolo_conf", "yolo_bubbles", "yolo_ms", "ad_ratio", "ad_cusum", "ad_alarm", "ad_top"])
+                "yolo_liquid", "yolo_conf", "yolo_bubbles", "yolo_ms", "ad_ratio", "ad_cusum", "ad_alarm", "ad_top",
+                "flow_101", "flow_102", "flow_103", "mass_101", "mass_102", "mass_103", "flow_status"])
     stop = {"flag": False}
     signal.signal(signal.SIGINT, lambda *_: stop.__setitem__("flag", True))
     signal.signal(signal.SIGTERM, lambda *_: stop.__setitem__("flag", True))
@@ -173,6 +174,8 @@ def main(argv=None):
                 row_ad = dict(t=t, mA_101=pm["P-101"]["cmd_mA"], mA_102=pm["P-102"]["cmd_mA"], mA_103=pm["P-103"]["cmd_mA"],
                               spm_101=pm["P-101"]["spm"], spm_102=pm["P-102"]["spm"], spm_103=pm["P-103"]["spm"],
                               p_bar=tele["pressure_bar"], ph=tele["ph"], temp_C=tele["temp_C"], rpm=float("nan"),
+                              **{f"flow_{k}": (tk.get("flow_mL_min") if tk.get("valid") else float("nan"))
+                                 for k, tk in ((p[-3:], tele.get("tanks", {}).get(p, {})) for p in ("P-101", "P-102", "P-103"))},
                               cC_hat=float(c_hat[0]), cM_hat=float(c_hat[1]), cY_hat=float(c_hat[2]), dE=float(de_v))
                 o = adet.push(row_ad)
                 if o:
@@ -185,7 +188,10 @@ def main(argv=None):
                         *([tele["ph"], tele["pressure_bar"], tele["temp_C"]] if tele else ["", "", ""]),
                         yolo_res["liquid"] or "", round(yolo_res["liquid_conf"], 3), yolo_res["bubbles"], round(yolo_res["ms"], 1),
                         round(ad_res["ratio"], 3), round(ad_res["cusum"], 2), int(ad_res["alarm"] or ad_res["cusum_alarm"]),
-                        ad_res["top"][0][0] if ad_res["top"] else ""])
+                        ad_res["top"][0][0] if ad_res["top"] else "",
+                        *[(tele.get("tanks", {}).get(p, {}).get("flow_mL_min", "") if tele else "") for p in ("P-101", "P-102", "P-103")],
+                        *[(tele.get("tanks", {}).get(p, {}).get("mass_g", "") if tele else "") for p in ("P-101", "P-102", "P-103")],
+                        ";".join(f"{p[-3:]}:{tele['tanks'][p]['status']}" for p in tele.get("tanks", {}) if tele["tanks"][p]["status"] != "OK") if tele else ""])
             if ds:
                 ds.maybe_record(t, None, c_hat, None, rgb, rec.target_rgb8, de_v, run_id="real", image=frame)
             if a.preview:

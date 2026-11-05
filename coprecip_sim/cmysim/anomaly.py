@@ -26,7 +26,7 @@ STROKE_ML, I_START, I_FULL, MAX_SPM = 0.19, 4.4, 19.6, 200.0
 FEATURES_BASE = ["mA_101", "mA_102", "mA_103", "spm_101", "spm_102", "spm_103",
                  "r_spm_101", "r_spm_102", "r_spm_103", "r_mb_C", "r_mb_M", "r_mb_Y",
                  "cC_hat", "cM_hat", "cY_hat", "dE", "d_dE", "p_bar"]
-FEATURES_OPT = ["ph", "temp_C", "rpm"]
+FEATURES_OPT = ["ph", "temp_C", "rpm", "flow_101", "flow_102", "flow_103", "r_flow_101", "r_flow_102", "r_flow_103"]
 
 
 # ------------------------------------------------------------------ 특징
@@ -44,6 +44,7 @@ def canonical_rows(path) -> list[dict]:
         out.append(dict(t=g("t_s", "t"), mA_101=g("mA_101"), mA_102=g("mA_102"), mA_103=g("mA_103"),
                         spm_101=g("spm_101"), spm_102=g("spm_102"), spm_103=g("spm_103"), p_bar=g("p_bar"),
                         ph=g("ph"), temp_C=g("temp_C"), rpm=g("rpm"),
+                        flow_101=g("flow_101"), flow_102=g("flow_102"), flow_103=g("flow_103"),
                         cC_hat=g("cC_hat"), cM_hat=g("cM_hat"), cY_hat=g("cY_hat"), dE=g("dE2000_cam", "dE2000")))
     return out
 
@@ -54,13 +55,18 @@ def resample(rows: list[dict], dt=0.5) -> list[dict]:
         return rows
     out, bucket, t0 = [], [], rows[0]["t"]
     keys = [k for k in rows[0] if k != "t"]
+
+    def mean_or_nan(vals):
+        v = [x for x in vals if x == x]                      # NaN 제외 (전부 NaN 이면 NaN, 경고 없이)
+        return float(np.mean(v)) if v else float("nan")
+
     for r in rows:
         if r["t"] - t0 >= dt and bucket:
-            out.append(dict(t=t0, **{k: float(np.nanmean([b[k] for b in bucket])) for k in keys}))
+            out.append(dict(t=t0, **{k: mean_or_nan([b[k] for b in bucket]) for k in keys}))
             t0 += dt * max(1, int((r["t"] - t0) // dt)); bucket = []
         bucket.append(r)
     if bucket:
-        out.append(dict(t=t0, **{k: float(np.nanmean([b[k] for b in bucket])) for k in keys}))
+        out.append(dict(t=t0, **{k: mean_or_nan([b[k] for b in bucket]) for k in keys}))
     return out
 
 
@@ -78,7 +84,8 @@ class FeatureBuilder:
     def available_features(self, rows):
         feats = list(FEATURES_BASE)
         for k in FEATURES_OPT:
-            if any(not math.isnan(r.get(k, float("nan"))) for r in rows[:50]):
+            src = k.replace("r_flow", "flow")                      # r_flow_* 는 flow_* 가 있을 때 함께
+            if any(not math.isnan(r.get(src, float("nan"))) for r in rows[:200]):
                 feats.append(k)
         return feats
 
@@ -99,6 +106,12 @@ class FeatureBuilder:
         f.update(zip(["r_spm_101", "r_spm_102", "r_spm_103"], r_spm)); f.update(zip(["r_mb_C", "r_mb_M", "r_mb_Y"], c_exp - c_hat))
         f.update(cC_hat=c_hat[0], cM_hat=c_hat[1], cY_hat=c_hat[2], dE=dE, d_dE=d_dE, p_bar=r.get("p_bar", 0.0),
                  ph=r.get("ph", float("nan")), temp_C=r.get("temp_C", float("nan")), rpm=r.get("rpm", float("nan")))
+        # 로드셀 유량: 무효 구간(NaN) 은 기대 유량으로 메워 잔차 0 (건드림을 고장으로 오인하지 않게)
+        exp_flow = spm_expected(mA) * STROKE_ML
+        for j, k in enumerate(("101", "102", "103")):
+            fl = r.get("flow_" + k, float("nan"))
+            fl = exp_flow[j] if (fl is None or math.isnan(fl)) else fl
+            f["flow_" + k] = fl; f["r_flow_" + k] = exp_flow[j] - fl
         return f
 
     def matrix(self, rows: list[dict], features: list[str]) -> np.ndarray:
