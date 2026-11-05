@@ -128,16 +128,21 @@ class PHGains:
 class PHSafety:
     ph_max: float = 12.0
     ph_min: float = 2.0
-    max_total_mL: float = 500.0
+    max_total_mL: float = 500.0          # 염기 배치 최대
+    max_acid_mL: float = 500.0           # 산 배치 최대
+    min_switch_s: float = 10.0           # 염기↔산 방향 전환 최소 간격 (시약 낭비·채터링 방지)
     stuck_s: float = 60.0      # 이 시간 동안 최대 출력인데 pH 변화 < stuck_dpH 면 프로브/펌프 고장
     stuck_dpH: float = 0.05
 
 
 class PHController:
     def __init__(self, setpoint: float, gains: PHGains | None = None, safety: PHSafety | None = None,
-                 naoh_mol_L: float = 0.1, mode: str = "pid", V_L: float = 2.0):
+                 naoh_mol_L: float = 0.1, mode: str = "pid", V_L: float = 2.0, acid_mol_L: float | None = None):
+        """acid_mol_L 을 주면 양방향: update() 가 음수(산 유량 mL/min)도 낸다."""
         self.sp, self.g, self.s = setpoint, gains or PHGains(), safety or PHSafety()
-        self.naoh, self.V = naoh_mol_L, V_L
+        self.naoh, self.V, self.acid = naoh_mol_L, V_L, acid_mol_L
+        self.bidirectional = acid_mol_L is not None
+        self.acid_mL = 0.0; self._last_dir = 0; self._last_switch_t = -1e9
         self.beta = self.g.beta0_mol_L_pH          # 완충용량 추정 [mol/L/pH]
         self._dose_hist: list = []                 # (t, mmol) 최근 투입
         self._beta_obs: list = []                  # (pH, 누적 mmol) 관측 → 기울기
@@ -172,21 +177,34 @@ class PHController:
             self.fault = f"PH_LIMIT {meas:.2f}"; self.out = 0.0; return 0.0
         if self.total_mL >= self.s.max_total_mL:
             self.fault = f"NAOH_VOLUME_LIMIT {self.total_mL:.0f} mL"; self.out = 0.0; return 0.0
+        if self.acid_mL >= self.s.max_acid_mL:
+            self.fault = f"ACID_VOLUME_LIMIT {self.acid_mL:.0f} mL"; self.out = 0.0; return 0.0
         if self.mode == "relay":
             out = self._relay(t, meas)
             if dt > 0:
                 self._record_dose(t, out / 60.0 * dt * self.naoh, meas)
         else:
             out = self._pid(t, meas, dt)
+        # 방향 전환 간격 (양방향): 반대 방향으로 바뀐 지 min_switch_s 안이면 0
+        d_new = 1 if out > 0 else (-1 if out < 0 else 0)
+        if d_new != 0 and self._last_dir != 0 and d_new != self._last_dir and t - self._last_switch_t < self.s.min_switch_s:
+            out = 0.0; d_new = 0
+        if d_new != 0 and d_new != self._last_dir:
+            self._last_switch_t = t
+        if d_new != 0:
+            self._last_dir = d_new
         # 프로브/펌프 고착: 최대 출력인데 pH 가 안 움직임
-        if out >= self.g.out_max * 0.95:
+        if abs(out) >= self.g.out_max * 0.95:
             if self._stuck_t0 is None:
                 self._stuck_t0, self._stuck_ph0 = t, meas
             elif t - self._stuck_t0 > self.s.stuck_s and abs(meas - self._stuck_ph0) < self.s.stuck_dpH:
                 self.fault = "STUCK: full dosing, pH not moving (probe/pump/empty tank?)"; out = 0.0
         else:
             self._stuck_t0 = None
-        self.total_mL += out / 60.0 * dt
+        if out > 0:
+            self.total_mL += out / 60.0 * dt
+        else:
+            self.acid_mL += -out / 60.0 * dt
         self.out = out
         self.prev_t, self.prev_meas = t, meas
         self.log.append((round(t, 2), round(meas, 3), round(self.sp, 3), round(out, 3)))
@@ -206,26 +224,31 @@ class PHController:
             a = dt / (self.g.d_filter_s + dt)
             self.d_state = raw if self.d_state is None else self.d_state + a * (raw - self.d_state)
             d = self.g.Kd * self.d_state
+        sgn = 1.0 if e >= 0 else -1.0
+        acid_scale = (self.naoh / self.acid) if (self.bidirectional and self.acid) else 1.0   # 산 농도가 다르면 등가 유량으로 환산
         p_term = self.g.Kp * e + d
         governed = False
-        if e > 0:
+        if e > 0 or (e < 0 and self.bidirectional):
+            mag = abs(p_term)
             if self.g.cap_enabled:
-                p_term = min(p_term, self._cap_mL_min(t, e))  # 접근 속도 상한 1: 완충용량 추정
+                mag = min(mag, self._cap_mL_min(t, abs(e), sgn))   # 접근 속도 상한 1: 완충용량 추정
             if self.g.rate_governor:
-                slope = self._ph_slope(t)                      # 접근 속도 상한 2: 관측된 상승률. 지연 동안 올라갈 양이 남은 오차의 절반을 넘지 않게
-                slope_max = max(e, 0.05) / (2.0 * self.g.lag_s) + max(self.titrate_rate, 0.0)   # 램프 중엔 램프 속도만큼 허용
-                if slope is not None and slope > slope_max:
-                    p_term *= slope_max / slope; governed = True
+                slope = self._ph_slope(t)                          # 접근 속도 상한 2: 관측된 변화율 (지연 동안 갈 양이 남은 오차의 절반 이하)
+                slope_max = max(abs(e), 0.05) / (2.0 * self.g.lag_s) + abs(self.titrate_rate)
+                if slope is not None and sgn * slope > slope_max:
+                    mag *= slope_max / (sgn * slope); governed = True
+            p_term = sgn * mag * (acid_scale if sgn < 0 else 1.0)
         u_unsat = p_term + self.i_term + ff
-        u = float(np.clip(u_unsat, self.g.out_min, self.g.out_max))
+        lo = -self.g.out_max if self.bidirectional else self.g.out_min
+        u = float(np.clip(u_unsat, lo, self.g.out_max))
         if dt > 0:
             # 조건부 적분: 오차가 적분대 안이고, 포화/속도제한으로 묶여 있지 않을 때만
             saturated_hi = u_unsat > self.g.out_max and e > 0
-            saturated_lo = u_unsat < self.g.out_min and e < 0
+            saturated_lo = u_unsat < lo and e < 0
             if abs(e) < self.g.i_band and not (saturated_hi or saturated_lo or governed):
                 self.i_term += self.g.Ki * e * dt
-            self.i_term = float(np.clip(self.i_term, 0.0, self.g.out_max))
-            self._record_dose(t, u / 60.0 * dt * self.naoh, meas)
+            self.i_term = float(np.clip(self.i_term, lo, self.g.out_max))
+            self._record_dose(t, (u / 60.0 * dt * self.naoh) if u >= 0 else (u / 60.0 * dt * (self.acid or self.naoh)), meas)
         return u
 
     def _ph_slope(self, t, W=10.0):
@@ -237,8 +260,8 @@ class PHController:
 
     # ---- 완충용량 추정과 투입 상한
     def _record_dose(self, t, mmol, meas):
-        """mmol = mL × mol/L. 누적 투입과 pH 이력으로 완충용량을 추정한다 (지연 lag_s 만큼 어긋나게 비교)."""
-        if mmol > 0:
+        """mmol = mL × mol/L (염기 +, 산 −). 누적 투입과 pH 이력으로 완충용량을 추정한다 (지연 lag_s 만큼 어긋나게 비교)."""
+        if mmol != 0:
             self._dose_hist.append((t, mmol))
         self._dose_hist = [(tt, m) for tt, m in self._dose_hist if t - tt <= 2 * self.g.lag_s]
         self._cum_mmol = getattr(self, "_cum_mmol", 0.0) + mmol
@@ -253,17 +276,18 @@ class PHController:
         b_now, b_old = at(t - self.g.lag_s, 2), at(t - self.g.lag_s - W, 2)
         if None not in (ph_old, b_now, b_old):
             dph, db = ph_now - ph_old, b_now - b_old
-            if dph > 0.1 and db > 0.02:                            # 염기를 넣어 pH 가 올라간 구간에서만
+            if abs(dph) > 0.1 and abs(db) > 0.02 and dph * db > 0:   # 넣은 방향으로 pH 가 움직인 구간에서만
                 beta_hat = db / 1000.0 / self.V / dph
                 self.beta = 0.8 * self.beta + 0.2 * float(np.clip(beta_hat, 0.2 * self.g.beta0_mol_L_pH, 200 * self.g.beta0_mol_L_pH))
 
-    def _cap_mL_min(self, t, e):
-        need_mmol = self.beta * self.V * e * 1000.0
-        in_transit = sum(m for tt, m in self._dose_hist if t - tt <= self.g.lag_s)
+    def _cap_mL_min(self, t, e_abs, sgn=1.0):
+        """현재 방향(sgn: +염기/−산)으로 설정값까지 필요한 양 − 그 방향으로 아직 반영 안 된 양 → 등가 염기 유량 상한 [mL/min]."""
+        need_mmol = self.beta * self.V * e_abs * 1000.0
+        in_transit = sgn * sum(m for tt, m in self._dose_hist if t - tt <= self.g.lag_s)
         remaining = max(need_mmol - in_transit, 0.0)
         cap = remaining / self.naoh / (self.g.horizon_s / 60.0)
-        cap += self.beta * self.V * max(self.titrate_rate, 0.0) * 60.0 / self.naoh * 1000.0   # 램프를 따라가는 데 필요한 유량
-        return max(cap, 0.1 * self.g.Kp * e, 0.05)              # 바닥: 완충용량을 과소추정해도 P 항의 10 % 는 남긴다
+        cap += self.beta * self.V * abs(self.titrate_rate) * 60.0 / self.naoh * 1000.0      # 램프를 따라가는 데 필요한 유량
+        return max(cap, 0.1 * self.g.Kp * e_abs, 0.05)              # 바닥: 완충용량을 과소추정해도 P 항의 10 % 는 남긴다
 
     def _relay(self, t, meas):
         if self.relay_state == 1 and meas > self.sp + self.relay_h:
@@ -272,6 +296,8 @@ class PHController:
         elif self.relay_state == 0 and meas < self.sp - self.relay_h:
             self.relay_state = 1; self._relay_switch_t.append(t)
         self._relay_min, self._relay_max = min(self._relay_min, meas), max(self._relay_max, meas)
+        if self.bidirectional:
+            return self.relay_d if self.relay_state == 1 else -self.relay_d * (self.naoh / self.acid)
         return self.relay_d if self.relay_state == 1 else 0.0
 
     def relay_result(self) -> dict | None:
@@ -285,7 +311,7 @@ class PHController:
         if not amps:
             return None
         a = float(np.mean(amps))
-        d = self.relay_d / 2                                   # 0 ↔ d 릴레이의 등가 진폭
+        d = self.relay_d if self.bidirectional else self.relay_d / 2    # 0 ↔ d 릴레이는 등가 진폭 d/2
         Ku = 4 * d / (math.pi * a)
         Kp, Ti = Ku / 3.2, 2.2 * Tu
         return dict(Ku=Ku, Tu=Tu, a=a, Kp=Kp, Ki=Kp / Ti, Ti=Ti)
@@ -300,9 +326,20 @@ class PHController:
         for i in range(len(t)):
             if inband[i:].all():
                 settle = float(t[i] - t[0]); break
+        # 오버슈트: 설정값이 바뀌는 지점마다 구간을 나누고, 구간 안에서 첫 교차 이후 '넘어간 양' 의 최대
+        overshoot, start = 0.0, 0
+        bounds = list(np.where(np.abs(np.diff(sp)) > 0.05)[0] + 1) + [len(t)]
+        for b in bounds:
+            seg_y, seg_sp = y[start:b], sp[start:b]
+            if len(seg_y) > 2:
+                sgn = np.sign(seg_sp[0] - seg_y[0]) or 1.0
+                crossed = np.where(sgn * (seg_y - seg_sp) >= 0)[0]
+                if len(crossed):
+                    overshoot = max(overshoot, float((sgn * (seg_y - seg_sp))[crossed[0]:].max()))
+            start = b
         return dict(IAE=float(np.trapezoid(np.abs(e), t)) if hasattr(np, "trapezoid") else float(np.trapz(np.abs(e), t)),
-                    overshoot=float(max(0.0, (y - sp).max())), settle_s=settle, final_err=float(e[-1]),
-                    naoh_mL=round(self.total_mL, 2), fault=self.fault)
+                    overshoot=overshoot, settle_s=settle, final_err=float(e[-1]),
+                    naoh_mL=round(self.total_mL, 2), acid_mL=round(self.acid_mL, 2), fault=self.fault)
 
 
 def flow_to_mA(flow_mL_min: float, stroke_mL=0.19, stroke_len=1.0, max_spm=200.0, i_start=4.4, i_full=19.6) -> float:
@@ -314,10 +351,13 @@ def flow_to_mA(flow_mL_min: float, stroke_mL=0.19, stroke_len=1.0, max_spm=200.0
 
 # ------------------------------------------------------------------ 단독 시뮬레이션 (노드 없이, 동조용)
 def simulate(setpoint=10.5, pH0=7.0, V_L=2.0, naoh_mol_L=0.1, load_mol_min=0.0, load_start_s=0.0, duration=600.0,
-             dt=0.5, gains=None, mode="pid", rpm=300.0, probe_tau=8.0, buffers=None, seed=0, titrate=None, relay_d=2.0):
+             dt=0.5, gains=None, mode="pid", rpm=300.0, probe_tau=8.0, buffers=None, seed=0, titrate=None, relay_d=2.0,
+             acid_mol_L=None, sp_steps=(), base_load_mol_min=0.0, base_load_start_s=0.0):
+    """acid_mol_L 을 주면 양방향. sp_steps=((t, sp), ...) 로 설정값 변경, base_load 는 염기성 외란(pH 를 올리는 피드)."""
     rng = np.random.default_rng(seed)
     model = PHModel(V_L, pH0, buffers); probe = PHProbe(probe_tau, rng=rng)
-    ctl = PHController(setpoint, gains, naoh_mol_L=naoh_mol_L, mode=mode, V_L=V_L)
+    ctl = PHController(setpoint, gains, naoh_mol_L=naoh_mol_L, mode=mode, V_L=V_L, acid_mol_L=acid_mol_L)
+    sp_steps = sorted(sp_steps)
     if titrate:
         ctl.set_titration(*titrate)
     ctl.relay_d = relay_d
@@ -325,9 +365,16 @@ def simulate(setpoint=10.5, pH0=7.0, V_L=2.0, naoh_mol_L=0.1, load_mol_min=0.0, 
     hist = dict(t=[], ph_true=[], ph_meas=[], sp=[], flow=[], naoh_mL=[], beta=[])
     t = 0.0; flow = 0.0
     while t < duration:
+        while sp_steps and t >= sp_steps[0][0]:
+            ctl.sp = sp_steps.pop(0)[1]
         if t >= load_start_s and load_mol_min > 0:
             model.add_acid(load_mol_min / 60.0 * dt); ctl.load_mol_min = load_mol_min
-        model.add_base(flow / 60.0 * dt, naoh_mol_L)
+        if t >= base_load_start_s and base_load_mol_min > 0:
+            model.B += base_load_mol_min / 60.0 * dt
+        if flow >= 0:
+            model.add_base(flow / 60.0 * dt, naoh_mol_L)
+        else:
+            model.add_acid(-flow / 60.0 * dt / 1000.0 * (acid_mol_L or naoh_mol_L)); model.add_water(-flow / 60.0 * dt)
         ph_true = model.pH()
         mixed += (ph_true - mixed) * (1 - math.exp(-dt / (tm / 3)))
         meas = probe.step(mixed, dt)
@@ -354,34 +401,42 @@ def main(argv=None):
         p.add_argument("--no-cap", action="store_true", help="완충용량 상한·속도 제한기 끄기 (비교용)"); p.add_argument("--relay-d", type=float, default=0.0, help="릴레이 진폭 mL/min (0 = 부하 등가의 2 배)")
         p.add_argument("--ff", type=float, default=0.0, help="피드포워드 이득 (1.0 = 화학량론)")
         p.add_argument("--titrate", help="'start,end,rate_pH_per_min' 램프 (예 10,3,0.5)")
+        p.add_argument("--acid", type=float, default=None, help="산 펌프 농도 mol/L (주면 양방향 제어)")
+        p.add_argument("--sp-step", action="append", default=[], help="'t:sp' 설정값 변경 (예 400:8.0), 여러 번 가능")
+        p.add_argument("--base-load", type=float, default=0.0, help="염기성 외란 mol/min"); p.add_argument("--base-load-start", type=float, default=0.0)
         p.add_argument("--plot")
     a = ap.parse_args(argv)
     buffers = [BufferSpecies(float(x.split("@")[0]), float(x.split("@")[1])) for x in a.buffer.split(",")]
     gains = PHGains(Kp=a.Kp, Ki=a.Ki, Kd=a.Kd, ff_gain=a.ff, cap_enabled=not a.no_cap, rate_governor=not a.no_cap)
     titr = tuple(float(v) for v in a.titrate.split(",")) if a.titrate else None
     if a.cmd == "autotune":
-        if a.load <= 0:
+        if a.load <= 0 and a.acid is None:
             a.load = 0.0002
-            print("주의: 염기만 넣는 제어라 산 부하가 없으면 릴레이 진동이 생기지 않습니다. 기본 부하 0.2 mmol/min 을 가정합니다.")
-        relay_d = a.relay_d if a.relay_d > 0 else 2.0 * a.load / a.naoh * 1000.0
+            print("주의: 염기만 넣는 제어라 산 부하가 없으면 릴레이 진동이 생기지 않습니다. 기본 부하 0.2 mmol/min 을 가정합니다 (--acid 를 주면 불필요).")
+        relay_d = a.relay_d if a.relay_d > 0 else (2.0 if a.acid is not None else 2.0 * a.load / a.naoh * 1000.0)
         hist, ctl, model = simulate(a.setpoint, a.ph0, a.volume, a.naoh, a.load, a.load_start, a.duration, gains=gains, mode="relay",
-                                    rpm=a.rpm, buffers=buffers, relay_d=relay_d)
+                                    rpm=a.rpm, buffers=buffers, relay_d=relay_d, acid_mol_L=a.acid)
         r = ctl.relay_result()
         print(f"릴레이 진폭 {relay_d:.2f} mL/min, 결과:", {k: round(v, 4) for k, v in r.items()} if r else "진동 부족 (duration 을 늘리거나 relay-d 를 키우세요)")
         if r:
             print(f"추천: --Kp {r['Kp']:.2f} --Ki {r['Ki']:.4f}   (Tyreus–Luyben PI, 완충용량 β≈{model.buffer_capacity()*1000:.2f} mmol/L/pH)")
     else:
+        steps = [(float(x.split(":")[0]), float(x.split(":")[1])) for x in a.sp_step]
         hist, ctl, model = simulate(a.setpoint, a.ph0, a.volume, a.naoh, a.load, a.load_start, a.duration, gains=gains,
-                                    rpm=a.rpm, buffers=buffers, titrate=titr)
+                                    rpm=a.rpm, buffers=buffers, titrate=titr, acid_mol_L=a.acid, sp_steps=steps,
+                                    base_load_mol_min=a.base_load, base_load_start_s=a.base_load_start)
         m = ctl.metrics()
         print(f"최종 pH {hist['ph_meas'][-1]:.2f} (설정 {ctl.sp:.2f})  정착 {m['settle_s']} s  오버슈트 {m['overshoot']:.2f}  IAE {m['IAE']:.1f}  "
-              f"NaOH {m['naoh_mL']} mL  β 실제 {model.buffer_capacity()*1000:.2f} / 추정 {ctl.beta*1000:.2f} mmol/L/pH  {m['fault']}")
+              f"NaOH {m['naoh_mL']} mL  산 {m['acid_mL']} mL  β 실제 {model.buffer_capacity()*1000:.2f} / 추정 {ctl.beta*1000:.2f} mmol/L/pH  {m['fault']}")
     if a.plot:
         import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
         fig, ax = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
         ax[0].plot(hist["t"], hist["ph_true"], "k", lw=1, label="pH true"); ax[0].plot(hist["t"], hist["ph_meas"], "b", lw=0.8, label="pH probe")
         ax[0].plot(hist["t"], hist["sp"], "r--", label="setpoint"); ax[0].set_ylabel("pH"); ax[0].legend()
-        ax[1].plot(hist["t"], hist["flow"], "g", label="NaOH mL/min"); ax[1].set_ylabel("NaOH [mL/min]"); ax[1].set_xlabel("t [s]")
+        ax[1].plot(hist["t"], np.clip(hist["flow"], 0, None), "g", label="NaOH mL/min")
+        if (hist["flow"] < 0).any():
+            ax[1].plot(hist["t"], -np.clip(hist["flow"], None, 0), "r", label="acid mL/min")
+        ax[1].set_ylabel("dosing [mL/min]"); ax[1].set_xlabel("t [s]"); ax[1].legend()
         ax1b = ax[1].twinx(); ax1b.plot(hist["t"], hist["naoh_mL"], "gray", lw=0.8); ax1b.set_ylabel("total mL")
         fig.tight_layout(); fig.savefig(a.plot, dpi=120); print("그래프:", a.plot)
     return 0

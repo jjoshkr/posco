@@ -296,6 +296,28 @@ pH 제어가 어려운 이유는 약완충 용액에서 설정값 근처 이득�
 | 릴레이 동조값(Kp 8.2, Ki 0.054)으로 10.0 유지(부하) | 240 s | 0.05 | 31 mL | 실제 장치에서는 (1) NaOH 는 0.1 M 로
 묽게, (2) 첫 배치에 `relay` 로 동조, (3) 프로브는 투입구 반대편·임펠러 높이에, (4) 트랜스미터는 절연형으로 접지 루프를 피하세요.
 
+### 양방향 pH 제어: 산 펌프 P-104 (펄스 접점 구동)
+
+염기만으로는 넘긴 pH 를 되돌릴 수 없으므로 산 펌프를 4번째 펌프로 추가했습니다. MCC 152 는 AO 가 4개뿐이라(펌프 3 + 교반기)
+P-104 는 **펄스(접점) 모드**로 구동합니다. MCC 152 #2 의 예비 DIO6 → 포토커플러 → 펌프 외부 접점 입력, 1 펄스 = 1 스트로크,
+DIO7 은 밸브 XV-104. 운전 허가 접점은 4대 공통입니다.
+
+| 항목 | 내용 |
+|---|---|
+| I/O 노드 명령 | `pulse_rate {id: P-104, spm}` 연속, `pulse_dose {id, strokes, spm}` 계수 도징, `stop`. 인터록(밸브·운전 허가)은 아날로그 펌프와 동일 |
+| 펄스 출력 | 위상 누적으로 spm 에 맞춰 틱마다 펄스, 접점 닫힘 20 ms(`io_node.json` `pulse_ms`, 펌프 최소 펄스폭 이상으로) |
+| 제어기 | `PHController(..., acid_mol_L=0.1)` 이면 부호 있는 출력: + 염기 mL/min, − 산 mL/min(농도 차는 등가 환산). 방향 전환 최소 간격 10 s, 산 배치 최대 부피, 대칭 릴레이 동조(부하 없이도 진동) |
+| 레시피 | `ph: {naoh_pump: P-103, acid_pump: P-104, acid_mol_L: 0.1}` 와 `ph_control: {acid_pump: P-104, ...}`. 예시 `recipes/tierB_ph_bidirectional.yaml` |
+
+```bash
+python -m cmysim.ph_control sim --setpoint 10.5 --acid 0.1 --sp-step 400:8.0 --base-load 0.0002 --base-load-start 900 --duration 1400 --plot ph.png
+python -m cmysim.ph_control autotune --setpoint 10.0 --ph0 9.5 --acid 0.1          # 부하 없이 대칭 릴레이
+python -m cmysim.ph_control sim --ph0 10 --acid 0.1 --titrate 10,4,0.5 --buffer 0.01@4.8   # 내려가는 적정 (Tier B 침전 개시 pH)
+```
+
+시뮬레이션(0.1 M NaOH / 0.1 M HCl, 2 L): 7 → 10.5 상승 후 400 s 에 8.0 으로 내리면 산 펌프가 약 26 mL 로 되돌리고,
+900 s 부터 염기성 외란이 들어와도 산 펌프가 유지합니다. 산/염기가 동시에 도는 일은 없습니다(부호 전환 사이 0 출력).
+
 ## 로드셀(HX711) 중량 유량 계측 (`loadcell.py`)
 
 스톡병마다 로드셀을 두고 무게 감소율로 **실제 유량**을 잽니다. 정량펌프는 개루프라 스트로크는 세는데 액이 안 나가는 고장
@@ -398,7 +420,7 @@ coprecip_sim/
 │                      로드셀: loadcell (HX711 serial/gpio/sim, FlowEstimator, FlowCheck, tare/calib/flow CLI)
 │                      pH: ph_control (PHModel/PHProbe, PHController PID+캡+안전, 릴레이 동조, titrate, sim/autotune CLI)
 ├── firmware/hx711_bridge.ino  Arduino HX711×3 → USB 시리얼 브리지
-├── recipes/           예시 레시피 5개 (색 매칭, 비율 스윕, 고장 주입, pH 스텝, pH 자동동조)
+├── recipes/           예시 레시피 6개 (색 매칭, 비율 스윕, 고장 주입, pH 스텝, pH 자동동조, 양방향 pH)
 ├── tests/fake_daqhats.py  PC 에서 I/O 노드 코드를 시험하는 가짜 daqhats
 ├── tests/test_sim.py  물질수지·광학 역산·펌프 곡선·DAC 교정·인터록·워치독·폐루프·고장 테스트
 ├── docs/              예시 그래프

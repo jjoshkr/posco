@@ -121,7 +121,7 @@ def main(argv=None):
     if a.anomaly:
         from .anomaly import Detector
         adet = Detector.load(a.anomaly); adet.fb.heel = cfg.reactor.heel_mL
-        adet.fb.c_stock = np.array([tk.conc_mg_L for tk in cfg.tanks], float)
+        adet.fb.c_stock = np.array([tk.conc_mg_L for tk in cfg.tanks[:3]], float)
         print(f"이상탐지 로드 {a.anomaly}: {adet.model.kind}, 특징 {len(adet.features)}개, 창 {adet.W}×{adet.dt}s, 임계 {adet.thr:.4f}")
     ad_res = dict(score=0.0, ratio=0.0, alarm=False, cusum=0.0, cusum_alarm=False, top=[])
     next_ad = 0.0

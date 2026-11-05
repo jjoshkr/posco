@@ -5,7 +5,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 import numpy as np
-from .config import PumpSpec, DacChainSpec, AdcSpec
+from .config import PumpSpec, DacChainSpec, AdcSpec, PulsePumpSpec
 
 
 class Mcc152AO:
@@ -183,3 +183,26 @@ class Stirrer:
         target = 0.0 if mA < 4.0 else self.rpm_max * np.clip((mA - 4.0) / 16.0, 0, 1)
         self.rpm += (target - self.rpm) * min(1.0, dt / self.tau)
         return self.rpm
+
+
+class PulsePump:
+    """접점(펄스) 모드 펌프: pulse() 한 번 = 스트로크 한 번 (운전 허가·수위 OK 일 때)."""
+
+    def __init__(self, spec: PulsePumpSpec, rng: np.random.Generator, pump_id: str):
+        self.spec, self.rng, self.id = spec, rng, pump_id
+        self.paused, self.level_ok = True, True
+        self.strokes_total, self.volume_total_mL, self.pulses_ignored = 0, 0.0, 0
+        self.last_pulse_t = -1e9
+
+    def pulse(self, t: float, outlet_open: bool, deliver) -> bool:
+        p = self.spec
+        if self.paused or not self.level_ok or (t - self.last_pulse_t) < 60.0 / p.max_spm * 0.9:
+            self.pulses_ignored += 1                    # 너무 빠른 펄스·정지 상태: 펌프가 무시
+            return False
+        self.last_pulse_t = t
+        self.strokes_total += 1
+        vol = p.stroke_mL * p.stroke_length * (1 + self.rng.normal(0, p.repro))
+        if outlet_open:
+            self.volume_total_mL += vol
+            deliver(vol)
+        return True

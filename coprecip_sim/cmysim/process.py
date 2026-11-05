@@ -47,10 +47,20 @@ class Reactor:
         self.ph = spec.ph                 # 프로브가 읽는 값 (SimHAL.read_ph 가 트랜스미터로 양자화)
         self.acid_load_mol_min = spec.acid_load_mol_min
         self.naoh_mL = 0.0
+        self.acid_mL = 0.0
 
     def add(self, dye_idx: int, vol_mL: float, conc_mg_L: float):
         self.m_mg[dye_idx] += vol_mL * conc_mg_L / 1000.0
         self.V_mL += vol_mL
+        self.ph_model.add_water(vol_mL)
+        if self.V_mL > self.spec.v_max_mL:
+            self.overflow = True
+
+    def add_acid_solution(self, vol_mL: float, conc_mol_L: float):
+        """산(HCl 등) 투입 (양방향 pH 제어의 산 펌프)."""
+        self.V_mL += vol_mL
+        self.acid_mL = getattr(self, "acid_mL", 0.0) + vol_mL
+        self.ph_model.add_acid(vol_mL / 1000.0 * conc_mol_L)
         self.ph_model.add_water(vol_mL)
         if self.V_mL > self.spec.v_max_mL:
             self.overflow = True

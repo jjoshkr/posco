@@ -4,8 +4,10 @@ from dataclasses import dataclass, field
 import numpy as np
 
 DYES = ("C", "M", "Y")           # 염료 순서 = 펌프 순서 (P-101, P-102, P-103)
-PUMP_IDS = ("P-101", "P-102", "P-103")
+PUMP_IDS = ("P-101", "P-102", "P-103")          # 아날로그(4–20 mA) 펌프
 VALVE_IDS = ("XV-101", "XV-102", "XV-103")
+PULSE_PUMP_IDS = ("P-104",)                      # 펄스(접점) 구동 펌프: 1 펄스 = 1 스트로크. 산 펌프 (양방향 pH 제어)
+PULSE_VALVES = {"P-104": "XV-104"}
 
 
 @dataclass
@@ -22,6 +24,17 @@ class PumpSpec:
     input_ohm: float = 120.0         # mA 입력 저항
     fb_option_c: bool = True         # 옵션 C: 실제 스트로크를 4–20 mA로 출력
     relief_bar: float = 3.0          # 배압/릴리프 밸브 설정 (토출 막힘 시 이 압력으로 탱크 복귀)
+
+
+@dataclass
+class PulsePumpSpec:
+    """gamma/X 외부 접점(펄스) 모드: 무전압 접점 1회 = 스트로크 1회. DIO → 포토커플러 → 펌프 접점 입력."""
+    model: str = "GMXa 1602 (pulse)"
+    stroke_mL: float = 0.19
+    stroke_length: float = 1.0
+    max_spm: float = 200.0
+    pulse_ms: float = 20.0           # 접점 닫힘 유지 시간 (펌프 최소 펄스폭 이상)
+    repro: float = 0.01
 
 
 @dataclass
@@ -50,7 +63,7 @@ class TankSpec:
     volume_mL: float = 2000.0        # GL45 2 L 스톡병
     conc_mg_L: float = 1000.0        # 스톡 1.00 g/L (role == "dye")
     low_level_mL: float = 100.0      # 수위 스위치 (펌프 수위 입력 → 자동 정지)
-    role: str = "dye"                # "dye" | "naoh"  (naoh 면 pH 제어용 NaOH, conc_mol_L 사용)
+    role: str = "dye"                # "dye" | "naoh" | "acid"  (naoh/acid 는 pH 제어용, conc_mol_L 사용)
     conc_mol_L: float = 0.1
 
 
@@ -94,9 +107,11 @@ class NetworkSpec:
 @dataclass
 class SystemConfig:
     pump: PumpSpec = field(default_factory=PumpSpec)
+    pulse_pump: PulsePumpSpec = field(default_factory=PulsePumpSpec)
     dac: DacChainSpec = field(default_factory=DacChainSpec)
     adc: AdcSpec = field(default_factory=AdcSpec)
-    tanks: tuple = field(default_factory=lambda: (TankSpec(), TankSpec(), TankSpec()))
+    # 탱크 0~2 = 염료(또는 naoh 역할), 탱크 3 = P-104 (기본 산 0.1 M)
+    tanks: tuple = field(default_factory=lambda: (TankSpec(), TankSpec(), TankSpec(), TankSpec(role="acid", conc_mol_L=0.1)))
     reactor: ReactorSpec = field(default_factory=ReactorSpec)
     camera: CameraSpec = field(default_factory=CameraSpec)
     net: NetworkSpec = field(default_factory=NetworkSpec)
@@ -108,6 +123,7 @@ class SystemConfig:
         "P-103": ("mcc152#2", "AO0"), "STIRRER": ("mcc152#2", "AO1"),
         "XV-101": ("mcc152#1", "DIO4"), "XV-102": ("mcc152#1", "DIO5"),
         "XV-103": ("mcc152#2", "DIO4"), "RUN_ENABLE": ("mcc152#2", "DIO5"),
+        "P-104": ("mcc152#2", "DIO6"), "XV-104": ("mcc152#2", "DIO7"),       # 펄스 펌프 + 밸브 (예비 DIO 사용)
         "FB-101": ("mcc118", "CH1"), "FB-102": ("mcc118", "CH2"), "FB-103": ("mcc118", "CH3"),
         "PH": ("mcc118", "CH0"), "PRESSURE": ("mcc118", "CH4"), "TEMP": ("mcc134", "CH0"),
     })

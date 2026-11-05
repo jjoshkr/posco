@@ -20,6 +20,7 @@
 
 스텝 종류
   stir(rpm) · wait(seconds) · valve(id, open) · dose(pump|pumps, volume_mL|strokes, rate_mL_min|minutes|mA, ratio, total_mL)
+  ph_control(pump, acid_pump, setpoint, seconds, Kp, Ki, mode) · acid_load(mol_min)
   dose_to_target(minutes, flow_factor) · settle(factor|seconds) · measure(seconds, label)
   trim_to_target(max_trims, tol_mg_L, de) · hold(seconds) · log(note) · inject_fault(kind, arg, seconds)  · stop
 
@@ -29,7 +30,7 @@
 from __future__ import annotations
 import copy, itertools, json, pathlib
 import numpy as np
-from .config import SystemConfig, PUMP_IDS, VALVE_IDS, DYES, pump_max_rate_mL_min
+from .config import SystemConfig, PUMP_IDS, VALVE_IDS, DYES, PULSE_PUMP_IDS, PULSE_VALVES, pump_max_rate_mL_min
 from .control import Controller, Recipe, plan_doses, mA_for_rate, target_from_hex, target_from_cmy
 from .ph_control import PHController, PHGains, PHSafety, flow_to_mA
 from . import optics
@@ -81,6 +82,8 @@ def validate(r: dict) -> list[str]:
         if k == "ph_control":
             if s.get("pump", "P-103") not in PUMP_IDS:
                 errs.append(f"steps[{i}] ph_control: 모르는 펌프 {s.get('pump')}")
+            if "acid_pump" in s and s["acid_pump"] not in PUMP_IDS + PULSE_PUMP_IDS:
+                errs.append(f"steps[{i}] ph_control: 모르는 산 펌프 {s['acid_pump']}")
             if "setpoint" not in s and s.get("mode", "pid") != "titrate":
                 errs.append(f"steps[{i}] ph_control: setpoint 필요")
             if not (0 < float(s.get("seconds", 0))):
@@ -140,6 +143,10 @@ def apply_recipe_to_config(r: dict, cfg: SystemConfig) -> SystemConfig:
     if "naoh_pump" in ph:
         j = PUMP_IDS.index(ph["naoh_pump"])
         cfg.tanks[j].role = "naoh"; cfg.tanks[j].conc_mol_L = float(ph.get("naoh_mol_L", 0.1))
+    if "acid_pump" in ph:                                   # 산 펌프: P-104(펄스) 또는 P-10x(아날로그)
+        pid = ph["acid_pump"]
+        j = PUMP_IDS.index(pid) if pid in PUMP_IDS else 3 + list(PULSE_PUMP_IDS).index(pid)
+        cfg.tanks[j].role = "acid"; cfg.tanks[j].conc_mol_L = float(ph.get("acid_mol_L", 0.1))
     return cfg
 
 
@@ -293,16 +300,25 @@ class RecipeExecutor(Controller):
             pid = s.get("pump", "P-103")
             j = PUMP_IDS.index(pid)
             gains = PHGains(**{k2: float(s[k2]) for k2 in ("Kp", "Ki", "Kd", "deadband", "out_max", "ff_gain") if k2 in s})
-            safety = PHSafety(**{k2: float(s[k2]) for k2 in ("ph_max", "ph_min", "max_total_mL") if k2 in s})
+            safety = PHSafety(**{k2: float(s[k2]) for k2 in ("ph_max", "ph_min", "max_total_mL", "max_acid_mL", "min_switch_s") if k2 in s})
+            acid_pid = s.get("acid_pump", (self.recipe.get("ph") or {}).get("acid_pump"))
+            acid_conc = None
+            if acid_pid:
+                ja = PUMP_IDS.index(acid_pid) if acid_pid in PUMP_IDS else 3 + list(PULSE_PUMP_IDS).index(acid_pid)
+                acid_conc = self.cfg.tanks[ja].conc_mol_L
             self.ph_ctl = PHController(float(s.get("setpoint", 7.0)), gains, safety, naoh_mol_L=self.cfg.tanks[j].conc_mol_L,
-                                       mode=s.get("mode", "pid"), V_L=self.V_est / 1000.0)
+                                       mode=s.get("mode", "pid"), V_L=self.V_est / 1000.0, acid_mol_L=acid_conc)
             if s.get("mode") == "titrate":
                 self.ph_ctl.set_titration(float(s["start"]), float(s["end"]), float(s.get("rate_pH_per_min", 0.5)))
             if "relay_d" in s:
                 self.ph_ctl.relay_d = float(s["relay_d"])
             self._ph_pump, self._ph_valve = pid, VALVE_IDS[j]
-            self._ph_last_mA, self._ph_next = -1.0, t
+            self._acid_pump = acid_pid
+            self._acid_valve = (PULSE_VALVES[acid_pid] if acid_pid in PULSE_PUMP_IDS else VALVE_IDS[PUMP_IDS.index(acid_pid)]) if acid_pid else None
+            self._ph_last_mA, self._ph_next, self._acid_last = -1.0, t, -1.0
             bus.send_cmd(dict(cmd="valve", id=self._ph_valve, open=True))
+            if self._acid_valve:
+                bus.send_cmd(dict(cmd="valve", id=self._acid_valve, open=True))
             self.phase = "PH"
         elif k == "stop":
             self._finish(t, bus)
@@ -360,22 +376,34 @@ class RecipeExecutor(Controller):
             self._ph_next = t + float(s.get("period_s", 1.0))
             ph = tele.get("ph")
             flow = 0.0 if done or ph is None else self.ph_ctl.update(t, float(ph))
-            mA = flow_to_mA(flow, self.cfg.pump.stroke_mL, self.cfg.pump.stroke_length, self.cfg.pump.max_spm,
+            base, acid = max(flow, 0.0), max(-flow, 0.0)
+            mA = flow_to_mA(base, self.cfg.pump.stroke_mL, self.cfg.pump.stroke_length, self.cfg.pump.max_spm,
                             self.cfg.pump.i_start_mA, self.cfg.pump.i_full_mA)
             if abs(mA - self._ph_last_mA) > 0.02 or done:
                 bus.send_cmd(dict(cmd="pump", id=self._ph_pump, mA=round(mA, 3)) if mA > 0 else dict(cmd="stop", id=self._ph_pump))
                 self._ph_last_mA = mA
+            if self._acid_pump and (abs(acid - self._acid_last) > 0.02 or done):
+                if self._acid_pump in PULSE_PUMP_IDS:                        # 펄스 펌프: spm
+                    spm = acid / (self.cfg.pulse_pump.stroke_mL * self.cfg.pulse_pump.stroke_length)
+                    bus.send_cmd(dict(cmd="pulse_rate", id=self._acid_pump, spm=round(spm, 3)) if spm > 0 else dict(cmd="stop", id=self._acid_pump))
+                else:                                                        # 아날로그 펌프: mA
+                    mA_a = flow_to_mA(acid, self.cfg.pump.stroke_mL, self.cfg.pump.stroke_length, self.cfg.pump.max_spm,
+                                      self.cfg.pump.i_start_mA, self.cfg.pump.i_full_mA)
+                    bus.send_cmd(dict(cmd="pump", id=self._acid_pump, mA=round(mA_a, 3)) if mA_a > 0 else dict(cmd="stop", id=self._acid_pump))
+                self._acid_last = acid
             if self.ph_ctl.fault and not self.aborted:
                 self.aborted = "PH " + self.ph_ctl.fault; self._note(t, "abort", self.aborted); done = True
             if self.ph_ctl.mode == "relay" and self.ph_ctl.relay_result() and not getattr(self, "_relay_logged", False):
                 self._relay_logged = True; self._note(t, "autotune", str({k: round(v, 4) for k, v in self.ph_ctl.relay_result().items()}))
         if done:
             bus.send_cmd(dict(cmd="stop", id=self._ph_pump)); bus.send_cmd(dict(cmd="valve", id=self._ph_valve, open=False))
+            if self._acid_pump:
+                bus.send_cmd(dict(cmd="stop", id=self._acid_pump)); bus.send_cmd(dict(cmd="valve", id=self._acid_valve, open=False))
             m = self.ph_ctl.metrics(); m.update(label=s.get("label", f"ph{self.i}"), setpoint=self.ph_ctl.sp, t=round(t, 2),
                                                  beta_est_mmol_L_pH=round(self.ph_ctl.beta * 1000, 3))
             if self.ph_ctl.mode == "relay":
                 m["autotune"] = self.ph_ctl.relay_result()
-            self.measurements.append(m); self.V_est += self.ph_ctl.total_mL
+            self.measurements.append(m); self.V_est += self.ph_ctl.total_mL + self.ph_ctl.acid_mL
             self._note(t, "ph_done", f"sp={self.ph_ctl.sp:.2f} final_err={m.get('final_err')} NaOH={m.get('naoh_mL')} mL settle={m.get('settle_s')}")
             self.ph_log = getattr(self, "ph_log", []) + self.ph_ctl.log
             self._next(t, bus)
@@ -391,7 +419,7 @@ class RecipeExecutor(Controller):
                     if self.de >= de_ok and np.all(err <= tol):
                         self._note(t, "trim", "오버슈트 또는 허용오차 내: 추가 투입 없음")
                     self._next(t, bus); return
-                c_stock = np.array([tk.conc_mg_L for tk in self.cfg.tanks])
+                c_stock = np.array([tk.conc_mg_L for tk in self.cfg.tanks[:3]])
                 extra = np.where(err > tol, err * self.V_est / (c_stock - self.r.c_target), 0.0)
                 plan = []
                 for j, pid in enumerate(PUMP_IDS):

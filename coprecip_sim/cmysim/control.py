@@ -56,7 +56,7 @@ def mA_for_rate(cfg: SystemConfig, rate_mL_min: float) -> float:
 def plan_doses(cfg: SystemConfig, V_heel_mL: float, c_target: np.ndarray, dose_minutes: float,
                flow_factor=np.ones(3)) -> list[dict]:
     """각 펌프의 투입 부피·스트로크 수·유량·mA 계획."""
-    c_stock = np.array([t.conc_mg_L for t in cfg.tanks])
+    c_stock = np.array([t.conc_mg_L for t in cfg.tanks[:3]])
     V = dose_volumes(V_heel_mL, c_target, c_stock) * np.asarray(flow_factor, float)
     rmax = pump_max_rate_mL_min(cfg)
     T = max(dose_minutes, float(np.max(V)) / rmax)         # 가장 많이 넣는 펌프가 최대 유량을 넘지 않게
@@ -166,7 +166,7 @@ class Controller:
                     self._go(t, "TRIM")
         elif self.state == "TRIM":
             err = r.c_target - self.c_hat
-            c_stock = np.array([tk.conc_mg_L for tk in self.cfg.tanks])
+            c_stock = np.array([tk.conc_mg_L for tk in self.cfg.tanks[:3]])
             extra = np.where(err > r.trim_tol_mg_L, err * self.V_est / (c_stock - r.c_target), 0.0)
             plan = []
             for j, pid in enumerate(PUMP_IDS):

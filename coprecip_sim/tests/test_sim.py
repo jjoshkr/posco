@@ -497,3 +497,56 @@ def test_recipe_ph_control_step():
     assert ex.measurements and ex.measurements[-1]["label"] == "up" and abs(ex.measurements[-1]["final_err"]) < 0.2
     assert res["c_true"][2] < 1e-6                                          # NaOH 펌프는 염료를 넣지 않음
     assert not any("INTERLOCK" in a[1] for a in res["alarms"])
+
+
+# ---------------- 양방향 pH 제어 + 펄스 펌프
+from cmysim.config import PULSE_PUMP_IDS
+
+
+def test_bidirectional_ph_step_down_and_relay():
+    hist, ctl, _ = simulate(10.5, 7.0, 2.0, 0.1, duration=900, seed=3, acid_mol_L=0.1, sp_steps=((400, 8.0),))
+    m = ctl.metrics()
+    assert abs(hist["ph_meas"][-1] - 8.0) < 0.2 and m["acid_mL"] > 1.0 and m["overshoot"] < 0.3 and not ctl.fault
+    sgn = np.sign(hist["flow"]); nz = np.where(sgn != 0)[0]
+    switches = [hist["t"][nz[i]] for i in range(1, len(nz)) if sgn[nz[i]] != sgn[nz[i - 1]]]
+    assert all(b - a >= 10.0 - 1e-9 for a, b in zip(switches, switches[1:]))                   # 방향 전환 간격 ≥ min_switch_s
+    _, ctl2, _ = simulate(10.0, 9.5, 2.0, 0.1, duration=900, mode="relay", acid_mol_L=0.1, relay_d=2.0)
+    r = ctl2.relay_result()
+    assert r and r["Ku"] > 0 and 20 < r["Tu"] < 300                                           # 부하 없이도 대칭 릴레이 진동
+
+
+def test_ionode_pulse_pump_dosing_and_interlock():
+    cfg = SystemConfig(seed=4); plant = SimPlant(cfg); bus = Bus(); io = IONode(cfg, SimHAL(plant), bus)
+    bus.send_cmd(dict(cmd="arm")); bus.send_cmd(dict(cmd="run_enable", on=True))
+    bus.send_cmd(dict(cmd="pulse_rate", id="P-104", spm=120)); io.tick(0.1)
+    assert io.pulse_spm["P-104"] == 0.0 and any("INTERLOCK P-104" in a[1] for a in io.alarms)   # 밸브 닫힘
+    bus.send_cmd(dict(cmd="valve", id="XV-104", open=True)); bus.send_cmd(dict(cmd="pulse_dose", id="P-104", strokes=20, spm=120))
+    t = 0.1
+    for _ in range(300):
+        t += 0.1; bus.send_cmd(dict(cmd="heartbeat")); io.tick(t); plant.step(0.1)
+        if io.pulse_target["P-104"] is None and io.pulse_strokes["P-104"] >= 20:
+            break
+    assert io.pulse_strokes["P-104"] == 20 and plant.pulse_pumps["P-104"].strokes_total == 20
+    assert abs(plant.reactor.acid_mL - 20 * 0.19) < 0.2 and plant.reactor.ph_true < 6.9          # 산 0.1 M 3.8 mL → pH 하강
+    tele = bus.latest(); assert tele["pulse_pumps"]["P-104"]["strokes"] == 20 and not tele["pulse_pumps"]["P-104"]["dosing"]
+    assert 9.5 < t < 11.5                                                                       # 120 spm → 20 스트로크 ≈ 10 s
+
+
+def test_daqhats_pulse_output_mapping():
+    hal = _hal()
+    fdh.LOG.clear(); hal.io.pulse_ms = 0.0
+    assert hal.pulse("P-104") and fdh.LOG[:2] == [(1, "dio", 6, 1), (1, "dio", 6, 0)]
+    hal.valve("XV-104", True); assert hal.b["mcc152#2"].pin_level(7) == 1
+    hal.close(); assert hal.b["mcc152#2"].pin_level(7) == 0
+
+
+def test_recipe_bidirectional_ph_with_pulse_acid_pump():
+    r = load_recipe("recipes/tierB_ph_bidirectional.yaml")
+    r["steps"] = r["steps"][:3] + [{"step": "stop"}]                                           # 동조 스텝 제외 (시간)
+    cfg = SystemConfig(seed=12); ex = RecipeExecutor(cfg, r)
+    assert cfg.tanks[3].role == "acid" and cfg.tanks[2].role == "naoh"
+    res = run_once(cfg, ex.r, 800.0, controller=ex)
+    labels = {m["label"]: m for m in ex.measurements}
+    assert abs(labels["up"]["final_err"]) < 0.25 and abs(labels["down"]["final_err"]) < 0.25
+    assert res["pulse_dosed_mL"]["P-104"] > 1.0 and res["acid_mL"] > 1.0 and labels["down"]["acid_mL"] > 1.0
+    assert not any("INTERLOCK" in a[1] or "PULSE_IGNORED" in a[1] for a in res["alarms"])

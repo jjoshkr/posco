@@ -11,7 +11,7 @@
     DIO3 EF(B)                                DIO3 EF(B)
     DIO4 XV-101 솔레노이드 (포토커플러)       DIO4 XV-103
     DIO5 XV-102                               DIO5 RUN_ENABLE (펌프 3대 Pause 접점 공통)
-    DIO6, DIO7 예비                           DIO6, DIO7 예비
+    DIO6, DIO7 예비                           DIO6 P-104 펄스(접점, 산 펌프)  DIO7 XV-104
   MCC 118 (주소 2)  CH0 pH(4–20 mA, 250 Ω)  CH1~3 펌프 옵션 C 피드백  CH4 압력 트랜스미터
   MCC 134 (주소 3)  CH0 열전대 K (반응기 온도)
 
@@ -38,7 +38,9 @@ class IOConfig:
     ef_pin: dict = field(default_factory=lambda: {"P-101": ["mcc152#1", 1], "P-102": ["mcc152#1", 3],
                                                  "P-103": ["mcc152#2", 1], "STIRRER": ["mcc152#2", 3]})
     dio: dict = field(default_factory=lambda: {"XV-101": ["mcc152#1", 4], "XV-102": ["mcc152#1", 5],
-                                              "XV-103": ["mcc152#2", 4], "RUN_ENABLE": ["mcc152#2", 5]})
+                                              "XV-103": ["mcc152#2", 4], "RUN_ENABLE": ["mcc152#2", 5],
+                                              "P-104": ["mcc152#2", 6], "XV-104": ["mcc152#2", 7]})   # 펄스 펌프(산) + 밸브
+    pulse_ms: float = 20.0
     # 아날로그 입력: 4–20 mA → 션트 → V → 공학단위 (eu_lo @ 4 mA, eu_hi @ 20 mA)
     ai: dict = field(default_factory=lambda: {
         "PH": {"ch": 0, "shunt_ohm": 250.0, "eu_lo": 0.0, "eu_hi": 14.0},
@@ -187,6 +189,16 @@ class DaqHatsHAL(HAL):
         if self.lc is None:
             raise AttributeError("loadcell not configured")
         return self.lc.read_g()
+
+    def pulse(self, pid) -> bool:
+        """접점 펄스: DIO High(포토커플러 ON = 접점 닫힘) pulse_ms 유지 후 Low. 펌프 최소 펄스폭(매뉴얼) 이상으로 둘 것."""
+        if pid not in self.io.dio:
+            return False
+        bname, ch = self.io.dio[pid]
+        self.b[bname].dio_output_write_bit(ch, 1)
+        time.sleep(self.io.pulse_ms / 1000.0)
+        self.b[bname].dio_output_write_bit(ch, 0)
+        return True
 
     def read_ef_faults(self) -> dict:
         """XTR111 EF 핀: Low = 부하 단선/과열. {'P-101': True(고장), ...}"""
