@@ -210,14 +210,15 @@ function drawFarLand() {
   g.fillStyle = '#B9D7A5'; g.fillRect(0, HORIZON, W, H - HORIZON);
 }
 const COAST = -14;
+let SEA_TOP = HORIZON;
 function drawSea() {
-  g.save(); g.beginPath(); g.rect(0, HORIZON, W, H); g.clip();
+  g.save(); g.beginPath(); g.rect(-4000, SEA_TOP, 12000, 8000); g.clip();
   poly3([[COAST, -900], [COAST, 900], [-900, 900], [-900, -900]], lg(0, HORIZON, 0, 760, [[0, '#A9DDF3'], [.35, '#5DB4E2'], [1, '#2F8FCB']]));
   // wave glints
   const r = rng(12); g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1.4;
   for (let i = 0; i < 160; i++) {
     const x = COAST - 6 - r() * 260, y = -220 + r() * 520; const p = P(x, y, 0);
-    if (p[1] < HORIZON + 4 || p[1] > H) continue;
+    if (p[1] < SEA_TOP + 4 || p[1] > H) continue;
     const L = 4 + r() * 10 * (p[1] - HORIZON) / 400; g.beginPath(); g.moveTo(p[0] - L, p[1]); g.lineTo(p[0] + L, p[1]); g.stroke();
   }
   // sun glitter path on the water
