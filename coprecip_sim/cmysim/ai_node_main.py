@@ -48,6 +48,9 @@ def main(argv=None):
     ap.add_argument("--hz", type=float, default=10.0, help="제어 루프 주기")
     ap.add_argument("--monitor", action="store_true"); ap.add_argument("--no-io", action="store_true")
     ap.add_argument("--preview", action="store_true", help="OpenCV 창에 ROI·색 견본 표시 (모니터 연결 시)")
+    ap.add_argument("--yolo", help="학습된 가중치 (.pt/.onnx/.hef). 기포·액체 상태를 로그에 남기고 기포가 많으면 트림을 보류")
+    ap.add_argument("--yolo-every", type=int, default=5, help="몇 프레임마다 YOLO 를 돌릴지")
+    ap.add_argument("--bubble-hold", type=int, default=3, help="이 개수 이상 기포가 보이면 카메라 추정을 믿지 않고 TRIM 을 미룸")
     a = ap.parse_args(argv)
 
     # 1) 설정 + 실측 보정값
@@ -95,10 +98,17 @@ def main(argv=None):
         print("텔레메트리 수신:", bus.latest())
 
     ctl = Controller(cfg, rec)
-    ds = DatasetRecorder(a.dataset, cam, de_match=a.de_match) if a.dataset else None
+    ds = DatasetRecorder(a.dataset, cam, de_match=a.de_match, roi=cs.roi) if a.dataset else None
+    det = None
+    if a.yolo:
+        from .yolo_infer import VisionEvents
+        det = VisionEvents(a.yolo); print("YOLO 로드:", a.yolo, det.backend)
+    yolo_res = dict(liquid=None, liquid_conf=0.0, bubbles=0, ms=0.0)
+    frame_i = 0
     logf = open(a.log, "w", newline=""); w = csv.writer(logf)
     w.writerow(["t_s", "state", "R", "G", "B", "A_R", "A_G", "A_B", "cC_hat", "cM_hat", "cY_hat", "dE2000", "io_mode",
-                "mA_101", "mA_102", "mA_103", "spm_101", "spm_102", "spm_103", "ph", "p_bar", "temp_C"])
+                "mA_101", "mA_102", "mA_103", "spm_101", "spm_102", "spm_103", "ph", "p_bar", "temp_C",
+                "yolo_liquid", "yolo_conf", "yolo_bubbles", "yolo_ms"])
     stop = {"flag": False}
     signal.signal(signal.SIGINT, lambda *_: stop.__setitem__("flag", True))
     signal.signal(signal.SIGTERM, lambda *_: stop.__setitem__("flag", True))
@@ -117,6 +127,12 @@ def main(argv=None):
             frame = cam.read()
             rgb, A = cam.roi_rgb8(frame), cam.roi_absorbance(frame, cfg.camera.I0)
             tele = bus.latest()
+            frame_i += 1
+            if det is not None and frame_i % a.yolo_every == 0:
+                yolo_res = det.detect(frame)
+                if yolo_res["bubbles"] >= a.bubble_hold and ctl.state == "MEASURE":
+                    ctl.t_state = t                      # 기포가 가라앉을 때까지 측정 구간을 연장
+                    print(f"{t:7.1f}s 기포 {yolo_res['bubbles']}개 → 측정 보류")
             if a.monitor:
                 c = optics.nnls3(cfg.camera.E, A)
                 de = optics.delta_e2000(rgb, rec.target_rgb8)
@@ -135,7 +151,8 @@ def main(argv=None):
             w.writerow([round(t, 2), row_state, *rgb.astype(int), *np.round(A, 4), *np.round(c_hat, 3), round(float(de_v), 3),
                         tele["mode"] if tele else "", *([pm[p]["cmd_mA"] for p in pm] if pm else ["", "", ""]),
                         *([pm[p]["spm"] for p in pm] if pm else ["", "", ""]),
-                        *([tele["ph"], tele["pressure_bar"], tele["temp_C"]] if tele else ["", "", ""])])
+                        *([tele["ph"], tele["pressure_bar"], tele["temp_C"]] if tele else ["", "", ""]),
+                        yolo_res["liquid"] or "", round(yolo_res["liquid_conf"], 3), yolo_res["bubbles"], round(yolo_res["ms"], 1)])
             if ds:
                 ds.maybe_record(t, None, c_hat, None, rgb, rec.target_rgb8, de_v, run_id="real", image=frame)
             if a.preview:

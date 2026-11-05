@@ -32,15 +32,18 @@ class SyntheticCamera:
         return np.round(optics.linear_to_code(I + noise, self.spec.gamma))
 
     def frame(self, c_obs: np.ndarray, bubbles: int = 0) -> np.ndarray:
-        """H×W×3 uint8 합성 프레임."""
+        """H×W×3 uint8 합성 프레임. 기포(밝은 원) 위치는 self.last_bubbles 에 (x, y, r) 로 남겨 YOLO 라벨에 쓴다."""
         I = self.linear_mean(c_obs)
         img = I[None, None, :] * self._vignette[:, :, None]
         img = img + self.rng.normal(0, self.spec.pixel_noise, img.shape)
+        self.last_bubbles = []
+        yy, xx = np.ogrid[:self.size[0], :self.size[1]]
         for _ in range(bubbles):
-            y, x = self.rng.integers(0, self.size[0]), self.rng.integers(0, self.size[1])
-            yy, xx = np.ogrid[:self.size[0], :self.size[1]]
-            m = (yy - y) ** 2 + (xx - x) ** 2 < 9
-            img[m] = 0.95
+            r = int(self.rng.integers(2, 6))
+            y, x = int(self.rng.integers(r, self.size[0] - r)), int(self.rng.integers(r, self.size[1] - r))
+            m = (yy - y) ** 2 + (xx - x) ** 2 < r * r
+            img[m] = (0.95 - 0.1 * ((yy - y) ** 2 + (xx - x) ** 2)[m] / (r * r))[:, None]   # 가장자리 어두운 구슬 모양
+            self.last_bubbles.append((x, y, r))
         return optics.linear_to_code(img, self.spec.gamma).astype(np.uint8)
 
 
@@ -58,14 +61,23 @@ def write_png(path, img: np.ndarray):
     pathlib.Path(path).write_bytes(png)
 
 
-class DatasetRecorder:
-    """YOLO 학습용 프레임/라벨 기록. on_target 기준은 ΔE2000 < de_match."""
+CLASSES = ("liquid_on_target", "liquid_off_target", "bubble")
 
-    def __init__(self, out_dir, cam: SyntheticCamera, every_s: float = 2.0, de_match: float = 2.0):
+
+class DatasetRecorder:
+    """YOLO 학습용 프레임/라벨 기록.
+
+    라벨 (YOLO detect 형식, 정규화 cx cy w h)
+      0 liquid_on_target / 1 liquid_off_target : 액체 ROI 박스. on_target 기준은 ΔE2000 < de_match
+      2 bubble                                  : 합성 프레임에서는 그린 기포 위치를 자동 라벨. 실제 프레임은 사람이 추가 (CVAT/LabelImg)
+    index.jsonl 에는 회귀용 연속값(진짜 농도, 추정 농도, RGB, ΔE)을 남긴다.
+    """
+
+    def __init__(self, out_dir, cam, every_s: float = 2.0, de_match: float = 2.0, roi=None):
         self.dir = pathlib.Path(out_dir)
         (self.dir / "images").mkdir(parents=True, exist_ok=True)
         (self.dir / "labels").mkdir(parents=True, exist_ok=True)
-        self.cam, self.every, self.de_match = cam, every_s, de_match
+        self.cam, self.every, self.de_match, self.roi = cam, every_s, de_match, roi
         self._last, self.n = -1e9, 0
         self.index = []
 
@@ -82,16 +94,24 @@ class DatasetRecorder:
         write_png(self.dir / "images" / f"{name}.png", img)
         h, w = img.shape[:2]
         cls = 0 if de < self.de_match else 1
-        # 액체 ROI = 프레임 중앙 80 % 박스 (YOLO: cls cx cy w h, 정규화)
-        (self.dir / "labels" / f"{name}.txt").write_text(f"{cls} 0.5 0.5 0.8 0.8\n")
+        if self.roi is not None:                                   # 실제 카메라: camera.json 의 ROI
+            x, y, rw, rh = self.roi
+            lines = [f"{cls} {(x + rw / 2) / w:.5f} {(y + rh / 2) / h:.5f} {rw / w:.5f} {rh / h:.5f}"]
+        else:                                                       # 합성: 중앙 80 %
+            lines = [f"{cls} 0.5 0.5 0.8 0.8"]
+        if image is None:
+            for (bx, by, br) in getattr(self.cam, "last_bubbles", []):
+                lines.append(f"2 {bx / w:.5f} {by / h:.5f} {2 * br / w:.5f} {2 * br / h:.5f}")
+        (self.dir / "labels" / f"{name}.txt").write_text("\n".join(lines) + "\n")
         rec = dict(frame=name, t=round(t, 2), c_true=(None if c_true is None else [round(float(v), 3) for v in c_true]),
                    c_hat=[round(float(v), 3) for v in c_hat], rgb=[int(v) for v in rgb8],
-                   target_rgb=[int(v) for v in target_rgb8], dE2000=round(float(de), 3), cls=cls)
+                   target_rgb=[int(v) for v in target_rgb8], dE2000=round(float(de), 3), cls=cls,
+                   n_bubbles=len(lines) - 1)
         self.index.append(rec)
         self.n += 1
 
     def close(self):
         (self.dir / "index.jsonl").write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in self.index) + "\n")
-        (self.dir / "classes.txt").write_text("on_target\noff_target\n")
-        (self.dir / "dataset.yaml").write_text(
-            f"path: {self.dir.resolve()}\ntrain: images\nval: images\nnames:\n  0: on_target\n  1: off_target\n")
+        (self.dir / "classes.txt").write_text("\n".join(CLASSES) + "\n")
+        names = "\n".join(f"  {i}: {c}" for i, c in enumerate(CLASSES))
+        (self.dir / "dataset.yaml").write_text(f"path: {self.dir.resolve()}\ntrain: images\nval: images\nnames:\n{names}\n")

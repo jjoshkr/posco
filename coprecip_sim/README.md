@@ -181,6 +181,37 @@ python -m cmysim.ai_node_main --io-ip 192.168.10.2 --target-file target.json --m
 I/O 노드에 `run_enable OFF` 와 `safe` 를 보내고, I/O 노드는 하트비트가 1 초 끊기면 스스로 SAFE 가 됩니다.
 `--dataset` 을 주면 실제 프레임이 2 초마다 YOLO 라벨과 함께 저장됩니다(라벨의 c_true 는 실물에서는 null, 카메라 추정 ĉ 와 ΔE 만 기록).
 
+## YOLO 학습 (`yolo_train.py`)
+
+역할 분담은 대화에서 정리한 대로입니다. 색 → 농도 같은 연속값은 Beer–Lambert 역산(또는 작은 회귀)이 맡고,
+YOLO 는 기포·거품·침전·이물 같은 '사건' 과 액체 ROI 의 on/off_target 상태를 봅니다.
+
+라벨 클래스: `0 liquid_on_target`, `1 liquid_off_target`(ΔE2000 기준), `2 bubble`.
+시뮬레이션 프레임은 기포 위치를 알고 그리므로 자동 라벨이 붙고, 실제 프레임은 ROI 박스만 자동이며 기포 박스는
+CVAT/LabelImg 로 추가합니다(같은 YOLO txt 형식).
+
+```bash
+cd coprecip_sim
+python -m cmysim.yolo_train gen --out ds_sim --runs 12                  # 시뮬레이션 12회 → 라벨 달린 프레임
+python -m cmysim.yolo_train prepare --src ds_sim/* ds_run1 --out yolo_ds # 실행 단위 train/val 분할, data.yaml, regression.csv
+python -m cmysim.yolo_train train --data yolo_ds/data.yaml --model yolo11n.pt --epochs 50 --imgsz 320 --device 0
+python -m cmysim.yolo_train train --data yolo_ds_cls --task classify --model yolo11n-cls.pt --epochs 30
+python -m cmysim.yolo_train infer --weights runs/cmy/weights/best.pt --source yolo_ds/images/val --save pred/
+python -m cmysim.yolo_train export --weights runs/cmy/weights/best.pt    # ONNX (NMS 없음, 고정 크기) → Hailo 컴파일
+python -m cmysim.yolo_train regress --csv yolo_ds/regression.csv         # 색→농도 회귀 (optics 역산과 비교)
+```
+
+- **분할은 실행 단위**가 기본입니다. 같은 실행의 연속 프레임이 train/val 에 섞이면 점수가 부풀려집니다.
+- **색상 증강(hsv_h, hsv_s)은 꺼져 있습니다.** 색이 라벨 그 자체이기 때문입니다.
+- 학습은 워크스테이션에서 합니다. Pi 에서는 추론만 합니다(`.pt` 는 CPU 로 수 fps, AI HAT+ 는 `.hef`).
+- **Hailo 경로**: `export` 가 만든 ONNX 를 x86 에서 Hailo Dataflow Compiler(`hailomz compile`, 보정 이미지 = `yolo_ds/images/train`)로
+  `.hef` 로 바꾸고 AI 노드로 복사합니다. `yolo_infer.VisionEvents` 가 `.pt/.onnx`(ultralytics) 와 `.hef`(hailo_platform) 를 같은
+  인터페이스로 감쌉니다. `.hef` 후처리는 hailo_model_zoo 의 YOLO NMS 출력 형식을 가정했고 Pi 에서 검증이 필요합니다.
+- AI 노드에 붙이기: `ai_node_main --yolo best.pt --yolo-every 5`. 액체 상태·기포 수가 로그에 남고, 기포가 `--bubble-hold`
+  개 이상이면 MEASURE 구간을 연장해 기포가 가라앉은 뒤 트림을 판단합니다.
+- `regress` 는 numpy 만으로 ROI RGB → 농도 릿지 회귀를 학습합니다. 시뮬레이션에서는 optics 역산과 비슷한 0.3~0.4 mg/L 수준이며,
+  실제 장치에서 Beer–Lambert 선형 가정이 깨지는 짙은 농도 구간의 보정 곡선으로 쓸 수 있습니다.
+
 ## 실제 보드로 옮길 때
 
 1. `daqhats_hal.DaqHatsHAL` 이 `io_node.json` 의 주소·핀 배정대로 daqhats 를 호출합니다. 실제 보드로는 실행하지 못했고,
@@ -213,6 +244,7 @@ I/O 노드에 `run_enable OFF` 와 `safe` 를 보내고, I/O 노드는 하트비
 coprecip_sim/
 ├── cmysim/            시뮬레이션: config, optics, hardware, process, vision, nodes, control, experiment, __main__
 │                      실물(Pi): camera, camera_tools, ai_node_main (AI 노드) / daqhats_hal, io_node_main (I/O 노드) / zmq_bridge
+│                      학습: yolo_train (gen/prepare/train/export/infer/regress), yolo_infer (VisionEvents: .pt/.onnx/.hef)
 ├── tests/fake_daqhats.py  PC 에서 I/O 노드 코드를 시험하는 가짜 daqhats
 ├── tests/test_sim.py  물질수지·광학 역산·펌프 곡선·DAC 교정·인터록·워치독·폐루프·고장 테스트
 ├── docs/              예시 그래프

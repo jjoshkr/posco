@@ -260,3 +260,27 @@ def test_ionode_on_daqhats_hal_with_loopback():
     assert io.mode == "RUN" and b1.pin_level(4) == 1                    # 밸브는 AI 노드가 닫을 때까지 열림
     io.tick(t + 2.0)                                                    # 하트비트 끊김
     assert io.mode == "SAFE" and b1.pin_level(4) == 0 and hal.b["mcc152#2"].pin_level(5) == 0
+
+
+# ---------------- YOLO 데이터셋 파이프라인 (ultralytics 없이 검증 가능한 부분)
+def test_recorder_bubble_labels_and_prepare(tmp_path):
+    from cmysim.yolo_train import main as ymain
+    import json as _json
+    cfg = SystemConfig(seed=5); rec, _ = make_recipe(cfg, target_cmy=[20, 8, 15], dose_minutes=0.5)
+    run_once(cfg, rec, 120.0, dataset_dir=tmp_path / "ds/run00", run_id="run00")
+    labels = list((tmp_path / "ds/run00/labels").glob("*.txt"))
+    assert labels
+    txt = "\n".join(l.read_text() for l in labels)
+    classes = {int(line.split()[0]) for line in txt.splitlines() if line.strip()}
+    assert classes <= {0, 1, 2} and 2 in classes                       # 기포 자동 라벨 존재
+    for line in txt.splitlines():
+        vals = [float(v) for v in line.split()[1:]]
+        assert all(0.0 <= v <= 1.0 for v in vals)
+    idx = [_json.loads(l) for l in (tmp_path / "ds/run00/index.jsonl").read_text().splitlines()]
+    assert any(r["n_bubbles"] > 0 for r in idx) and (tmp_path / "ds/run00/classes.txt").read_text().startswith("liquid_on_target")
+    ymain(["prepare", "--src", str(tmp_path / "ds/run00"), "--out", str(tmp_path / "yolo"), "--split-by", "frame", "--copy"])
+    assert (tmp_path / "yolo/data.yaml").exists() and (tmp_path / "yolo/regression.csv").exists()
+    assert len(list((tmp_path / "yolo/images/train").glob("*.png"))) + len(list((tmp_path / "yolo/images/val").glob("*.png"))) == len(labels)
+    assert (tmp_path / "yolo_cls/train/liquid_off_target").exists()
+    ymain(["regress", "--csv", str(tmp_path / "yolo/regression.csv"), "--out", str(tmp_path / "w.npy")])
+    assert (tmp_path / "w.npy").exists()
