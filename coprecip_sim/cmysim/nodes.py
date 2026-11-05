@@ -194,6 +194,7 @@ class IONode:
         self.lc_cfg = getattr(hal, "lc_cfg", None) or LoadCellConfig(backend="sim")
         self.flow_est = {pid: FlowEstimator(self.lc_cfg, j) for j, pid in enumerate(PUMP_IDS)}
         self.flow_chk = FlowCheck()
+        self._exp_hist = {pid: [] for pid in PUMP_IDS}     # (t, 기대 유량) — 로드셀 창과 같은 길이로 평균해 비교 (지령이 매초 바뀌는 pH 제어 등)
         self.flow_state = {pid: dict(mass_g=None, flow_mL_min=0.0, delivered_mL=0.0, valid=False, low=False, status="NO_DATA", ratio=float("nan"))
                            for pid in PUMP_IDS}
         self._next_lc = 0.0
@@ -334,7 +335,10 @@ class IONode:
             for j, pid in enumerate(PUMP_IDS):
                 st = self.flow_est[pid].push(t, masses[j] if j < len(masses) else None)
                 exp_spm = self.cfg.pump.max_spm * max(0.0, (self.cmd_mA[pid] - self.cfg.pump.i_start_mA)) / (self.cfg.pump.i_full_mA - self.cfg.pump.i_start_mA) if self.cmd_mA[pid] >= self.cfg.pump.i_start_mA else 0.0
-                exp_flow = min(exp_spm, self.cfg.pump.max_spm) * self.cfg.pump.stroke_mL * self.cfg.pump.stroke_length
+                exp_now = min(exp_spm, self.cfg.pump.max_spm) * self.cfg.pump.stroke_mL * self.cfg.pump.stroke_length
+                hist_e = self._exp_hist[pid]; hist_e.append((t, exp_now))
+                self._exp_hist[pid] = hist_e = [(tt, v) for tt, v in hist_e if t - tt <= self.lc_cfg.window_s]
+                exp_flow = sum(v for _, v in hist_e) / len(hist_e)          # 로드셀 기울기 창과 같은 창의 평균 지령 유량
                 status, ratio = self.flow_chk.check(t, pid, exp_flow, st)
                 st.update(status=status, ratio=None if ratio != ratio else round(ratio, 3))
                 self.flow_state[pid] = st
