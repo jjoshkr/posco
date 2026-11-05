@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>장면 01 · 플랜트 전경</title>
+<style>
+html,body{margin:0;height:100%;background:#0b1220;overflow:hidden}
+canvas{position:absolute;left:0;top:0;width:100%;height:100%}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<script>
+'use strict';
+/* ============================================================
+   PLATE 01 — establishing aerial (3/4 isometric), code-drawn
+   ============================================================ */
+const W = 1920, H = 1080;
+const FONT = '"Noto Sans KR","Noto Sans CJK KR","Malgun Gothic","Apple SD Gothic Neo",sans-serif';
+const font = (w, s) => `${w} ${s}px ${FONT}`;
+const HORIZON = 238;
+const PAL = {
+  pb:'#004490', pb2:'#5B7FB5', tq:'#1BA39C', tqL:'#5FD0C8', red:'#C0392B', heat:'#E8772E', green:'#2E9E6A',
+  ink:'#16202B', steel:'#C7D1DC', steelL:'#EEF3F8', steelD:'#8796A8', concrete:'#E4E8EC', asphalt:'#6D7682'
+};
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let r = Math.imul(seed ^ seed >>> 15, 1 | seed); r = r + Math.imul(r ^ r >>> 7, 61 | r) ^ r; return ((r ^ r >>> 14) >>> 0) / 4294967296; }; }
+function hex(h) { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function shade(h, k) {            // k<0 darker, k>0 lighter
+  const c = hex(h).map(v => k < 0 ? v * (1 + k) : v + (255 - v) * k);
+  return `rgb(${c.map(v => Math.round(v)).join(',')})`;
+}
+function rgba(h, a) { const c = hex(h); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+
+/* ---------- isometric projection ----------
+   world: x -> screen lower-right, y -> screen lower-left, z up (metres-ish) */
+const ISO = { s:3.9, ox:900, oy:345 };
+const CX = .866, CY = .5;
+function P(x, y, z = 0) { return [ISO.ox + (x - y) * CX * ISO.s, ISO.oy + (x + y) * CY * ISO.s - z * ISO.s]; }
+const SUN = { dx:-.32, dy:.62 };                       // shadow offset per metre of height (falls to front-left)
+function shadowPt(x, y, z) { return [x + SUN.dx * z, y + SUN.dy * z]; }
+
+let g;                                                 // active 2D context
+function path(pts) { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); }
+function poly3(pts3, fill, stroke, lw = 1) {
+  path(pts3.map(p => P(p[0], p[1], p[2] || 0)));
+  if (fill) { g.fillStyle = fill; g.fill(); }
+  if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw; g.stroke(); }
+}
+function line3(a, b, color, lw = 1) { const A = P(...a), B = P(...b); g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(B[0], B[1]); g.strokeStyle = color; g.lineWidth = lw; g.stroke(); }
+function lg(x0, y0, x1, y1, stops) { const gr = g.createLinearGradient(x0, y0, x1, y1); stops.forEach(([o, c]) => gr.addColorStop(o, c)); return gr; }
+
+/* ---------- shadows (drawn in one ground pass before objects) ---------- */
+const SHADOWS = [];
+function shBox(x, y, w, d, h) { SHADOWS.push({ k:'box', x, y, w, d, h }); }
+function shCyl(cx, cy, r, h) { SHADOWS.push({ k:'cyl', cx, cy, r, h }); }
+function hull(pts) {
+  pts = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cr = (o, a, b) => (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]);
+  const lo = [], up = [];
+  for (const p of pts) { while (lo.length >= 2 && cr(lo[lo.length-2], lo[lo.length-1], p) <= 0) lo.pop(); lo.push(p); }
+  for (const p of pts.slice().reverse()) { while (up.length >= 2 && cr(up[up.length-2], up[up.length-1], p) <= 0) up.pop(); up.push(p); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+function drawShadows() {
+  g.save(); g.fillStyle = 'rgba(28,46,70,.20)';
+  for (const s of SHADOWS) {
+    let pts = [];
+    if (s.k === 'box') {
+      const base = [[s.x, s.y], [s.x + s.w, s.y], [s.x + s.w, s.y + s.d], [s.x, s.y + s.d]];
+      pts = base.concat(base.map(p => shadowPt(p[0], p[1], s.h)));
+    } else {
+      for (let a = 0; a < 6.283; a += .4) { const px = s.cx + Math.cos(a) * s.r, py = s.cy + Math.sin(a) * s.r; pts.push([px, py], shadowPt(px, py, s.h)); }
+    }
+    path(hull(pts.map(p => P(p[0], p[1], 0)))); g.fill();
+  }
+  g.restore();
+}
+
+/* ---------- primitives ---------- */
+// box with three visible faces; c = base colour, light from upper-right
+function box(x, y, z, w, d, h, c, opt = {}) {
+  const top = opt.top || shade(c, .28), rt = opt.right || shade(c, .02), lf = opt.left || shade(c, -.2);
+  poly3([[x, y + d, z], [x + w, y + d, z], [x + w, y + d, z + h], [x, y + d, z + h]], lf);         // +y face (front-left)
+  poly3([[x + w, y, z], [x + w, y + d, z], [x + w, y + d, z + h], [x + w, y, z + h]], rt);         // +x face (front-right)
+  poly3([[x, y, z + h], [x + w, y, z + h], [x + w, y + d, z + h], [x, y + d, z + h]], top);        // top
+  if (opt.edge !== false) {
+    g.strokeStyle = 'rgba(30,45,65,.28)'; g.lineWidth = .8;
+    line3([x + w, y + d, z], [x + w, y + d, z + h], 'rgba(255,255,255,.35)', .8);
+    line3([x, y + d, z + h], [x + w, y + d, z + h], 'rgba(255,255,255,.5)', .8);
+    line3([x + w, y, z + h], [x + w, y + d, z + h], 'rgba(255,255,255,.5)', .8);
+  }
+}
+// windows/louvres on the +y (front-left) face
+function faceY(x, y, z, w, h, fn) {      // transform so (u,v) maps along x and up
+  const o = P(x, y, z); g.save(); g.setTransform(CX * ISO.s * DPR, CY * ISO.s * DPR, 0, -ISO.s * DPR, o[0] * DPR, o[1] * DPR); fn(); g.restore();
+}
+function faceX(x, y, z, d, h, fn) {      // along y and up on the +x face
+  const o = P(x, y, z); g.save(); g.setTransform(-CX * ISO.s * DPR, CY * ISO.s * DPR, 0, -ISO.s * DPR, o[0] * DPR, o[1] * DPR); fn(); g.restore();
+}
+function windowsY(x, y, z, w, h, rows, cols, col = 'rgba(40,80,130,.75)', glint = 'rgba(190,225,255,.9)') {
+  faceY(x, y, z, w, h, () => {
+    const cw = w / cols, rh = h / rows;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      g.fillStyle = col; g.fillRect(c * cw + cw * .18, r * rh + rh * .25, cw * .64, rh * .5);
+      g.fillStyle = glint; g.fillRect(c * cw + cw * .18, r * rh + rh * .62, cw * .64, rh * .1);
+    }
+  });
+}
+function windowsX(x, y, z, d, h, rows, cols, col = 'rgba(55,95,145,.7)') {
+  faceX(x, y, z, d, h, () => {
+    const cw = d / cols, rh = h / rows;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) { g.fillStyle = col; g.fillRect(-(c + 1) * cw + cw * .18, r * rh + rh * .25, cw * .64, rh * .5); }
+  });
+}
+const ER = 1.2247, ERY = .7071;          // circle -> ellipse factors
+function ell(cx, cy, z, r) { const p = P(cx, cy, z); g.beginPath(); g.ellipse(p[0], p[1], r * ER * ISO.s, r * ERY * ISO.s, 0, 0, Math.PI * 2); }
+// vertical cylinder (tanks, columns, silos)
+function cyl(cx, cy, z, r, h, c, opt = {}) {
+  const b = P(cx, cy, z), t = P(cx, cy, z + h), rx = r * ER * ISO.s, ry = r * ERY * ISO.s;
+  g.fillStyle = lg(b[0] - rx, 0, b[0] + rx, 0, [[0, shade(c, -.3)], [.35, shade(c, -.08)], [.72, shade(c, .35)], [.9, shade(c, .18)], [1, shade(c, -.05)]]);
+  g.beginPath(); g.moveTo(b[0] - rx, b[1]); g.ellipse(b[0], b[1], rx, ry, 0, Math.PI, 0, true); g.lineTo(t[0] + rx, t[1]); g.ellipse(t[0], t[1], rx, ry, 0, 0, Math.PI, true); g.closePath(); g.fill();
+  if (opt.bands) opt.bands.forEach(([zz, col, th]) => { const p = P(cx, cy, z + zz); g.strokeStyle = col; g.lineWidth = th * ISO.s; g.beginPath(); g.ellipse(p[0], p[1], rx, ry, 0, 0, Math.PI); g.stroke(); });
+  if (opt.cap !== 'none') {
+    g.fillStyle = opt.capColor || shade(c, .3); g.beginPath(); g.ellipse(t[0], t[1], rx, ry, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(30,45,65,.25)'; g.lineWidth = .8; g.stroke();
+  }
+  if (opt.dome) { g.fillStyle = lg(t[0] - rx, 0, t[0] + rx, 0, [[0, shade(c, -.15)], [.7, shade(c, .4)], [1, shade(c, .1)]]); g.beginPath(); g.ellipse(t[0], t[1], rx, opt.dome * ISO.s, 0, Math.PI, 0); g.fill(); }
+  if (opt.cone) { const a = P(cx, cy, z + h + opt.cone); g.fillStyle = lg(t[0] - rx, 0, t[0] + rx, 0, [[0, shade(c, -.2)], [.7, shade(c, .38)], [1, shade(c, .05)]]);
+    g.beginPath(); g.moveTo(t[0] - rx, t[1]); g.lineTo(a[0], a[1]); g.lineTo(t[0] + rx, t[1]); g.ellipse(t[0], t[1], rx, ry, 0, 0, Math.PI); g.closePath(); g.fill(); }
+}
+// inverted cone (hopper/cyclone bottom) from z down to z-hc
+function cone(cx, cy, z, r, hc, r2, c) {
+  const t = P(cx, cy, z), b = P(cx, cy, z - hc), rx = r * ER * ISO.s, ry = r * ERY * ISO.s, rx2 = r2 * ER * ISO.s;
+  g.fillStyle = lg(t[0] - rx, 0, t[0] + rx, 0, [[0, shade(c, -.3)], [.7, shade(c, .3)], [1, shade(c, -.05)]]);
+  g.beginPath(); g.moveTo(t[0] - rx, t[1]); g.ellipse(t[0], t[1], rx, ry, 0, Math.PI, 0, true); g.lineTo(b[0] + rx2, b[1]); g.lineTo(b[0] - rx2, b[1]); g.closePath(); g.fill();
+}
+function sphere(cx, cy, z, r, c) {
+  const p = P(cx, cy, z), R = r * ISO.s * 1.06;
+  const gr = g.createRadialGradient(p[0] + R * .35, p[1] - R * .4, R * .08, p[0], p[1], R);
+  gr.addColorStop(0, '#FFFFFF'); gr.addColorStop(.45, shade(c, .2)); gr.addColorStop(1, shade(c, -.35));
+  g.fillStyle = gr; g.beginPath(); g.arc(p[0], p[1], R, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = rgba(PAL.pb, .35); g.lineWidth = 1.2; g.beginPath(); g.ellipse(p[0], p[1], R, R * .22, 0, 0, Math.PI); g.stroke();
+}
+// 3D pipe along a polyline
+function pipe3(pts, w, c, opt = {}) {
+  const sp = pts.map(p => P(...p)); const px = w * ISO.s;
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  const st = (col, lw) => { g.beginPath(); sp.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.strokeStyle = col; g.lineWidth = lw; g.stroke(); };
+  st(shade(c, -.35), px + 1.4); st(c, px); st(rgba('#FFFFFF', opt.gloss ?? .55), Math.max(.8, px * .28));
+}
+// steel structure: columns + beams + grated floors
+function frame(x, y, z, w, d, h, levels, c = '#5B7FB5', floor = 'rgba(160,175,195,.9)', part = 'all') {
+  const cols = [[x, y], [x + w, y], [x + w, y + d], [x, y + d]];
+  const lv = []; for (let i = 0; i <= levels; i++) lv.push(z + h * i / levels);
+  if (part !== 'beams') lv.forEach((zz, i) => { if (i === 0) return; poly3([[x, y, zz], [x + w, y, zz], [x + w, y + d, zz], [x, y + d, zz]], floor); });
+  if (part === 'floors') return;
+  cols.forEach(([cx, cy]) => line3([cx, cy, z], [cx, cy, z + h], c, 2.2));
+  lv.forEach((zz, i) => { if (i === 0) return;
+    line3([x, y + d, zz], [x + w, y + d, zz], c, 2); line3([x + w, y, zz], [x + w, y + d, zz], c, 2);
+    // hand-rails
+    line3([x, y + d, zz + 1.1], [x + w, y + d, zz + 1.1], rgba('#F2C14E', .9), 1); line3([x + w, y, zz + 1.1], [x + w, y + d, zz + 1.1], rgba('#F2C14E', .9), 1);
+  });
+  // diagonal bracing on the two visible sides
+  for (let i = 0; i < levels; i++) { line3([x, y + d, lv[i]], [x + w, y + d, lv[i + 1]], rgba(c, .6), 1); line3([x + w, y, lv[i]], [x + w, y + d, lv[i + 1]], rgba(c, .6), 1); }
+}
+function tree(x, y, s = 1, seed = 1) {
+  const r = rng(seed)(), p = P(x, y, 0), R = (3 + r * 1.6) * s * ISO.s;
+  g.fillStyle = 'rgba(28,46,70,.18)'; g.beginPath(); g.ellipse(p[0] - R * .5, p[1] + R * .35, R * 1.1, R * .45, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#6B4F3A'; g.fillRect(p[0] - 1.2, p[1] - R * .9, 2.4, R * .9);
+  const c = P(x, y, 4.2 * s);
+  const gr = g.createRadialGradient(c[0] + R * .3, c[1] - R * .4, R * .1, c[0], c[1], R * 1.1);
+  gr.addColorStop(0, '#9BD48A'); gr.addColorStop(.6, '#4FA86A'); gr.addColorStop(1, '#2F7F55');
+  g.fillStyle = gr; g.beginPath(); g.arc(c[0], c[1], R, 0, Math.PI * 2); g.fill();
+}
+let DPR = 1;
+
+/* ============================================================
+   ENVIRONMENT
+   ============================================================ */
+function drawSky() {
+  g.fillStyle = lg(0, 0, 0, HORIZON, [[0, '#6FC0F2'], [.7, '#BFE5FA'], [1, '#E6F5FD']]); g.fillRect(0, 0, W, HORIZON + 2);
+  const sx = 1580, sy = 92;
+  const gr = g.createRadialGradient(sx, sy, 8, sx, sy, 420);
+  gr.addColorStop(0, 'rgba(255,250,225,1)'); gr.addColorStop(.12, 'rgba(255,240,190,.75)'); gr.addColorStop(.4, 'rgba(255,240,200,.18)'); gr.addColorStop(1, 'rgba(255,240,200,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, W, HORIZON + 2);
+  g.fillStyle = '#FFFBEA'; g.beginPath(); g.arc(sx, sy, 34, 0, Math.PI * 2); g.fill();
+  // soft clouds
+  [[250, 150, 1.0], [700, 176, .62], [1010, 128, .85], [1330, 196, .5], [1830, 205, .55], [80, 210, .42]].forEach(([x, y, s]) => cloud(x, y, s));
+}
+function cloud(x, y, s) {
+  // cumulus: overlapping puffs, flat base, cool shading underneath
+  const puffs = [[-120, -6, 38], [-70, -34, 52], [-10, -52, 66], [60, -36, 54], [118, -10, 40], [20, -12, 50], [-50, -8, 44]];
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.beginPath(); g.rect(-200, -160, 400, 160); g.clip();
+  g.fillStyle = 'rgba(200,222,240,.9)'; g.beginPath(); puffs.forEach(([px, py, r]) => { g.moveTo(px + r, py + 6); g.arc(px, py + 6, r, 0, 7); }); g.fill();
+  const cg = g.createLinearGradient(0, -120, 0, 0); cg.addColorStop(0, '#FFFFFF'); cg.addColorStop(.75, '#FAFDFF'); cg.addColorStop(1, '#E2EEF8');
+  g.fillStyle = cg; g.beginPath(); puffs.forEach(([px, py, r]) => { g.moveTo(px + r, py); g.arc(px, py, r, 0, 7); }); g.fill();
+  g.restore();
+}
+function ridge(y0, amp, seed, col0, col1, x0 = 0, x1 = W) {
+  const r = rng(seed); g.beginPath(); g.moveTo(x0, HORIZON + 2);
+  let a = r() * 6, b = r() * 6;
+  for (let x = x0; x <= x1; x += 8) g.lineTo(x, y0 - amp * (.55 + .3 * Math.sin(x * .004 + a) + .15 * Math.sin(x * .013 + b)));
+  g.lineTo(x1, HORIZON + 2); g.closePath(); g.fillStyle = lg(0, y0 - amp, 0, HORIZON, [[0, col0], [1, col1]]); g.fill();
+}
+function drawFarLand() {
+  ridge(HORIZON - 6, 40, 3, '#A7C2D8', '#CFE0EC', 0, W);          // far mountains behind the steel works
+  ridge(HORIZON, 26, 8, '#8FB49B', '#B6D2B4', 1050, W);
+  g.fillStyle = '#B9D7A5'; g.fillRect(0, HORIZON, W, H - HORIZON);
+}
+const COAST = -14;
+function drawSea() {
+  g.save(); g.beginPath(); g.rect(0, HORIZON, W, H); g.clip();
+  poly3([[COAST, -900], [COAST, 900], [-900, 900], [-900, -900]], lg(0, HORIZON, 0, 760, [[0, '#A9DDF3'], [.35, '#5DB4E2'], [1, '#2F8FCB']]));
+  // wave glints
+  const r = rng(12); g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1.4;
+  for (let i = 0; i < 160; i++) {
+    const x = COAST - 6 - r() * 260, y = -220 + r() * 520; const p = P(x, y, 0);
+    if (p[1] < HORIZON + 4 || p[1] > H) continue;
+    const L = 4 + r() * 10 * (p[1] - HORIZON) / 400; g.beginPath(); g.moveTo(p[0] - L, p[1]); g.lineTo(p[0] + L, p[1]); g.stroke();
+  }
+  // sun glitter path on the water
+  const sg = g.createRadialGradient(1150, HORIZON + 30, 4, 1150, HORIZON + 30, 260);
+  sg.addColorStop(0, 'rgba(255,250,220,.55)'); sg.addColorStop(1, 'rgba(255,250,220,0)'); g.fillStyle = sg; g.fillRect(700, HORIZON, 900, 300);
+  // seawall + rocks along the coast
+  poly3([[COAST, -260], [COAST + 5, -260], [COAST + 5, 260], [COAST, 260]], '#D9D2BE');
+  poly3([[COAST - 3, -260], [COAST, -260], [COAST, 260], [COAST - 3, 260]], '#A99F88');
+  const rr2 = rng(31);
+  for (let y = -200; y < 240; y += 3.2) { const p = P(COAST - 2.5 - rr2() * 1.5, y, 0); g.fillStyle = rr2() > .5 ? '#BDB4A0' : '#9C937F'; g.beginPath(); g.arc(p[0], p[1], 1.6 + rr2() * 1.4, 0, 7); g.fill(); }
+  ship(-74, 58, 40, 8, '#2F4F76'); ship(-44, 150, 18, 4.5, '#3E6A8F');
+  g.restore();
+}
+function ship(x, y, L, Wd, c) {
+  shBox(x, y, L, Wd, 0);
+  box(x, y, -1.2, L, Wd, 3.2, c, { top: '#B44B3A' });
+  box(x + L * .78, y + Wd * .15, 2, L * .14, Wd * .7, 6, '#F4F6F8');
+  const cols = ['#C0392B', '#1BA39C', '#5B7FB5', '#E8772E', '#2E9E6A'];
+  for (let i = 0; i < 7; i++) box(x + 3 + i * (L * .1), y + Wd * .12, 2, L * .085, Wd * .76, 2.4, cols[i % cols.length], { edge:false });
+  // wake
+  const p = P(x + L + 2, y + Wd / 2, 0); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(p[0] + 60, p[1] + 34); g.moveTo(p[0], p[1]); g.lineTo(p[0] + 70, p[1] + 18); g.stroke();
+}
+function road(pts, w = 7) {
+  // asphalt ribbon with dashed centre line, pts in ground plane
+  const sp = pts.map(p => P(p[0], p[1], 0));
+  const st = (col, lw, dash) => { g.save(); if (dash) g.setLineDash(dash); g.beginPath(); sp.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.strokeStyle = col; g.lineWidth = lw; g.lineJoin = 'round'; g.stroke(); g.restore(); };
+  st('#5E6773', w * ISO.s * .82 + 2); st(PAL.asphalt, w * ISO.s * .82); st('rgba(255,255,255,.85)', 1.4, [10, 10]);
+}
+function drawGroundPlan() {
+  // farmland patches beyond the site
+  const r = rng(19); const fields = ['#C6DFB0', '#B2D59A', '#D2E5B6', '#A9CF92'];
+  for (let i = 0; i < 26; i++) { const x = -10 + r() * 330, y = 150 + r() * 120, w = 18 + r() * 30, d = 14 + r() * 26; poly3([[x, y], [x + w, y], [x + w, y + d], [x, y + d]], fields[i % 4]); }
+  for (let i = 0; i < 18; i++) { const x = 215 + r() * 120, y = -120 + r() * 260, w = 16 + r() * 30, d = 14 + r() * 26; poly3([[x, y], [x + w, y], [x + w, y + d], [x, y + d]], fields[(i + 1) % 4]); }
+  // steel-works pad (behind)
+  poly3([[96, -74], [222, -74], [222, -16], [96, -16]], '#D4D9DF');
+  // plant site pad
+  poly3([[0, 0], [205, 0], [205, 145], [0, 145]], PAL.concrete);
+  // equipment bunds / pads
+  [[22, 92, 22, 30], [50, 52, 40, 44], [88, 50, 50, 46], [136, 44, 60, 50], [4, 4, 38, 30], [138, 4, 64, 34], [50, 100, 36, 30]].forEach(([x, y, w, d]) => poly3([[x, y], [x + w, y], [x + w, y + d], [x, y + d]], '#D6DCE2', 'rgba(150,165,180,.6)', 1));
+  // lawns
+  [[2, 126, 18, 17], [50, 132, 78, 12], [50, 2, 80, 10], [2, 36, 40, 10]].forEach(([x, y, w, d]) => poly3([[x, y], [x + w, y], [x + w, y + d], [x, y + d]], '#A8D392'));
+  // roads
+  road([[-8, 150], [215, 150]], 8);                       // public road in front
+  road([[212, 150], [212, -90]], 8);                     // road along right side
+  road([[45, 0], [45, 145]], 6); road([[132, 0], [132, 145]], 6); road([[0, 96], [205, 96]], 6); road([[100, 145], [100, 150]], 6);
+  road([[45, 0], [45, -10], [205, -10]], 6);
+  // fence
+  g.save(); g.setLineDash([3, 3]); poly3([[0, 0], [205, 0], [205, 145], [0, 145]], null, 'rgba(90,105,125,.8)', 1.2); g.restore();
+  // parking beside the admin building
+  poly3([[92, 104], [128, 104], [128, 126], [92, 126]], '#CDD3DA');
+  g.strokeStyle = 'rgba(255,255,255,.8)'; for (let i = 0; i <= 10; i++) { line3([93 + i * 3.4, 105, 0], [93 + i * 3.4, 110, 0], 'rgba(255,255,255,.8)', .8); line3([93 + i * 3.4, 115, 0], [93 + i * 3.4, 120, 0], 'rgba(255,255,255,.8)', .8); }
+  for (let i = 0; i < 9; i++) shBox(94 + i * 3.4, 105.4, 2, 4.2, 1.4);
+  for (let i = 0; i < 6; i++) shBox(94 + i * 3.4, 115.4, 2, 4.2, 1.4);
+  // loading-bay markings (front right)
+  g.save(); g.setLineDash([4, 3]); poly3([[140, 100], [196, 100], [196, 140], [140, 140]], null, 'rgba(232,170,40,.9)', 1.4); g.restore();
+}
+// solar field (renewable power for the plant)
+function solarField() {
+  for (let row = 0; row < 7; row++) for (let seg = 0; seg < 5; seg++) {
+    const x = 226 + seg * 13, y = 20 + row * 15;
+    shBox(x, y, 11, 4, 1.6);
+  }
+}
+function drawSolar() {
+  for (let row = 0; row < 7; row++) for (let seg = 0; seg < 5; seg++) {
+    const x = 226 + seg * 13, y = 20 + row * 15;
+    poly3([[x, y, 2.6], [x + 11, y, 2.6], [x + 11, y + 4, .8], [x, y + 4, .8]], '#1F5FA6');
+    g.strokeStyle = 'rgba(200,225,255,.55)'; g.lineWidth = .7;
+    for (let k = 1; k < 6; k++) line3([x + k * 11 / 6, y, 2.6], [x + k * 11 / 6, y + 4, .8], 'rgba(200,225,255,.5)', .7);
+    line3([x, y + 2, 1.7], [x + 11, y + 2, 1.7], 'rgba(200,225,255,.5)', .7);
+    line3([x, y, 2.6], [x + 11, y, 2.6], 'rgba(255,255,255,.8)', .9);
+  }
+}
+
+/* ============================================================
+   OBJECTS (registered with a depth key, drawn back-to-front)
+   ============================================================ */
+const OBJ = [];
+const add = (depth, f) => OBJ.push({ depth, f });
+const STEEL = '#C9D3DE', WHITE = '#EEF2F6', BLUEW = '#6F93C4';
+
+/* ---- cars in the car park ---- */
+(() => { const cc = ['#F7FAFC', '#2B3A4C', '#C0392B', '#5B7FB5', '#F7FAFC', '#9AA8B8', '#1BA39C', '#F7FAFC', '#3D4B5C'];
+  const car = (x, y, c) => add(x + y + 4, () => { box(x, y, 0, 2, 4.2, 1.0, c); box(x + .2, y + 1.2, 1, 1.6, 2.2, .6, '#3A4A5E', { top:'#7F9CC0' }); });
+  for (let i = 0; i < 9; i++) car(94 + i * 3.4, 105.4, cc[i]);
+  for (let i = 0; i < 6; i++) car(94 + i * 3.4, 115.4, cc[(i + 4) % 9]);
+})();
+
+/* ---- admin / control building (front, facing the road) ---- */
+shBox(52, 104, 32, 16, 14);
+add(52 + 32 + 104 + 16, () => {
+  box(52, 104, 0, 32, 16, 14, '#F2F5F8', { top:'#DCE3EA' });
+  windowsY(52, 120, 0, 32, 14, 3, 14, 'rgba(46,96,150,.78)');
+  windowsX(84, 120, 0, 16, 14, 3, 7);
+  box(52, 119.2, 13.2, 32, 1.2, .8, PAL.tq, { edge:false });
+  box(56, 107, 14, 7, 5, 2.4, '#C9D3DE'); box(70, 108, 14, 9, 6, 1.6, '#AEBBCA');
+  poly3([[56, 112, 14.1], [66, 112, 14.1], [66, 116, 14.1], [56, 116, 14.1]], '#2B5FA0');
+  faceY(52, 120, 0, 32, 14, () => { g.save(); g.scale(1, -1);
+    g.fillStyle = '#FFFFFF'; g.fillRect(2, -13.6, 28, 3.4);
+    g.fillStyle = PAL.pb; g.font = font(800, 2.2); g.textBaseline = 'middle'; g.textAlign = 'center';
+    g.fillText('POSCO 청록수소 플랜트 · 2030', 16, -11.9); g.restore(); });
+  [[60, 124], [64, 124], [68, 124]].forEach(([x, y], i) => { line3([x, y, 0], [x, y, 9], '#9AA8B8', 1); poly3([[x, y, 9], [x + 3, y, 8.6], [x + 3, y, 7.2], [x, y, 7.6]], ['#1BA39C', '#004490', '#F7FAFC'][i]); });
+});
+/* ---- back-left: maintenance workshop + water tanks ---- */
+shBox(6, 6, 28, 20, 10); shCyl(39, 12, 3.4, 9); shCyl(39, 24, 3.4, 9);
+add(6 + 6 + 30, () => {
+  box(6, 6, 0, 28, 20, 9, '#DDE5EC', { top:'#C9D3DE' });
+  for (let i = 0; i < 4; i++) { const x = 6 + i * 7; poly3([[x, 6, 9], [x + 7, 6, 12], [x + 7, 26, 12], [x, 26, 9]], '#E9EFF5', 'rgba(80,100,125,.3)'); poly3([[x + 7, 6, 9], [x + 7, 6, 12], [x + 7, 26, 12], [x + 7, 26, 9]], 'rgba(150,190,230,.85)'); }
+  faceY(6, 26, 0, 28, 9, () => { g.fillStyle = '#9AA8B8'; [3, 12, 21].forEach(u => g.fillRect(u, 0, 5, 6)); });
+});
+[[39, 12], [39, 24]].forEach(([x, y]) => add(x + y + 2, () => cyl(x, y, 0, 3.4, 9, '#DCE4EC', { dome:.9, bands:[[7.5, PAL.pb, .4]] })));
+/* ---- back-right: utilities (cooling tower, nitrogen, water treatment) ---- */
+shBox(142, 8, 26, 10, 8); shBox(144, 24, 12, 9, 6); shBox(176, 8, 19, 12, 4);
+add(142 + 8 + 30, () => {
+  box(142, 8, 0, 26, 10, 7, '#BCC8D5', { top:'#9FB0C2' });
+  for (let i = 0; i < 4; i++) { const c = P(145.5 + i * 6.2, 13, 7.2); g.fillStyle = '#5C6B7D'; g.beginPath(); g.ellipse(c[0], c[1], 9, 5, 0, 0, 7); g.fill(); g.strokeStyle = '#D9E1EA'; g.lineWidth = 1; g.stroke(); }
+  faceY(142, 18, 0, 26, 7, () => { g.fillStyle = 'rgba(80,95,115,.45)'; for (let i = 0; i < 26; i++) g.fillRect(i + .2, .6, .5, 5); });
+});
+add(144 + 24 + 20, () => { box(144, 24, 0, 12, 9, 6, '#EEF2F6'); windowsY(144, 33, 0, 12, 6, 1, 4); });
+add(186 + 20 + 6, () => { [[176, 10], [176, 18]].forEach(([x, y]) => { box(x + 2, y - 1.2, 0, 1, 2.4, 1.8, '#7F8FA3'); box(x + 15, y - 1.2, 0, 1, 2.4, 1.8, '#7F8FA3'); pipe3([[x, y, 3], [x + 19, y, 3]], 3, '#E8EDF2'); }); });
+/* ---- solid-carbon product warehouse (back middle) ---- */
+shBox(90, 6, 36, 18, 11);
+add(90 + 6 + 40, () => {
+  box(90, 6, 0, 36, 18, 10, '#E2E8EE', { top:'#C9D3DE' });
+  poly3([[90, 6, 10], [126, 6, 10], [126, 15, 13], [90, 15, 13]], '#D3DCE5'); poly3([[90, 15, 13], [126, 15, 13], [126, 24, 10], [90, 24, 10]], '#EEF3F7');
+  poly3([[126, 6, 10], [126, 15, 13], [126, 24, 10]], '#C3CDD8');
+  box(90, 23.6, 7.6, 36, .4, .8, PAL.tq, { edge:false });
+  faceY(90, 24, 0, 36, 10, () => { g.fillStyle = '#9AA8B8'; [3, 12, 21, 30].forEach(u => g.fillRect(u, 0, 4.5, 6)); });
+});
+/* ---- loading bay: tube-trailer filling canopy, carbon trucks ---- */
+SHADOWS.push({ k:'box', x:145 + 6 * SUN.dx, y:107 + 6 * SUN.dy, w:22, d:20, h:0 });
+add(160 + 120 + 8, () => {
+  [[146, 108], [166, 108], [146, 126], [166, 126]].forEach(([x, y]) => line3([x, y, 0], [x, y, 6], '#8796A8', 1.6));
+  [[150, 117], [158, 117]].forEach(([x, y]) => box(x, y - 1, 0, 1.6, 2, 2.2, '#F2F5F8', { top:PAL.tq }));          // dispensers
+  poly3([[145, 107, 6], [167, 107, 6], [167, 127, 6], [145, 127, 6]], 'rgba(240,244,248,.96)', 'rgba(120,135,155,.6)', 1);
+  poly3([[145, 127, 6], [167, 127, 6], [167, 127, 5.2], [145, 127, 5.2]], PAL.tq);
+  poly3([[167, 107, 6], [167, 127, 6], [167, 127, 5.2], [167, 107, 5.2]], shade(PAL.tq, -.15));
+});
+(() => { const trailer = (x, y) => add(x + y + 14, () => { box(x, y, 0, 13, 3, .8, '#4C5967'); for (let k = 0; k < 3; k++) pipe3([[x + .6, y + .6 + k * .9, 1.3 + (k % 2) * .5], [x + 12.4, y + .6 + k * .9, 1.3 + (k % 2) * .5]], .9, '#F4F7FA'); box(x + 13.2, y + .1, 0, 3.4, 2.8, 2.4, PAL.tq); });
+  [[172, 110], [172, 117], [172, 124], [150, 132]].forEach(([x, y]) => trailer(x, y)); })();
+/* ---- gate house ---- */
+add(100 + 142 + 4, () => { box(102, 140, 0, 5, 3.5, 3.2, '#F2F5F8', { top:PAL.tq }); line3([96, 146, 1.2], [104, 146, 1.2], '#C0392B', 1.6); });
+
+for (const [x, y, s] of [[4, 40, 1], [16, 40, .9], [30, 40, 1], [-4, 66, 1.1], [-4, 82, 1], [-4, 100, 1.2], [-4, 118, 1.1], [-4, 134, 1], [10, 140, .9], [54, 136, 1], [66, 137, .9], [78, 136, 1], [90, 132, .8], [118, 140, 1], [150, 143, 1.1], [180, 143, 1], [200, 143, .9], [208, 118, 1], [208, 90, 1.1], [208, 60, 1], [208, 30, 1.1], [130, 4, .9], [60, 6, .8], [88, 6, .9]])
+  add(x + y + .5, () => tree(x, y, s, x * 7 + y));
+
+/* ---- ① feed intake & pretreatment (front-left) ---- */
+shBox(12, 112, 8, 7, 4.5); shCyl(32, 106, 1.5, 9); shCyl(36, 106, 1.5, 9);
+add(12 + 112 + 15, () => {
+  box(12, 112, 0, 8, 7, 4.5, '#F3F6F9', { top:'#DDE4EB' });              // metering station
+  box(12, 118.6, 3.4, 8, .4, .6, PAL.tq, { edge:false });
+});
+add(-50, () => {});
+add(24 + 98 + 30, () => {
+  g.save(); g.setLineDash([7, 6]); { const a = P(18, 330, 0), b = P(18, 146, 0); g.strokeStyle = rgba(PAL.tq, .75); g.lineWidth = 3; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); } g.restore();   // buried city-gas main
+  box(16.6, 141, 0, 2.8, 2.4, 1.6, '#F2C14E', { top:'#F7D77A' });                                                     // above-ground riser / valve
+  pipe3([[18, 142, 1.2], [18, 122, 1.2], [26, 116, 1.2], [26, 104, 1.2]], 1.4, PAL.tq, { gloss:.5 });  // city-gas line
+  box(24, 98, 0, 20, 16, .8, '#9AA8B8');                                   // skid base
+  pipe3([[27, 102, 3.2], [41, 102, 3.2]], 3.2, WHITE); pipe3([[27, 110, 3.2], [41, 110, 3.2]], 3.2, WHITE);   // horizontal separators
+  [[30, 99.2], [38, 99.2], [30, 107.2], [38, 107.2]].forEach(([x, y]) => box(x, y, .8, .6, 1.4, 1.6, '#7F8FA3', { edge:false }));
+  cyl(32, 106, .8, 1.5, 8, STEEL, { dome:.9 }); cyl(36, 106, .8, 1.5, 8, STEEL, { dome:.9 });
+  line3([44, 114, 0], [44, 114, 7], '#7F8FA3', 1.4); box(43.4, 113.4, 7, 1.2, 1.2, 1, '#F7FAFC');      // gas detector pole
+});
+
+/* ---- main pipe rack linking the units ---- */
+function rack(x0, x1, y, z, cols) {
+  for (let x = x0; x <= x1; x += 8) { line3([x, y, 0], [x, y, z], '#6E7F93', 1.6); line3([x, y + 3, 0], [x, y + 3, z], '#6E7F93', 1.6); line3([x, y, z], [x, y + 3, z], '#6E7F93', 1.6); }
+  cols.forEach(([dy, c, w], i) => pipe3([[x0, y + dy, z + .5], [x1, y + dy, z + .5]], w, c));
+}
+add(30 + 48 + 40, () => rack(30, 52, 47, 7, [[.6, PAL.tq, .9], [1.6, WHITE, .9], [2.5, '#B7C3D0', .7]]));
+add(90 + 48 + 40, () => rack(78, 140, 47, 7, [[.6, PAL.tq, .9], [1.6, WHITE, .9], [2.5, '#B7C3D0', .7]]));
+add(30 + 100, () => { for (let y = 88; y >= 52; y -= 8) { line3([25, y, 0], [25, y, 7.5], '#6E7F93', 1.3); line3([27, y, 0], [27, y, 7.5], '#6E7F93', 1.3); line3([25, y, 7.5], [27, y, 7.5], '#6E7F93', 1.3); }
+  pipe3([[26, 104, 1.2], [26, 96, 1.2], [26, 88, 7.5], [26, 50, 7.5], [52, 48, 7.5]], 1.1, PAL.tq); });
+
+/* ---- ② pyrolysis reactor block + power ---- */
+shBox(54, 56, 24, 18, 38); shBox(54, 78, 20, 12, 10);
+add(54 + 56 + 30, () => {
+  box(52, 54, 0, 28, 22, .8, '#AEB9C6');
+  frame(54, 56, .8, 24, 18, 28, 3, '#41679E', 'rgba(150,165,185,.55)', 'floors');
+  [[59, 61], [66, 61], [73, 61], [62.5, 68], [69.5, 68]].forEach(([cx, cy], i) => {
+    cyl(cx, cy, .8, 2.6, i < 3 ? 36 : 33, '#E3E9EF', { dome:1.6, bands:[[7, PAL.tq, .5], [24, PAL.pb, .35], [30, PAL.tq, .3]] });
+    const w = P(cx, cy + 2.4, 13); g.fillStyle = lg(0, w[1] - 40, 0, w[1] + 10, [[0, '#FFE2A0'], [.5, '#F08A32'], [1, '#C0472A']]);
+    g.beginPath(); g.ellipse(w[0] + 2, w[1] - 14, 3.2, 12, 0, 0, 7); g.fill();            // glowing sight window
+  });
+  frame(54, 56, .8, 24, 18, 28, 3, '#41679E', null, 'beams');
+  // stair tower on the front-right corner
+  box(78.5, 70, .8, 4, 4, 30, '#5B7FB5', { top:'#7FA0CC', left:'rgba(60,95,150,.55)', right:'rgba(80,115,170,.45)' });
+  for (let k = 0; k < 10; k++) line3([82.5, 70, 2 + k * 3], [82.5, 74, 3.5 + k * 3], 'rgba(242,193,78,.95)', 1);
+  pipe3([[56, 74.5, 6], [56, 74.5, 26], [62.5, 68, 30]], .8, PAL.tq);
+  line3([66, 61, 38.5], [66, 61, 42], '#C0392B', 1.4); g.fillStyle = '#FF5A4A'; const bp = P(66, 61, 42.4); g.beginPath(); g.arc(bp[0], bp[1], 2.2, 0, 7); g.fill();  // aviation beacon
+});
+add(54 + 78 + 25, () => {
+  box(54, 78, 0, 20, 12, 10, '#E9EEF3', { top:'#D2DAE3' });              // plasma power building
+  box(54, 89.4, 8.6, 20, .6, 1.2, PAL.tq, { edge:false });
+  windowsY(54, 90, 0, 20, 10, 2, 8, 'rgba(46,96,150,.6)');
+  faceX(74, 90, 0, 12, 10, () => { g.fillStyle = 'rgba(120,135,155,.55)'; for (let i = 0; i < 10; i++) g.fillRect(-11 + i * 1.05, 2, .5, 5); });  // louvres
+});
+// substation + lattice pylon + lines from the solar field
+shBox(30, 72, 12, 14, 4);
+add(30 + 72 + 22, () => {
+  box(30, 72, 0, 12, 14, .5, '#B7C2CE');
+  [[31, 73], [37, 73], [31, 80], [37, 80]].forEach(([x, y]) => { box(x, y, .5, 4, 4.5, 4, '#8797AB'); for (let k = 0; k < 4; k++) line3([x + 4, y + .6 + k, .9], [x + 4, y + .6 + k, 4], '#6B7B8F', .8); });
+  g.save(); g.setLineDash([2, 2]); poly3([[29, 71], [43, 71], [43, 87], [29, 87]], null, 'rgba(90,105,125,.8)', 1); g.restore();
+});
+function pylon(x, y, h) { line3([x - 1.4, y, 0], [x, y, h], '#7A8798', 1.2); line3([x + 1.4, y, 0], [x, y, h], '#7A8798', 1.2); line3([x - 2.4, y, h - 3], [x + 2.4, y, h - 3], '#7A8798', 1.2); line3([x - 2, y, h - 6], [x + 2, y, h - 6], '#7A8798', 1.2); }
+add(46 + 74, () => { pylon(46, 74, 14); });
+// solar inverter station at the edge of the PV field
+shBox(220, 6, 8, 5, 3.2);
+add(220 + 6 + 10, () => { box(220, 6, 0, 8, 5, 3.2, '#F2F5F8', { top:'#C9D3DE' }); box(220, 10.6, 2.4, 8, .4, .5, PAL.tq, { edge:false }); });
+
+/* ---- ③ carbon separation + silos ---- */
+shCyl(93, 64, 2.2, 22); shCyl(99, 64, 2.2, 22); shBox(104, 54, 12, 9, 16);
+[[114, 82], [122, 82], [130, 82]].forEach(([x, y]) => shCyl(x, y, 3.6, 30));
+add(93 + 64 + 6, () => {
+  frame(90, 60, 0, 12, 8, 12, 2, '#41679E');
+  [[93, 64], [99, 64]].forEach(([x, y]) => { cyl(x, y, 14, 2.2, 7, STEEL, { cap:'flat' }); cone(x, y, 14, 2.2, 6, .5, STEEL); });
+  box(104, 54, 0, 12, 9, 16, '#DDE4EB', { top:'#C9D3DE' });                // bag-filter house
+  faceY(104, 63, 0, 12, 16, () => { g.fillStyle = 'rgba(110,125,145,.45)'; for (let i = 0; i < 6; i++) g.fillRect(1 + i * 1.8, 3, 1.1, 11); });
+  pipe3([[96, 64, 21], [96, 64, 24], [110, 58, 24], [110, 58, 16]], 1.2, '#B7C3D0');
+});
+add(122 + 82 + 6, () => {
+  box(110, 76, 0, 24, 12, 1, '#AEB9C6');
+  [[114, 82], [122, 82], [130, 82]].forEach(([x, y]) => cyl(x, y, 1, 3.6, 24, '#E4EAF0', { cone:4, bands:[[3, '#8C99A8', .5], [21, PAL.tq, .6]] }));
+  box(112, 80.6, 29, 20, 2.8, 1, '#7F8FA3', { edge:false });               // roof catwalk
+  // inclined conveyor gallery from filter house to silo tops
+  poly3([[110, 62, 14], [112, 80, 29.5], [114, 80, 29.5], [112, 62, 14]], '#9DAAB9');
+  poly3([[110, 62, 16.5], [112, 80, 32], [114, 80, 32], [112, 62, 16.5]], '#C6D0DB');
+  poly3([[112, 62, 14], [114, 80, 29.5], [114, 80, 32], [112, 62, 16.5]], '#B3BFCC');
+  // carbon black truck under the silos
+  box(134, 78, 0, 9, 3.2, 2.6, '#2F353D'); box(143, 78.2, 0, 3, 2.8, 2.4, PAL.pb);
+});
+
+/* ---- ④ purification, compression, storage ---- */
+for (let i = 0; i < 8; i++) shCyl(142 + (i % 4) * 4, 56 + Math.floor(i / 4) * 5, 1.1, 12);
+shBox(140, 72, 18, 11, 8);
+[[172, 54], [186, 60], [176, 74]].forEach(([x, y]) => shCyl(x, y, 6, 12));
+add(146 + 60, () => {
+  box(139, 53, 0, 18, 12, .8, '#AEB9C6');
+  for (let i = 0; i < 8; i++) { const x = 142 + (i % 4) * 4, y = 56 + Math.floor(i / 4) * 5; cyl(x, y, .8, 1.1, 11, '#E8EDF2', { dome:.8, bands:[[2, PAL.tq, .3]] }); }
+  pipe3([[141, 64, 2], [157, 64, 2]], .8, WHITE);
+});
+add(140 + 72 + 22, () => {
+  box(140, 72, 0, 18, 11, 8, '#EEF2F6', { top:'#D6DEE6' });               // compressor house
+  box(140, 82.4, 6.4, 18, .6, 1, PAL.pb, { edge:false });
+  faceY(140, 83, 0, 18, 8, () => { g.fillStyle = 'rgba(110,125,145,.5)'; for (let i = 0; i < 12; i++) g.fillRect(1 + i * 1.4, 1.6, .7, 3.6); });
+  box(144, 74, 8, 4, 4, 1.6, '#AEBBCA'); box(151, 75, 8, 4, 4, 1.6, '#AEBBCA');
+});
+[[172, 54], [186, 60], [176, 74]].forEach(([x, y]) => add(x + y + 4, () => {
+  for (let a = 0; a < 6.283; a += 1.047) line3([x + Math.cos(a) * 4.4, y + Math.sin(a) * 4.4, 0], [x + Math.cos(a) * 4.4, y + Math.sin(a) * 4.4, 7], '#7F8FA3', 1.6);
+  sphere(x, y, 12, 6, '#DDE4EB');
+  const p = P(x, y, 12); g.fillStyle = PAL.tq; g.font = font(800, 13); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('H₂', p[0], p[1] + 2);
+}));
+/* ---- ⑤ hydrogen pipeline rack to the steel works ---- */
+add(140, () => {
+  for (let y = 48; y >= -32; y -= 9) { line3([196, y, 0], [196, y, 6], '#6E7F93', 1.4); line3([199, y, 0], [199, y, 6], '#6E7F93', 1.4); line3([196, y, 6], [199, y, 6], '#6E7F93', 1.4); }
+  pipe3([[186, 60, 6.5], [197.5, 54, 6.5], [197.5, -36, 6.5], [194, -40, 8]], 1.4, '#F4F7FA', { gloss:.8 });
+  pipe3([[158, 70, 6.5], [170, 70, 6.5], [186, 60, 6.5]], 1.0, '#F4F7FA');
+});
+
+/* ---- HyREX steel works (background, behind the site) ---- */
+shBox(100, -70, 52, 16, 20); shBox(104, -48, 34, 12, 12); shCyl(171, -51, 6.5, 56); shCyl(194, -40, 5.2, 46);
+add(100 - 70 + 40, () => {
+  box(100, -70, 0, 52, 16, 20, '#9FB4CA', { top:'#B9C9DA' });
+  for (let i = 0; i < 7; i++) { const x = 100 + i * 52 / 7; poly3([[x, -70, 20], [x + 52 / 14, -70, 23.5], [x + 52 / 7, -70, 20], [x + 52 / 7, -54, 20], [x + 52 / 14, -54, 23.5], [x, -54, 20]], '#C3D1DF', 'rgba(80,100,125,.3)'); }
+  faceY(100, -54, 0, 52, 20, () => { g.fillStyle = 'rgba(255,255,255,.35)'; for (let i = 0; i < 12; i++) g.fillRect(1.5 + i * 4.2, 12, 2.6, 4); });
+  [[146, -34, 5], [156, -30, 4]].forEach(([x, y, r]) => { const p = P(x, y, 0), rx = r * ER * ISO.s; g.fillStyle = lg(p[0] - rx, 0, p[0] + rx, 0, [[0, '#4A3F3A'], [.6, '#7A6A60'], [1, '#56493F']]);
+    g.beginPath(); g.moveTo(p[0] - rx, p[1]); g.quadraticCurveTo(p[0] - rx * .2, p[1] - r * 2.2 * ISO.s, p[0], p[1] - r * 2 * ISO.s); g.quadraticCurveTo(p[0] + rx * .2, p[1] - r * 2.2 * ISO.s, p[0] + rx, p[1]); g.ellipse(p[0], p[1], rx, r * ERY * ISO.s, 0, 0, Math.PI); g.fill(); });
+});
+add(104 - 48 + 22, () => { box(104, -48, 0, 34, 12, 12, '#A9BCD0', { top:'#C2D0DE' }); windowsY(104, -36, 0, 34, 12, 2, 9, 'rgba(60,90,130,.45)', 'rgba(220,235,250,.6)'); });
+add(171 - 51 + 10, () => {
+  frame(162, -60, 0, 18, 18, 46, 5, '#5B7FB5', 'rgba(150,165,185,.7)');
+  cyl(171, -51, 0, 6.5, 54, '#C7D3E0', { dome:2.4, bands:[[18, PAL.tq, 1.2], [38, PAL.pb, .6]] });
+  poly3([[138, -44, 8], [164, -52, 44], [164, -49, 44], [138, -41, 8]], '#AEBCCB');
+  poly3([[138, -41, 8], [164, -49, 44], [164, -49, 47], [138, -41, 11]], '#C9D4E0');
+  const b1 = P(171, -51, 57); g.fillStyle = '#FF5A4A'; g.beginPath(); g.arc(b1[0], b1[1], 2.4, 0, 7); g.fill();
+});
+add(194 - 40 + 8, () => { cyl(194, -40, 0, 5.2, 44, '#BCCADA', { dome:2, bands:[[16, PAL.tq, 1.1]] }); frame(188, -46, 0, 12, 12, 36, 4, '#5B7FB5', 'rgba(150,165,185,.6)'); });
+
+/* ---- tiny workers (scale cue) ---- */
+function worker(x, y) { const p = P(x, y, 0); g.fillStyle = '#2C6CB5'; g.fillRect(p[0] - 1.3, p[1] - 6, 2.6, 6); g.fillStyle = '#FFFFFF'; g.beginPath(); g.arc(p[0], p[1] - 7.2, 1.6, 0, 7); g.fill(); }
+[[46, 118], [48, 121], [90, 98], [126, 98], [160, 92], [135, 62], [80, 92], [86, 128], [88, 129], [170, 96]].forEach(([x, y]) => add(x + y + 1, () => worker(x, y)));
+
+/* ---- floating labels (screen space) ---- */
+function tag(text, wx, wy, wz, col = PAL.pb, dy = -46, dx = 0) {
+  const [x0, y] = P(wx, wy, wz), x = x0 + dx;
+  g.save(); g.font = font(800, 26); const w = g.measureText(text).width + 34, h = 46;
+  g.strokeStyle = col; g.lineWidth = 2; g.beginPath(); g.moveTo(x0, y); g.lineTo(x, y + dy + (dy < 0 ? h / 2 : -h / 2)); g.stroke();
+  g.fillStyle = col; g.beginPath(); g.arc(x0, y, 4, 0, 7); g.fill();
+  g.shadowColor = 'rgba(0,40,90,.25)'; g.shadowBlur = 14; g.fillStyle = 'rgba(255,255,255,.96)';
+  const bx = x - w / 2, by = y + dy - h / 2; g.beginPath(); g.roundRect(bx, by, w, h, 10); g.fill(); g.shadowBlur = 0;
+  g.lineWidth = 2.5; g.stroke(); g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, x, by + h / 2 + 1);
+  g.restore();
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+const cv = document.getElementById('cv');
+function render() {
+  DPR = Math.max(1, window.devicePixelRatio || 1);
+  const sc = Math.min(innerWidth / W, innerHeight / H);
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  cv.style.width = W * sc + 'px'; cv.style.height = H * sc + 'px';
+  cv.style.left = (innerWidth - W * sc) / 2 + 'px'; cv.style.top = (innerHeight - H * sc) / 2 + 'px';
+  g = cv.getContext('2d'); g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  drawSky(); drawFarLand();
+  g.save(); g.beginPath(); g.rect(0, HORIZON, W, H); g.clip();     // ground plane never rises above the horizon
+  drawSea(); drawGroundPlan(); solarField(); drawShadows();
+  g.restore();
+  drawSolar();
+  OBJ.sort((a, b) => a.depth - b.depth).forEach(o => o.f());
+  tag('HyREX 수소환원제철', 171, -51, 60, PAL.pb, -40);
+  tag('POSCO 청록수소 플랜트 · 2030', 60, 124, 2, PAL.tq, 150, -230);
+  // gentle atmospheric haze toward the horizon
+  g.fillStyle = lg(0, HORIZON, 0, HORIZON + 160, [[0, 'rgba(230,244,252,.55)'], [1, 'rgba(230,244,252,0)']]); g.fillRect(0, HORIZON, W, 160);
+  window.__ready = true;
+}
+addEventListener('resize', render);
+render();
+</script>
+</body>
+</html>
