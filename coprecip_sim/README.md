@@ -256,6 +256,46 @@ python -m cmysim.yolo_train regress --csv yolo_ds/regression.csv         # 색�
 - `regress` 는 numpy 만으로 ROI RGB → 농도 릿지 회귀를 학습합니다. 시뮬레이션에서는 optics 역산과 비슷한 0.3~0.4 mg/L 수준이며,
   실제 장치에서 Beer–Lambert 선형 가정이 깨지는 짙은 농도 구간의 보정 곡선으로 쓸 수 있습니다.
 
+## pH 제어기: NaOH 도징 (`ph_control.py`)
+
+Tier B(pH 유도 침전)·Tier C(공침, pH 9~11 유지)용입니다. NaOH 는 펌프 3대 중 하나(기본 P-103)에 배정하고, pH 는 I/O 노드
+텔레메트리(MCC 118 CH0, 절연형 트랜스미터 4–20 mA)로 받아 AI 노드의 레시피 스텝 `ph_control` 이 펌프 mA 를 보냅니다.
+
+| 구성 | 내용 |
+|---|---|
+| 공정 모델 | 강염기 − 강산 + 약산 완충계의 전하 균형으로 pH 계산. `ph: {initial, buffers: [[conc, pKa]]}`. 산 부하(금속염 피드가 OH⁻ 를 소모하는 효과)는 `acid_load` 스텝 |
+| 프로브 | 혼합 지연(t_m/3) + 1차 지연 8 s + 잡음 + 드리프트. 실제 프로브 시정수는 실측해 `probe_tau_s` 에 |
+| 제어기 | 한쪽(염기만) PI(D), 측정값 미분 필터, 조건부 적분(안티와인드업), 불감대, 피드포워드(산 부하 × 화학량론) |
+| 과투입 방지 | **완충용량 기반 투입 상한**: 설정값까지 필요한 염기량(β̂·V·e)에서 아직 측정에 안 보이는 양(최근 20 s 투입)을 뺀 나머지를 30 s 안에 넣는 속도 이상은 내지 않음. β̂ 는 온라인 추정(사전값은 작게 → 모자라면 적분이 채움) |
+| 안전 | pH 상·하한, 배치 최대 NaOH 부피, 최대 투입인데 pH 가 안 움직이면 STUCK(프로브/펌프/빈 탱크) |
+| 동조 | `mode: relay` 릴레이 자동동조 → Ku, Tu → Tyreus–Luyben PI. 염기만 넣는 제어라 **산 부하(금속염 피드)가 있을 때만** 진동이 생김. `mode: titrate` 설정값 램프(침전 개시 pH 탐색) |
+
+```bash
+python -m cmysim.ph_control sim --setpoint 10.5 --load 0.0002 --load-start 200 --plot ph.png   # 단독 폐루프 (동조용)
+python -m cmysim.ph_control autotune --setpoint 10.0 --ph0 9.5 --load 0.0002 --duration 1500
+python -m cmysim.recipe_cli run recipes/tierB_ph_step.yaml --out results --plot
+```
+
+```yaml
+ph: {initial: 5.0, buffers: [[0.01, 4.8]], naoh_pump: P-103, naoh_mol_L: 0.1}
+steps:
+  - {step: ph_control, pump: P-103, setpoint: 10.5, seconds: 300, Kp: 10.0, Ki: 0.02, label: step_up}
+  - {step: acid_load, mol_min: 0.0002}
+  - {step: ph_control, pump: P-103, setpoint: 10.5, seconds: 400, label: hold_under_load}
+```
+
+pH 제어가 어려운 이유는 약완충 용액에서 설정값 근처 이득이 수십 배로 변하고, 염기만 넣을 수 있어 한 번 넘기면 되돌릴 수 없기
+때문입니다. 그래서 P 항은 완충용량 상한과 **관측 상승률 제한기**(지연 20 s 동안 올라갈 양이 남은 오차의 절반을 넘지 않게)로
+묶고, 적분은 오차가 ±0.5 안일 때만 쌓습니다. 시뮬레이션(0.1 M NaOH, 2 L, 프로브 8 s):
+
+| 경우 | 정착(±0.1) | 오버슈트 | NaOH |
+|---|---|---|---|
+| 약완충 7 → 10.5 | 152 s | 0.07 | 25 mL |
+| 구연산 10 mM, 5 → 10.5 | 270 s | 0.07 | 85 mL |
+| 10.5 유지 + 200 s 부터 산 부하 0.2 mmol/min | 유지, 정상상태 −0.09 | 0 | 47 mL |
+| 릴레이 동조값(Kp 8.2, Ki 0.054)으로 10.0 유지(부하) | 240 s | 0.05 | 31 mL | 실제 장치에서는 (1) NaOH 는 0.1 M 로
+묽게, (2) 첫 배치에 `relay` 로 동조, (3) 프로브는 투입구 반대편·임펠러 높이에, (4) 트랜스미터는 절연형으로 접지 루프를 피하세요.
+
 ## 로드셀(HX711) 중량 유량 계측 (`loadcell.py`)
 
 스톡병마다 로드셀을 두고 무게 감소율로 **실제 유량**을 잽니다. 정량펌프는 개루프라 스트로크는 세는데 액이 안 나가는 고장
@@ -356,8 +396,9 @@ coprecip_sim/
 │                      레시피: recipe (YAML → 스텝 실행기), recipe_cli (example/validate/expand/run)
 │                      이상탐지: anomaly (특징, PCA/1D-CNN 오토인코더, CUSUM, gen/train/eval/score, 온라인 Detector)
 │                      로드셀: loadcell (HX711 serial/gpio/sim, FlowEstimator, FlowCheck, tare/calib/flow CLI)
+│                      pH: ph_control (PHModel/PHProbe, PHController PID+캡+안전, 릴레이 동조, titrate, sim/autotune CLI)
 ├── firmware/hx711_bridge.ino  Arduino HX711×3 → USB 시리얼 브리지
-├── recipes/           예시 레시피 3개
+├── recipes/           예시 레시피 5개 (색 매칭, 비율 스윕, 고장 주입, pH 스텝, pH 자동동조)
 ├── tests/fake_daqhats.py  PC 에서 I/O 노드 코드를 시험하는 가짜 daqhats
 ├── tests/test_sim.py  물질수지·광학 역산·펌프 곡선·DAC 교정·인터록·워치독·폐루프·고장 테스트
 ├── docs/              예시 그래프

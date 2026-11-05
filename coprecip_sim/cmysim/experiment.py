@@ -40,7 +40,9 @@ def apply_fault(kind: str, arg: str, plant: SimPlant, ai: AINode, io: IONode):
         pid, v = arg.split("=")
         plant.tanks[PUMP_IDS.index(pid)].conc_mg_L = float(v)
     elif kind == "ph_drift":                      # pH 프로브 오프셋 드리프트 (+0.3 등)
-        plant.reactor.ph += float(arg or 0.3)
+        plant.reactor.ph_probe.offset += float(arg or 0.3)
+    elif kind == "acid_load":                     # 산 부하 [mol/min] 시작 (금속염 피드가 OH− 소모)
+        plant.reactor.acid_load_mol_min = float(arg or 0.0002)
     elif kind == "pump_air":                      # 튜브 공기 유입: 스트로크는 세지만 토출이 절반
         pid = arg or "P-101"
         plant.pumps[pid].spec = replace(plant.pumps[pid].spec, stroke_mL=plant.pumps[pid].spec.stroke_mL * 0.5)
@@ -67,7 +69,7 @@ def run_once(cfg: SystemConfig, recipe: Recipe, duration_s: float = 600.0, fault
     fault_list = sorted(parse_fault(f) for f in faults)
 
     hist = {k: [] for k in ("t", "c_true", "c_obs", "c_hat", "rgb", "dE", "dE_true", "cmd_mA", "fb_spm",
-                            "tank_mL", "V_mL", "state", "mode", "pressure", "ph", "temp", "rpm", "flow", "mass")}
+                            "tank_mL", "V_mL", "state", "mode", "pressure", "ph", "temp", "rpm", "flow", "mass", "ph_true", "naoh_mL")}
     t, n = 0.0, int(round(duration_s / cfg.dt))
     t_done = None
     for k in range(n + 1):
@@ -99,6 +101,7 @@ def run_once(cfg: SystemConfig, recipe: Recipe, duration_s: float = 600.0, fault
             hist["mode"].append(io.mode)
             hist["pressure"].append(max(pp.s.pressure_bar for pp in plant.pumps.values()))
             hist["ph"].append(io.hal.read_ph()); hist["temp"].append(io.hal.read_temp_C()); hist["rpm"].append(plant.reactor.rpm)
+            hist["ph_true"].append(plant.reactor.ph_true); hist["naoh_mL"].append(plant.reactor.naoh_mL)
             hist["flow"].append([io.flow_state[p]["flow_mL_min"] if io.flow_state[p]["valid"] else float("nan") for p in PUMP_IDS])
             hist["mass"].append([io.flow_state[p]["mass_g"] if io.flow_state[p]["mass_g"] is not None else float("nan") for p in PUMP_IDS])
         if rec:
@@ -113,7 +116,7 @@ def run_once(cfg: SystemConfig, recipe: Recipe, duration_s: float = 600.0, fault
 
     for key in ("c_true", "c_obs", "c_hat", "rgb", "cmd_mA", "fb_spm", "tank_mL", "flow", "mass"):
         hist[key] = np.array(hist[key], float)
-    for key in ("t", "dE", "dE_true", "V_mL", "pressure", "ph", "temp", "rpm"):
+    for key in ("t", "dE", "dE_true", "V_mL", "pressure", "ph", "temp", "rpm", "ph_true", "naoh_mL"):
         hist[key] = np.array(hist[key], float)
 
     cam = cfg.camera
@@ -176,14 +179,14 @@ def save_timeseries_csv(res: dict, path):
         w.writerow(["t_s", "state", "io_mode", "cC_true", "cM_true", "cY_true", "cC_hat", "cM_hat", "cY_hat",
                     "R", "G", "B", "dE2000_cam", "dE2000_true", "mA_101", "mA_102", "mA_103",
                     "spm_101", "spm_102", "spm_103", "tankC_mL", "tankM_mL", "tankY_mL", "reactor_mL", "p_bar",
-                    "ph", "temp_C", "rpm", "flow_101", "flow_102", "flow_103", "mass_101", "mass_102", "mass_103"])
+                    "ph", "temp_C", "rpm", "flow_101", "flow_102", "flow_103", "mass_101", "mass_102", "mass_103", "ph_true", "naoh_mL"])
         for i in range(len(h["t"])):
             w.writerow([h["t"][i], h["state"][i], h["mode"][i], *np.round(h["c_true"][i], 3), *np.round(h["c_hat"][i], 3),
                         *np.round(h["rgb"][i], 1), round(h["dE"][i], 3), round(h["dE_true"][i], 3),
                         *np.round(h["cmd_mA"][i], 2), *np.round(h["fb_spm"][i], 1), *np.round(h["tank_mL"][i], 1),
                         round(h["V_mL"][i], 1), round(h["pressure"][i], 2),
                         round(h["ph"][i], 3), round(h["temp"][i], 2), round(h["rpm"][i], 1),
-                        *np.round(h["flow"][i], 3), *np.round(h["mass"][i], 2)])
+                        *np.round(h["flow"][i], 3), *np.round(h["mass"][i], 2), round(h["ph_true"][i], 3), round(h["naoh_mL"][i], 2)])
 
 
 def plot_result(res: dict, path):

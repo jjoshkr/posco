@@ -74,7 +74,7 @@ class SimPlant:
         self.pumps = {pid: GammaXPump(cfg.pump, self.rng, pid) for pid in PUMP_IDS}
         self.valves = {vid: SolenoidValveNC(vid) for vid in VALVE_IDS}
         self.tanks = [StockTank(ts, d) for ts, d in zip(cfg.tanks, ("C", "M", "Y"))]
-        self.reactor = Reactor(cfg.reactor)
+        self.reactor = Reactor(cfg.reactor, self.rng)
         self.stirrer = Stirrer(cfg.reactor.rpm_max)
         self.stirrer_mA = 4.0 + 16.0 * cfg.reactor.rpm / cfg.reactor.rpm_max
         self.stirrer.rpm = cfg.reactor.rpm
@@ -91,7 +91,11 @@ class SimPlant:
             pump.level_ok = tank.level_ok
 
             def deliver(v, j=j, tank=tank):
-                self.reactor.add(j, tank.draw(v), tank.conc_mg_L)
+                drawn = tank.draw(v)
+                if tank.spec.role == "naoh":
+                    self.reactor.add_base(drawn, tank.spec.conc_mol_L)
+                else:
+                    self.reactor.add(j, drawn, tank.conc_mg_L)
 
             pump.step(ch.actual_mA, dt, valve.is_open, deliver)
         self.reactor.rpm = self.stirrer.step(self.stirrer_mA, dt)

@@ -48,8 +48,10 @@ class AdcSpec:
 @dataclass
 class TankSpec:
     volume_mL: float = 2000.0        # GL45 2 L 스톡병
-    conc_mg_L: float = 1000.0        # 스톡 1.00 g/L
+    conc_mg_L: float = 1000.0        # 스톡 1.00 g/L (role == "dye")
     low_level_mL: float = 100.0      # 수위 스위치 (펌프 수위 입력 → 자동 정지)
+    role: str = "dye"                # "dye" | "naoh"  (naoh 면 pH 제어용 NaOH, conc_mol_L 사용)
+    conc_mol_L: float = 0.1
 
 
 @dataclass
@@ -60,7 +62,10 @@ class ReactorSpec:
     rpm_max: float = 1000.0          # 교반기 4–20 mA ↔ 0–rpm_max (가정)
     mix_K: float = 3000.0            # t_m ≈ mix_K / rpm [s]  (300 rpm → 10 s)
     temp_C: float = 25.0
-    ph: float = 7.0
+    ph: float = 7.0                  # 초기 pH
+    buffers: tuple = ((0.005, 6.35),)   # 완충종 (conc mol/L, pKa). Tier B 구연산: ((0.01, 4.8),)
+    probe_tau_s: float = 8.0         # pH 프로브 1차 지연
+    acid_load_mol_min: float = 0.0   # 산 부하 (금속염 피드가 OH− 를 소모하는 효과), 레시피/고장으로 바꿈
 
 
 @dataclass

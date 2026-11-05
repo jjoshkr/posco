@@ -2,6 +2,7 @@
 from __future__ import annotations
 import numpy as np
 from .config import TankSpec, ReactorSpec, DYES
+from .ph_control import PHModel, PHProbe, BufferSpecies
 
 
 class StockTank:
@@ -32,19 +33,33 @@ class Reactor:
     - 카메라가 보는 농도 c_obs 는 교반 혼합시간 t_m = mix_K/rpm 에 따라 1차 지연 (τ = t_m/3 → t_m 에서 95 %)
     """
 
-    def __init__(self, spec: ReactorSpec):
+    def __init__(self, spec: ReactorSpec, rng=None):
         self.spec = spec
         self.V_mL = spec.heel_mL
         self.m_mg = np.zeros(3)
         self.c_obs = np.zeros(3)
         self.rpm = spec.rpm
         self.temp_C = spec.temp_C
-        self.ph = spec.ph
         self.overflow = False
+        self.ph_model = PHModel(spec.heel_mL / 1000.0, spec.ph, [BufferSpecies(c, pk) for c, pk in spec.buffers])
+        self.ph_probe = PHProbe(spec.probe_tau_s, rng=rng)
+        self.ph_mixed = spec.ph
+        self.ph = spec.ph                 # 프로브가 읽는 값 (SimHAL.read_ph 가 트랜스미터로 양자화)
+        self.acid_load_mol_min = spec.acid_load_mol_min
+        self.naoh_mL = 0.0
 
     def add(self, dye_idx: int, vol_mL: float, conc_mg_L: float):
         self.m_mg[dye_idx] += vol_mL * conc_mg_L / 1000.0
         self.V_mL += vol_mL
+        self.ph_model.add_water(vol_mL)
+        if self.V_mL > self.spec.v_max_mL:
+            self.overflow = True
+
+    def add_base(self, vol_mL: float, conc_mol_L: float):
+        """NaOH 투입 (pH 제어용 펌프). 염료 질량은 그대로, 부피만 늘고 염기가 더해진다."""
+        self.V_mL += vol_mL
+        self.naoh_mL += vol_mL
+        self.ph_model.add_base(vol_mL, conc_mol_L)
         if self.V_mL > self.spec.v_max_mL:
             self.overflow = True
 
@@ -57,9 +72,18 @@ class Reactor:
 
     def step(self, dt: float):
         tm = self.mixing_time_s()
+        if self.acid_load_mol_min > 0:
+            self.ph_model.add_acid(self.acid_load_mol_min / 60.0 * dt)
+        ph_true = self.ph_model.pH()
         if np.isfinite(tm):
             tau = tm / 3.0
             self.c_obs += (self.c_true - self.c_obs) * (1 - np.exp(-dt / tau))
+            self.ph_mixed += (ph_true - self.ph_mixed) * (1 - np.exp(-dt / tau))
+        self.ph = self.ph_probe.step(self.ph_mixed, dt)
+
+    @property
+    def ph_true(self) -> float:
+        return self.ph_model.pH()
 
     def final_volume_for(self, c_target: np.ndarray, c_stock: np.ndarray) -> float:
         """목표 농도 c_target 을 heel 에 스톡으로 맞출 때의 최종 부피. V_f = V_heel / (1 − Σ c_j/c_s,j)."""

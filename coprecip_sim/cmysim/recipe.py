@@ -31,10 +31,11 @@ import copy, itertools, json, pathlib
 import numpy as np
 from .config import SystemConfig, PUMP_IDS, VALVE_IDS, DYES, pump_max_rate_mL_min
 from .control import Controller, Recipe, plan_doses, mA_for_rate, target_from_hex, target_from_cmy
+from .ph_control import PHController, PHGains, PHSafety, flow_to_mA
 from . import optics
 
 STEP_KINDS = ("stir", "wait", "valve", "dose", "dose_to_target", "settle", "measure", "trim_to_target",
-              "hold", "log", "inject_fault", "stop")
+              "hold", "log", "inject_fault", "ph_control", "acid_load", "stop")
 
 
 # ------------------------------------------------------------------ 로드 · 검증 · 매트릭스 전개
@@ -77,6 +78,13 @@ def validate(r: dict) -> list[str]:
             errs.append(f"steps[{i}] valve: 모르는 밸브 {s.get('id')}")
         if k == "stir" and not (0 <= float(s.get("rpm", 0)) <= 2000):
             errs.append(f"steps[{i}] stir: rpm 범위 밖")
+        if k == "ph_control":
+            if s.get("pump", "P-103") not in PUMP_IDS:
+                errs.append(f"steps[{i}] ph_control: 모르는 펌프 {s.get('pump')}")
+            if "setpoint" not in s and s.get("mode", "pid") != "titrate":
+                errs.append(f"steps[{i}] ph_control: setpoint 필요")
+            if not (0 < float(s.get("seconds", 0))):
+                errs.append(f"steps[{i}] ph_control: seconds > 0 필요")
     return errs
 
 
@@ -123,6 +131,15 @@ def apply_recipe_to_config(r: dict, cfg: SystemConfig) -> SystemConfig:
     for j, d in enumerate(DYES):
         if d in (r.get("stocks") or {}):
             cfg.tanks[j].conc_mg_L = float(r["stocks"][d])
+    # pH: 초기 pH, 완충계, NaOH 탱크 역할 (예: ph: {initial: 7, buffers: [[0.01, 4.8]], naoh_pump: P-103, naoh_mol_L: 0.1})
+    ph = r.get("ph") or {}
+    if "initial" in ph:
+        cfg.reactor.ph = float(ph["initial"])
+    if "buffers" in ph:
+        cfg.reactor.buffers = tuple((float(c), float(pk)) for c, pk in ph["buffers"])
+    if "naoh_pump" in ph:
+        j = PUMP_IDS.index(ph["naoh_pump"])
+        cfg.tanks[j].role = "naoh"; cfg.tanks[j].conc_mol_L = float(ph.get("naoh_mol_L", 0.1))
     return cfg
 
 
@@ -268,6 +285,25 @@ class RecipeExecutor(Controller):
                 self._note(t, "fault_manual", f"사람이 지금 수행: {s['kind']} {s.get('arg', '')}")
         elif k == "log":
             self._note(t, "log", str(s.get("note", "")))
+        elif k == "acid_load":                                   # 시뮬레이션: 산 부하 시작 (실물: 피드 펌프가 하는 일)
+            if self.sim and self.fault_hook:
+                self.fault_hook("acid_load", str(s.get("mol_min", 0.0002)))
+            self._note(t, "acid_load", f"{s.get('mol_min', 0.0002)} mol/min")
+        elif k == "ph_control":
+            pid = s.get("pump", "P-103")
+            j = PUMP_IDS.index(pid)
+            gains = PHGains(**{k2: float(s[k2]) for k2 in ("Kp", "Ki", "Kd", "deadband", "out_max", "ff_gain") if k2 in s})
+            safety = PHSafety(**{k2: float(s[k2]) for k2 in ("ph_max", "ph_min", "max_total_mL") if k2 in s})
+            self.ph_ctl = PHController(float(s.get("setpoint", 7.0)), gains, safety, naoh_mol_L=self.cfg.tanks[j].conc_mol_L,
+                                       mode=s.get("mode", "pid"), V_L=self.V_est / 1000.0)
+            if s.get("mode") == "titrate":
+                self.ph_ctl.set_titration(float(s["start"]), float(s["end"]), float(s.get("rate_pH_per_min", 0.5)))
+            if "relay_d" in s:
+                self.ph_ctl.relay_d = float(s["relay_d"])
+            self._ph_pump, self._ph_valve = pid, VALVE_IDS[j]
+            self._ph_last_mA, self._ph_next = -1.0, t
+            bus.send_cmd(dict(cmd="valve", id=self._ph_valve, open=True))
+            self.phase = "PH"
         elif k == "stop":
             self._finish(t, bus)
 
@@ -310,7 +346,39 @@ class RecipeExecutor(Controller):
                     self._next(t, bus)
             elif k == "trim_to_target":
                 self._trim_step(t, tele, s, bus)
+            elif k == "acid_load":
+                if t - self.t_state >= 0.2:
+                    self._next(t, bus)
+            elif k == "ph_control":
+                self._ph_step(t, tele, s, bus)
         return dict(t=t, state=self.state, rgb=self.rgb.copy(), c_hat=self.c_hat.copy(), dE=self.de)
+
+    def _ph_step(self, t, tele, s, bus):
+        """매 1 s: 텔레메트리 pH → 제어기 → NaOH 펌프 mA. 끝나면 펌프 정지·밸브 닫기·지표 기록."""
+        done = t - self.t_state >= float(s["seconds"])
+        if tele is not None and (t >= self._ph_next or done):
+            self._ph_next = t + float(s.get("period_s", 1.0))
+            ph = tele.get("ph")
+            flow = 0.0 if done or ph is None else self.ph_ctl.update(t, float(ph))
+            mA = flow_to_mA(flow, self.cfg.pump.stroke_mL, self.cfg.pump.stroke_length, self.cfg.pump.max_spm,
+                            self.cfg.pump.i_start_mA, self.cfg.pump.i_full_mA)
+            if abs(mA - self._ph_last_mA) > 0.02 or done:
+                bus.send_cmd(dict(cmd="pump", id=self._ph_pump, mA=round(mA, 3)) if mA > 0 else dict(cmd="stop", id=self._ph_pump))
+                self._ph_last_mA = mA
+            if self.ph_ctl.fault and not self.aborted:
+                self.aborted = "PH " + self.ph_ctl.fault; self._note(t, "abort", self.aborted); done = True
+            if self.ph_ctl.mode == "relay" and self.ph_ctl.relay_result() and not getattr(self, "_relay_logged", False):
+                self._relay_logged = True; self._note(t, "autotune", str({k: round(v, 4) for k, v in self.ph_ctl.relay_result().items()}))
+        if done:
+            bus.send_cmd(dict(cmd="stop", id=self._ph_pump)); bus.send_cmd(dict(cmd="valve", id=self._ph_valve, open=False))
+            m = self.ph_ctl.metrics(); m.update(label=s.get("label", f"ph{self.i}"), setpoint=self.ph_ctl.sp, t=round(t, 2),
+                                                 beta_est_mmol_L_pH=round(self.ph_ctl.beta * 1000, 3))
+            if self.ph_ctl.mode == "relay":
+                m["autotune"] = self.ph_ctl.relay_result()
+            self.measurements.append(m); self.V_est += self.ph_ctl.total_mL
+            self._note(t, "ph_done", f"sp={self.ph_ctl.sp:.2f} final_err={m.get('final_err')} NaOH={m.get('naoh_mL')} mL settle={m.get('settle_s')}")
+            self.ph_log = getattr(self, "ph_log", []) + self.ph_ctl.log
+            self._next(t, bus)
 
     def _trim_step(self, t, tele, s, bus):
         max_trims = int(s.get("max_trims", self.r.max_trims)); tol = float(s.get("tol_mg_L", self.r.trim_tol_mg_L))

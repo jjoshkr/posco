@@ -443,3 +443,57 @@ def test_ionode_loadcell_telemetry_and_volume_mismatch():
     X = fb.matrix(rows, feats); j = feats.index("r_flow_101")
     t = np.array([r["t"] for r in rows])
     assert np.nanmean(X[(t > 40) & (t < 55), j]) > 5.0                               # 공기 유입 후 기대−실측 양수
+
+
+# ---------------- pH 제어
+from cmysim.ph_control import PHModel, PHProbe, PHController, PHGains, BufferSpecies, simulate, flow_to_mA
+
+
+def test_ph_model_basic():
+    m = PHModel(2.0, 7.0)
+    assert abs(m.pH() - 7.0) < 1e-3
+    p0 = m.pH(); m.add_base(10.0, 0.1); assert m.pH() > p0 + 0.2          # 염기 → pH 상승
+    m.add_acid(0.002); assert m.pH() < 7.5                                 # 같은 몰의 산 → 되돌아옴
+    m2 = PHModel(2.0, 5.0, [BufferSpecies(0.01, 4.8)])
+    assert abs(m2.pH() - 5.0) < 1e-3 and m2.buffer_capacity() > 0.003      # 구연산 완충: β 수 mmol/L/pH
+    pr = PHProbe(8.0, noise=0.0); pr.step(7.0, 0.0); ys = [pr.step(10.0, 1.0) for _ in range(8)]
+    assert 8.7 < ys[-1] < 9.1                                              # 7 → 10 스텝, 1τ(8 s) 에서 63 %
+
+
+def test_ph_controller_reaches_setpoint_without_overshoot():
+    hist, ctl, model = simulate(10.5, 7.0, 2.0, 0.1, duration=600, seed=1)
+    m = ctl.metrics()
+    assert abs(hist["ph_meas"][-1] - 10.5) < 0.2 and m["overshoot"] < 0.3 and not ctl.fault
+    assert np.where(np.abs(hist["ph_meas"] - 10.5) < 0.2)[0][0] * 0.5 < 400                     # 400 s 안에 ±0.2 도달
+    # 산 부하가 들어와도 유지
+    hist2, ctl2, _ = simulate(10.5, 7.0, 2.0, 0.1, load_mol_min=0.0002, load_start_s=200, duration=900, seed=2)
+    assert abs(hist2["ph_meas"][-1] - 10.5) < 0.2 and hist2["flow"][-20:].mean() > 1.0   # 부하 보상 유량 (0.2 mmol/min ÷ 0.1 M = 2 mL/min)
+    assert flow_to_mA(0) == 0.0 and abs(flow_to_mA(38.0) - 19.6) < 1e-9 and 4.4 < flow_to_mA(1.0) < 5.0
+
+
+def test_ph_safety_limits():
+    g = PHGains(cap_enabled=False, Kp=50.0)
+    ctl = PHController(10.0, g, naoh_mol_L=0.1)
+    ctl.update(0.0, 7.0); assert ctl.out == g.out_max
+    ctl.update(1.0, 12.5); assert ctl.fault.startswith("PH_LIMIT") and ctl.out == 0.0
+    ctl2 = PHController(10.0, g, naoh_mol_L=0.1)
+    for i in range(200):                                                   # 100 s 동안 최대 투입인데 pH 가 안 움직임
+        ctl2.update(i * 0.5, 7.0)
+    assert ctl2.fault.startswith("STUCK")
+
+
+def test_recipe_ph_control_step():
+    r = {"name": "ph", "reactor": {"heel_mL": 2000, "rpm": 300},
+         "ph": {"initial": 7.0, "naoh_pump": "P-103", "naoh_mol_L": 0.1},
+         "steps": [{"step": "stir", "rpm": 300},
+                   {"step": "ph_control", "pump": "P-103", "setpoint": 10.0, "seconds": 400, "label": "up"},
+                   {"step": "stop"}]}
+    cfg = SystemConfig(seed=9)
+    ex = RecipeExecutor(cfg, r)
+    assert cfg.tanks[2].role == "naoh"
+    res = run_once(cfg, ex.r, 600.0, controller=ex)
+    h = res["hist"]
+    assert abs(h["ph"][-1] - 10.0) < 0.2 and h["naoh_mL"][-1] > 1.0 and res["dosed_mL"]["P-103"] > 1.0
+    assert ex.measurements and ex.measurements[-1]["label"] == "up" and abs(ex.measurements[-1]["final_err"]) < 0.2
+    assert res["c_true"][2] < 1e-6                                          # NaOH 펌프는 염료를 넣지 않음
+    assert not any("INTERLOCK" in a[1] for a in res["alarms"])
