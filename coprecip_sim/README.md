@@ -1,0 +1,473 @@
+# coprecip_sim — CMY 식용색소 도징 · target color 매칭 시뮬레이터
+
+전구체 공침 반응기 실험의 1단계(식용색소 실험)를 보드 없이 통째로 돌려 보는 코드입니다.
+시안·마젠타·옐로 스톡을 gamma/X 펌프 3대로 반응기에 넣어 **목표색을 만들고**, 펌프 유량(=흘려주는 색소 양)을
+바꿔 가며 **목표색에 얼마나 가까워지는지(ΔE2000)** 를 카메라 모델로 비교합니다. 제어 구조는 실제 하드웨어
+(Pi 5 + AI HAT+ ↔ Pi 5 + MCC 118/134/152×2, 이더넷)와 같게 두 노드로 나눠 놓았습니다.
+
+```
+AI 노드 (Pi 5 + AI HAT+, RealSense)              I/O 노드 (Pi 5 + MCC 118 + MCC 134 + MCC 152 ×2)
+┌──────────────────────────────┐   cmd (JSON)   ┌────────────────────────────────────────────────┐
+│ 카메라 ROI RGB → 흡광도      │ ─────────────▶ │ 인터록 · 운전허가 · 밸브 · 펌프 mA · 스트로크 계수 │
+│ → NNLS 로 ĉ(C,M,Y)           │   telemetry    │ MCC 152 AO → XTR111 → 4–20 mA → gamma/X          │
+│ 레시피 계획 / 피드포워드 /   │ ◀───────────── │ MCC 118: 펌프 피드백(옵션 C)·pH·압력, MCC 134: 온도│
+│ 카메라 폐루프 트림           │   하트비트     │ 하트비트 1 s 끊기면 SAFE (Pause → 0 mA → 밸브 닫힘) │
+└──────────────────────────────┘                └────────────────────────────────────────────────┘
+                                                          │ 스톡 C/M/Y (2 L, 1 g/L)  →  반응기 5 L (heel 2 L)
+```
+
+## 문서
+
+| 문서 | 내용 |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 두 노드 구조, 시뮬레이터 모델, 안전 체인, 데이터 흐름, 모듈 의존 관계 |
+| [docs/PROTOCOL.md](docs/PROTOCOL.md) | AI↔I/O 노드 명령·텔레메트리 JSON 스키마, 알람 목록 |
+| [docs/HARDWARE.md](docs/HARDWARE.md) | 보드 주소·핀 배정, 펌프 인터페이스, 펄스 펌프, 밸브, 계측, 로드셀, 카메라, 교정 절차 |
+| [docs/RECIPES.md](docs/RECIPES.md) | 레시피 YAML 스키마와 스텝 참조, 중단 규칙, 예시 목록 |
+| [docs/CONFIG.md](docs/CONFIG.md) | camera.json · io_node.json · loadcell.json · calibration.json · SystemConfig |
+| [docs/OPERATIONS.md](docs/OPERATIONS.md) | 워크스테이션 → 빵판 → 24 V → 카메라 → 연동 → 실운전 절차, 문제 해결표 |
+| [docs/API.md](docs/API.md) | 모듈·클래스·함수 참조 (`tools/gen_api_docs.py` 로 독스트링에서 생성) |
+| [docs/integration_report_example.md](docs/integration_report_example.md) | Tier C 통합 시험 보고서 예시 |
+| [CHANGELOG.md](CHANGELOG.md) | 변경 이력 |
+
+## 빠른 시작
+
+```bash
+cd coprecip_sim
+python -m cmysim plan  --target "#5A8F7B"                       # 투입량·유량·mA 계획만
+python -m cmysim run   --target "#5A8F7B" --mode closed --plot run.png --csv run.csv --dataset ds/
+python -m cmysim run   --target "#5A8F7B" --mode open  --fault stock_conc:P-101=900 --e-cal-err 0.03
+python -m cmysim sweep --target "#5A8F7B" --factors 0.7,0.85,1,1.15,1.3 --csv sweep.csv
+python -m cmysim calib                                           # MCC 152 이득오차 2점 교정 시연
+python -m pytest -q tests                                        # 37개 테스트
+```
+
+필요한 것: Python 3.10+, numpy. 그래프는 matplotlib(선택). 목표는 `--target '#RRGGBB'` 또는 `--cmy 30,10,25`(mg/L).
+
+## 무엇을 시뮬레이션하나
+
+| 층 | 모듈 | 모델 |
+|---|---|---|
+| 광학 | `optics.py` | PDF 보고서 7장 절차 그대로: 감마 제거 → 흡광도 A = −log10(I/I0) → A = E c (3×3) → 비음수 최소제곱. 색차는 CIEDE2000/ΔE76 |
+| 펌프 | `hardware.py` | gamma/X Analog 모드: 4.4 mA 첫 스트로크, 19.6 mA 200 spm, 3.8 mA 아래 신호 알람, 1 스트로크 = 0.19 mL × 스트로크 길이 × (1 ± 1 %), 옵션 C 피드백 4–20 mA, 수위 입력, 토출 막힘 시 릴리프 3 bar |
+| DAC 체인 | `hardware.py` | MCC 152 AO 12 bit 0–5 V(이득오차 ±1.5 %) → XTR111 4.016 mA/V, OD 핀 페일세이프, 2점 교정 |
+| 계측 | `hardware.py` | MCC 118 12 bit ±10 V + 250 Ω 션트, MCC 134 열전대 잡음 |
+| 공정 | `process.py` | 스톡 탱크 잔량·수위 스위치, 반응기 물질수지(semi-batch), 교반 혼합 지연 t_m = 3000/rpm [s] |
+| 비전 | `vision.py` | RealSense 대역 합성 프레임(비네팅·잡음·기포), ROI 평균, YOLO 라벨 데이터셋 기록 |
+| 노드 | `nodes.py` | Bus(ZeroMQ 대역), HAL(SimHAL / DaqHatsHAL), IONode(인터록·워치독·스트로크 계수 도징), AINode |
+| 제어 | `control.py` | 계획: V_f = V_heel/(1 − Σc_j/c_s), V_j = c_j V_f / c_s. 상태기계 PLAN→PRIME→DOSE→SETTLE→MEASURE→TRIM→DONE |
+| 실행 | `experiment.py` | 고장 주입, 유량 스윕, 그래프, CSV/JSON, 데이터셋 |
+
+## 실험 1: 유량(투입량)을 바꾸면 색이 얼마나 비껴가나 (`sweep`)
+
+같은 도징 시간에 펌프 하나의 유량만 ×0.7~×1.3 으로 바꾼 결과(목표 #5A8F7B, 개루프, 매칭 기준 ΔE2000 < 1.5):
+
+| 펌프(염료) | ×0.7 | ×0.85 | ×1.0 | ×1.15 | ×1.3 |
+|---|---|---|---|---|---|
+| P-101 (C) | 6.6 | 2.6 | 0.0 | 2.4 | 4.4 |
+| P-102 (M) | 5.5 | 3.0 | 0.0 | 3.0 | 5.4 |
+| P-103 (Y) | 9.3 | 4.4 | 0.0 | 3.5 | 6.1 |
+
+유량 15 % 오차면 이미 ΔE 2~4 로 육안 식별 수준입니다. 옐로(황색 4호 역할)가 가장 민감한데, 이 색에서 Y 농도가
+B 채널 흡광도를 거의 혼자 정하기 때문입니다. 이 표가 "펌프 교정·스톡 농도 관리가 얼마나 정확해야 하는가"의 답입니다.
+
+## 실험 2: 개루프 vs 카메라 폐루프 (`run --mode open|closed`)
+
+스톡이 라벨보다 묽고(C 900, Y 920 mg/L) AI 노드의 보정 행렬 E 에 3 % 오차가 있을 때:
+
+| | 최종 ΔE2000 | 트림 | 비고 |
+|---|---|---|---|
+| open (피드포워드만) | 2.0 | – | 계획대로 넣었지만 스톡 오차만큼 빗나감 |
+| closed (카메라 트림) | 0.4 | 1회 | 카메라 추정 ĉ 와 목표 차이만큼 추가 투입 (C +8.9 mL, Y +6.2 mL) |
+
+![closed loop with stock error](docs/example_closed_stock_error.png)
+
+폐루프는 **부족분만 메울 수 있습니다.** 오버슈트는 물 펌프가 없으면 못 돌리므로, 피드포워드는 일부러 약간 적게
+넣도록 `flow_factor`(예 0.97)를 쓰는 것이 실제 운용에서 안전합니다.
+
+## 실험 3: 고장 주입 (`--fault`)
+
+| 지정 | 무엇이 일어나나 | 코드가 어떻게 잡나 |
+|---|---|---|
+| `tank_empty:P-101@30` | 30 s 에 C 스톡이 수위 스위치 직전까지 줄어듦 → 펌프 수위 입력으로 자체 정지 | I/O 노드 `NO_STROKE` 알람(지령 18 mA, 피드백 4 mA), AI 노드 DOSE 타임아웃 → 중단 |
+| `valve_stuck:XV-101` | 코일은 켜지는데 밸브가 안 열림 → 데드헤드 | 릴리프 3 bar 로 탱크 복귀(반응기엔 안 들어감). 압력 트랜스미터가 2.7 bar 넘기면 I/O 노드가 도징 펌프 전부 정지 + `RELIEF` 알람 |
+| `signal_loss:P-103@40` | 4–20 mA 케이블 단선 | 펌프가 0 mA 를 보고 정지, `NO_STROKE` |
+| `ai_crash@150` | AI 노드 프로세스 사망(하트비트 중단) | I/O 노드 워치독 1 s → SAFE(Pause → 0 mA → 밸브 닫힘) |
+| `camera_drift:0.9@60` | 조명/노출 10 % 변화 | 실제 농도는 맞는데 ĉ 가 전부 커 보여 카메라 ΔE 2.4 로 '불일치' 판정, 트림도 못 함(= 수동 노출 고정과 기준 영상 I0 재촬영이 왜 필수인지) |
+| `stock_conc:P-101=900` | 칭량 오차 | open 은 빗나가고 closed 는 트림으로 복구 |
+| `rpm:80` | 교반 약함 → 혼합시간 37 s | SETTLE 이 길어지고 카메라 추정이 뒤처짐 |
+
+## 데이터셋 (`--dataset DIR`)
+
+2 s 마다 합성 프레임 PNG + YOLO 라벨(`0 on_target` / `1 off_target`, 액체 ROI 박스)과 `index.jsonl`(진짜 농도, 추정 농도,
+RGB, ΔE)을 남깁니다. `dataset.yaml` 은 Ultralytics 형식입니다. 나중에 RealSense 실제 프레임으로 바꿔도 라벨 형식은 그대로
+쓰면 됩니다. 단, 색·농도 같은 연속값은 YOLO(탐지)보다 `index.jsonl` 로 회귀 모델을 학습하는 쪽이 맞고, YOLO 는
+기포·와류·침전·이물 같은 '사건' 탐지에 쓰는 것이 대화에서 정리한 역할 분담입니다.
+
+## 라즈베리파이에서 실행 (실제 카메라)
+
+### 설치 (AI 노드: Pi 5 + AI HAT+, Raspberry Pi OS 64-bit Bookworm)
+
+```bash
+sudo apt install -y python3-numpy python3-opencv python3-zmq python3-picamera2
+pip install pyrealsense2        # aarch64 휠이 없으면 librealsense 를 소스 빌드해야 합니다 (아래 링크)
+```
+
+RealSense 는 USB 3.0 포트(파란색)에 꽂고 `rs-enumerate-devices` 로 인식을 확인합니다. pyrealsense2 가 Pi 에서 바로
+안 깔리면 https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_raspbian.md 를 따라 빌드하거나,
+임시로 `--kind opencv` 로 RealSense 를 UVC 웹캠처럼 열어 색만 읽을 수 있습니다. 라즈베리파이 전용 카메라를 사면
+`--kind picamera2` 로 바꾸면 됩니다(인터페이스 동일).
+
+두 Pi 는 이더넷 직결 + 고정 IP(예 I/O 192.168.10.2, AI 192.168.10.3)로 둡니다. I/O 노드 설치는 아래 절을 보세요.
+
+### I/O 노드 (Pi 5 + MCC 152 ×2 + MCC 118 + MCC 134)
+
+```bash
+sudo apt install -y git python3-pip python3-numpy python3-zmq
+git clone https://github.com/mccdaq/daqhats && cd daqhats && sudo ./install.sh      # MCC daqhats 라이브러리 + 파이썬 모듈
+daqhats_list_boards                                                                  # 주소 0,1 = MCC 152, 2 = MCC 118, 3 = MCC 134
+```
+
+주소는 보드의 A0~A2 점퍼로 정합니다(점퍼 없음 = 0, A0 = 1, A1 = 2, A0+A1 = 3). 다른 주소를 썼으면
+`python -m cmysim.io_node_main init-config` 로 만든 `io_node.json` 의 `addresses` 와 핀 배정을 고치면 됩니다.
+24 V 전원은 Pi 와 보드가 켜진 뒤에 넣습니다.
+
+빵판 단계(24 V 없이, 대화의 `mcc152_bench.py` 와 같은 점검):
+
+```bash
+cd coprecip_sim
+python -m cmysim.io_node_main list                       # 보드 인식
+python -m cmysim.io_node_main bench ramp 0               # AO0 0→5 V 계단, 멀티미터로 확인
+python -m cmysim.io_node_main bench dio 4 1              # DIO4 LED 켜기
+python -m cmysim.io_node_main bench blink 5              # DIO5 깜빡임 (PC817)
+python -m cmysim.io_node_main bench read                 # EF 핀·아날로그 입력·온도 연속 표시 (32번 줄 GND 시험)
+```
+
+펌프 인터페이스 보드(XTR111)와 24 V 를 붙인 뒤:
+
+```bash
+python -m cmysim.io_node_main bench pump P-101 12        # OD 켜고 12 mA, 피드백·EF 표시 (펌프는 Pause 상태로)
+python -m cmysim.io_node_main bench calib P-101          # 멀티미터 값으로 2점 교정 → io_node.json (MCC 152 이득오차 ±1.5 % 보정)
+python -m cmysim.io_node_main run -v                     # 본 운전: 10 Hz, ZeroMQ PULL 5555 / PUB 5556
+```
+
+`run` 중 I/O 노드가 스스로 하는 일: 밸브 닫힌 채 펌프 지령 거부, 운전허가 없이 펌프 거부, 압력 2.7 bar 초과 시 도징 펌프 정지,
+AI 노드 하트비트 1 s 끊기면 SAFE, 지령은 있는데 스트로크 피드백이 없으면 `NO_STROKE`, XTR111 EF 핀 Low 면 `EF` 알람.
+프로세스가 어떤 이유로 끝나도 `finally` 에서 RUN_ENABLE OFF → AO 0 V → OD High → 밸브 OFF 를 수행합니다.
+
+보드 없이 두 Pi(또는 PC 두 대)의 이더넷·ZeroMQ 연동만 시험하려면 I/O 쪽을 `run --sim` 으로 띄우면 됩니다.
+시뮬레이션 공정이 실제 I/O 노드처럼 텔레메트리를 내고 명령을 받습니다.
+
+### 카메라 보정 순서 (PDF 8장 절차를 그대로 명령으로)
+
+```bash
+cd coprecip_sim
+python -m cmysim.camera_tools settings --kind realsense --exposure 120 --gain 16 --wb 4600   # 수동 고정
+python -m cmysim.camera_tools preview --save shot.png        # ROI 가 액체 안에 들어가는지 확인
+python -m cmysim.camera_tools roi --roi 220,140,200,200       # 또는 --pick (모니터 있을 때 마우스로)
+python -m cmysim.camera_tools reference                       # 물만 채운 반응기 → 픽셀별 기준 I0
+python -m cmysim.camera_tools sample --dye C --conc 5         # 시안 5 mg/L … 10, 15, 20 (염료마다 4~5점)
+python -m cmysim.camera_tools sample --dye M --conc 5
+python -m cmysim.camera_tools sample --dye Y --conc 5
+python -m cmysim.camera_tools fit                             # E 피팅 → calibration.json (조건수·R² 출력)
+python -m cmysim.camera_tools check --cmy 10,5,8              # 보정에 안 쓴 혼합액으로 검증
+python -m cmysim.camera_tools target --save target.json       # 목표 시료(기준 색 용액)를 같은 카메라로 촬영
+```
+
+카메라가 없는 워크스테이션에서는 `settings --kind fake` 로 위 명령을 전부 돌려 볼 수 있습니다
+(`CMYSIM_FAKE_CONC=10,5,8` 환경변수로 가짜 액체 농도를 바꿉니다).
+
+`reference` 에서 I0 가 0.95 를 넘으면 포화이니 노출을 줄이고, `sample` 에서 흡광도가 1 을 넘으면 더 묽게 잡습니다.
+조명·카메라 위치·노출을 바꾸면 reference 부터 다시 합니다.
+
+### 실험 실행
+
+```bash
+python -m cmysim.camera_tools monitor --target "#5A8F7B"      # 배선 전: 카메라만으로 ĉ, ΔE 확인
+python -m cmysim.ai_node_main --io-ip 192.168.10.2 --target-file target.json --mode closed \
+       --flow-factor 0.97,0.97,0.97 --log run1.csv --dataset ds_run1/ --preview
+```
+
+목표는 `--target '#hex'`, `--cmy`, `--target-file` 중 하나로 줍니다. ΔE 기준으로는 같은 카메라·조명으로 찍은
+`target.json` 이 가장 정확합니다(hex 는 모델을 거쳐 환산되므로 비네팅·글레어만큼 어긋날 수 있음).
+
+`ai_node_main` 은 시뮬레이터와 같은 `Controller` 를 쓰고 카메라 입력만 실물입니다. Ctrl+C·예외·완료 어느 경우에도
+I/O 노드에 `run_enable OFF` 와 `safe` 를 보내고, I/O 노드는 하트비트가 1 초 끊기면 스스로 SAFE 가 됩니다.
+`--dataset` 을 주면 실제 프레임이 2 초마다 YOLO 라벨과 함께 저장됩니다(라벨의 c_true 는 실물에서는 null, 카메라 추정 ĉ 와 ΔE 만 기록).
+
+## 레시피 실행기 (`recipe.py`, `recipe_cli.py`)
+
+실험 절차를 YAML 로 적으면 그대로 도징 순서가 됩니다. 시뮬레이터와 실제 AI 노드 양쪽에서 `Controller` 자리에 끼워 씁니다.
+
+```yaml
+name: target_match
+reactor: {heel_mL: 2000, rpm: 300}
+stocks: {C: 1000, M: 1000, Y: 1000}
+target: {hex: "#5A8F7B"}            # 또는 {cmy: [30, 10, 25]} / {file: target.json}
+match: {de: 1.5, max_trims: 3}
+steps:
+  - {step: stir, rpm: 300}
+  - {step: dose_to_target, minutes: 2, flow_factor: [0.97, 0.97, 0.97]}
+  - {step: settle, factor: 3}
+  - {step: measure, label: feedforward}
+  - {step: trim_to_target, max_trims: 3}
+  - {step: hold, seconds: 30, label: final}
+  - {step: stop}
+matrix: {"reactor.rpm": [150, 300, 500]}   # 선택: 카르테시안 곱으로 실행 묶음 생성
+```
+
+| 스텝 | 인자 | 하는 일 |
+|---|---|---|
+| `stir` | rpm | 교반기 지령 |
+| `wait` / `hold` | seconds, label | 대기. hold 는 끝에 측정을 기록 |
+| `dose` | pump 또는 pumps, volume_mL / strokes / total_mL(+ratio), rate_mL_min / minutes / mA, on_abort | 명시 투입. 밸브 열기 → 스트로크 계수 도징 → 밸브 닫기 |
+| `dose_to_target` | minutes, flow_factor | 목표 농도에서 투입량을 계산해 세 펌프 동시 투입 |
+| `settle` | factor 또는 seconds | 혼합시간 × factor 만큼 대기 |
+| `measure` | seconds, label | 카메라 평균 → RGB·ĉ·ΔE 기록 |
+| `trim_to_target` | max_trims, tol_mg_L, de | 부족분 계산 → 투입 → 정착 → 측정 반복 |
+| `inject_fault` | kind, arg, seconds | 시뮬레이션: 고장 주입 + 라벨. 실물: 사람이 수행할 내용을 출력하고 대기 |
+| `valve` / `log` / `stop` | | 밸브 수동 조작, 메모, 종료(운전 허가 OFF + SAFE) |
+
+```bash
+python -m cmysim.recipe_cli example > my.yaml
+python -m cmysim.recipe_cli validate my.yaml
+python -m cmysim.recipe_cli run recipes/tierA_ratio_sweep.yaml --out results --plot    # matrix 9개 실행 + summary.csv
+python -m cmysim.ai_node_main --io-ip 192.168.10.2 --recipe recipes/target_match.yaml    # 실물 (matrix 면 첫 항목)
+```
+
+`recipes/` 에 세 가지 예시가 있습니다. `target_match.yaml`(목표색 매칭), `tierA_ratio_sweep.yaml`(비율 × rpm 매트릭스,
+대화의 Tier A 혼합 실험), `fault_injection.yaml`(이상탐지 라벨용 고장 주입). 모든 스텝 전이·측정·고장은 `log.json` 에
+시간과 함께 남아 이상탐지 학습의 라벨이 됩니다. 인터록(밸브 닫힌 채 펌프 금지 등)은 레시피가 아니라 I/O 노드가 지킵니다.
+
+## YOLO 학습 (`yolo_train.py`)
+
+역할 분담은 대화에서 정리한 대로입니다. 색 → 농도 같은 연속값은 Beer–Lambert 역산(또는 작은 회귀)이 맡고,
+YOLO 는 기포·거품·침전·이물 같은 '사건' 과 액체 ROI 의 on/off_target 상태를 봅니다.
+
+라벨 클래스: `0 liquid_on_target`, `1 liquid_off_target`(ΔE2000 기준), `2 bubble`.
+시뮬레이션 프레임은 기포 위치를 알고 그리므로 자동 라벨이 붙고, 실제 프레임은 ROI 박스만 자동이며 기포 박스는
+CVAT/LabelImg 로 추가합니다(같은 YOLO txt 형식).
+
+```bash
+cd coprecip_sim
+python -m cmysim.yolo_train gen --out ds_sim --runs 12                  # 시뮬레이션 12회 → 라벨 달린 프레임
+python -m cmysim.yolo_train prepare --src ds_sim/* ds_run1 --out yolo_ds # 실행 단위 train/val 분할, data.yaml, regression.csv
+python -m cmysim.yolo_train train --data yolo_ds/data.yaml --model yolo11n.pt --epochs 50 --imgsz 320 --device 0
+python -m cmysim.yolo_train train --data yolo_ds_cls --task classify --model yolo11n-cls.pt --epochs 30
+python -m cmysim.yolo_train infer --weights runs/detect/cmy/weights/best.pt --source yolo_ds/images/val --save pred/
+python -m cmysim.yolo_train export --weights runs/detect/cmy/weights/best.pt    # ONNX (NMS 없음, 고정 크기) → Hailo 컴파일
+python -m cmysim.yolo_train regress --csv yolo_ds/regression.csv         # 색→농도 회귀 (optics 역산과 비교)
+```
+
+- **분할은 실행 단위**가 기본입니다. 같은 실행의 연속 프레임이 train/val 에 섞이면 점수가 부풀려집니다.
+- **색상 증강(hsv_h, hsv_s)은 꺼져 있습니다.** 색이 라벨 그 자체이기 때문입니다.
+- 학습은 워크스테이션에서 합니다. Pi 에서는 추론만 합니다(`.pt` 는 CPU 로 수 fps, AI HAT+ 는 `.hef`).
+- **Hailo 경로**: `export` 가 만든 ONNX 를 x86 에서 Hailo Dataflow Compiler(`hailomz compile`, 보정 이미지 = `yolo_ds/images/train`)로
+  `.hef` 로 바꾸고 AI 노드로 복사합니다. `yolo_infer.VisionEvents` 가 `.pt/.onnx`(ultralytics) 와 `.hef`(hailo_platform) 를 같은
+  인터페이스로 감쌉니다. `.hef` 후처리는 hailo_model_zoo 의 YOLO NMS 출력 형식을 가정했고 Pi 에서 검증이 필요합니다.
+- AI 노드에 붙이기: `ai_node_main --yolo best.pt --yolo-every 5`. 액체 상태·기포 수가 로그에 남고, 기포가 `--bubble-hold`
+  개 이상이면 MEASURE 구간을 연장해 기포가 가라앉은 뒤 트림을 판단합니다.
+- `regress` 는 numpy 만으로 ROI RGB → 농도 릿지 회귀를 학습합니다. 시뮬레이션에서는 optics 역산과 비슷한 0.3~0.4 mg/L 수준이며,
+  실제 장치에서 Beer–Lambert 선형 가정이 깨지는 짙은 농도 구간의 보정 곡선으로 쓸 수 있습니다.
+
+## pH 제어기: NaOH 도징 (`ph_control.py`)
+
+Tier B(pH 유도 침전)·Tier C(공침, pH 9~11 유지)용입니다. NaOH 는 펌프 3대 중 하나(기본 P-103)에 배정하고, pH 는 I/O 노드
+텔레메트리(MCC 118 CH0, 절연형 트랜스미터 4–20 mA)로 받아 AI 노드의 레시피 스텝 `ph_control` 이 펌프 mA 를 보냅니다.
+
+| 구성 | 내용 |
+|---|---|
+| 공정 모델 | 강염기 − 강산 + 약산 완충계의 전하 균형으로 pH 계산. `ph: {initial, buffers: [[conc, pKa]]}`. 산 부하(금속염 피드가 OH⁻ 를 소모하는 효과)는 `acid_load` 스텝 |
+| 프로브 | 혼합 지연(t_m/3) + 1차 지연 8 s + 잡음 + 드리프트. 실제 프로브 시정수는 실측해 `probe_tau_s` 에 |
+| 제어기 | 한쪽(염기만) PI(D), 측정값 미분 필터, 조건부 적분(안티와인드업), 불감대, 피드포워드(산 부하 × 화학량론) |
+| 과투입 방지 | **완충용량 기반 투입 상한**: 설정값까지 필요한 염기량(β̂·V·e)에서 아직 측정에 안 보이는 양(최근 20 s 투입)을 뺀 나머지를 30 s 안에 넣는 속도 이상은 내지 않음. β̂ 는 온라인 추정(사전값은 작게 → 모자라면 적분이 채움) |
+| 안전 | pH 상·하한, 배치 최대 NaOH 부피, 최대 투입인데 pH 가 안 움직이면 STUCK(프로브/펌프/빈 탱크) |
+| 동조 | `mode: relay` 릴레이 자동동조 → Ku, Tu → Tyreus–Luyben PI. 염기만 넣는 제어라 **산 부하(금속염 피드)가 있을 때만** 진동이 생김. `mode: titrate` 설정값 램프(침전 개시 pH 탐색) |
+
+```bash
+python -m cmysim.ph_control sim --setpoint 10.5 --load 0.0002 --load-start 200 --plot ph.png   # 단독 폐루프 (동조용)
+python -m cmysim.ph_control autotune --setpoint 10.0 --ph0 9.5 --load 0.0002 --duration 1500
+python -m cmysim.recipe_cli run recipes/tierB_ph_step.yaml --out results --plot
+```
+
+```yaml
+ph: {initial: 5.0, buffers: [[0.01, 4.8]], naoh_pump: P-103, naoh_mol_L: 0.1}
+steps:
+  - {step: ph_control, pump: P-103, setpoint: 10.5, seconds: 300, Kp: 10.0, Ki: 0.02, label: step_up}
+  - {step: acid_load, mol_min: 0.0002}
+  - {step: ph_control, pump: P-103, setpoint: 10.5, seconds: 400, label: hold_under_load}
+```
+
+pH 제어가 어려운 이유는 약완충 용액에서 설정값 근처 이득이 수십 배로 변하고, 염기만 넣을 수 있어 한 번 넘기면 되돌릴 수 없기
+때문입니다. 그래서 P 항은 완충용량 상한과 **관측 상승률 제한기**(지연 20 s 동안 올라갈 양이 남은 오차의 절반을 넘지 않게)로
+묶고, 적분은 오차가 ±0.5 안일 때만 쌓습니다. 시뮬레이션(0.1 M NaOH, 2 L, 프로브 8 s):
+
+| 경우 | 정착(±0.1) | 오버슈트 | NaOH |
+|---|---|---|---|
+| 약완충 7 → 10.5 | 152 s | 0.07 | 25 mL |
+| 구연산 10 mM, 5 → 10.5 | 270 s | 0.07 | 85 mL |
+| 10.5 유지 + 200 s 부터 산 부하 0.2 mmol/min | 유지, 정상상태 −0.09 | 0 | 47 mL |
+| 릴레이 동조값(Kp 8.2, Ki 0.054)으로 10.0 유지(부하) | 240 s | 0.05 | 31 mL | 실제 장치에서는 (1) NaOH 는 0.1 M 로
+묽게, (2) 첫 배치에 `relay` 로 동조, (3) 프로브는 투입구 반대편·임펠러 높이에, (4) 트랜스미터는 절연형으로 접지 루프를 피하세요.
+
+### 양방향 pH 제어: 산 펌프 P-104 (펄스 접점 구동)
+
+염기만으로는 넘긴 pH 를 되돌릴 수 없으므로 산 펌프를 4번째 펌프로 추가했습니다. MCC 152 는 AO 가 4개뿐이라(펌프 3 + 교반기)
+P-104 는 **펄스(접점) 모드**로 구동합니다. MCC 152 #2 의 예비 DIO6 → 포토커플러 → 펌프 외부 접점 입력, 1 펄스 = 1 스트로크,
+DIO7 은 밸브 XV-104. 운전 허가 접점은 4대 공통입니다.
+
+| 항목 | 내용 |
+|---|---|
+| I/O 노드 명령 | `pulse_rate {id: P-104, spm}` 연속, `pulse_dose {id, strokes, spm}` 계수 도징, `stop`. 인터록(밸브·운전 허가)은 아날로그 펌프와 동일 |
+| 펄스 출력 | 위상 누적으로 spm 에 맞춰 틱마다 펄스, 접점 닫힘 20 ms(`io_node.json` `pulse_ms`, 펌프 최소 펄스폭 이상으로) |
+| 제어기 | `PHController(..., acid_mol_L=0.1)` 이면 부호 있는 출력: + 염기 mL/min, − 산 mL/min(농도 차는 등가 환산). 방향 전환 최소 간격 10 s, 산 배치 최대 부피, 대칭 릴레이 동조(부하 없이도 진동) |
+| 레시피 | `ph: {naoh_pump: P-103, acid_pump: P-104, acid_mol_L: 0.1}` 와 `ph_control: {acid_pump: P-104, ...}`. 예시 `recipes/tierB_ph_bidirectional.yaml` |
+
+```bash
+python -m cmysim.ph_control sim --setpoint 10.5 --acid 0.1 --sp-step 400:8.0 --base-load 0.0002 --base-load-start 900 --duration 1400 --plot ph.png
+python -m cmysim.ph_control autotune --setpoint 10.0 --ph0 9.5 --acid 0.1          # 부하 없이 대칭 릴레이
+python -m cmysim.ph_control sim --ph0 10 --acid 0.1 --titrate 10,4,0.5 --buffer 0.01@4.8   # 내려가는 적정 (Tier B 침전 개시 pH)
+```
+
+시뮬레이션(0.1 M NaOH / 0.1 M HCl, 2 L): 7 → 10.5 상승 후 400 s 에 8.0 으로 내리면 산 펌프가 약 26 mL 로 되돌리고,
+900 s 부터 염기성 외란이 들어와도 산 펌프가 유지합니다. 산/염기가 동시에 도는 일은 없습니다(부호 전환 사이 0 출력).
+
+## 전체 시스템 통합 시험: Tier C 공침 레시피 (`integration_test.py`)
+
+CaCl₂ + Na₂CO₃ → CaCO₃(+시안 염료 공동 담지) 반투입 공침을 끝에서 끝까지 돌리며 모든 구성 요소를 한 번에 검증합니다.
+
+| 역할 | 펌프 | 비고 |
+|---|---|---|
+| CaCl₂ 0.2 M | P-101 (아날로그) | 별도 투입구. Ca²⁺ 와 CO₃²⁻ 가 튜브 안에서 만나면 막히므로 프리믹싱 금지 |
+| Na₂CO₃ 0.2 M | P-102 (아날로그) | 〃 |
+| NaOH 0.1 M | P-103 (아날로그) | 백그라운드 pH 10.0 유지 (`ph_hold_start` … `ph_hold_stop`) |
+| HCl 0.1 M | P-104 (펄스) | 양방향 pH 제어의 산 쪽 |
+
+`recipes/tierC_coprecip.yaml`: heel 500 mL + 시안 10 mg/L, 교반 400 rpm → pH 유지 시작 → 기준 측정 → 두 피드 동시 3 mL/min × 20 min
+→ 측정 → 숙성 180 s → pH 유지 종료 → 최종 측정. 시뮬레이터의 침전 모델(`precip.py`)은 탄산 평형·과포화도·단순 침전 속도·탁도를
+정성적으로 재현하고, 탁도계(MCC 118 CH5)와 카메라의 백색 혼입에 반영됩니다. 입경 d50 은 자리표시자 proxy 입니다(실제 답은 현미경 + YOLO).
+
+```bash
+python -m cmysim.integration_test --out it_results              # A, B, C 전부 → it_results/report.md
+python -m cmysim.integration_test --only A                      # 단일 프로세스만 (약 20 s)
+```
+
+| 시나리오 | 내용 | 검증 |
+|---|---|---|
+| A. 단일 프로세스 | `run_once` + `RecipeExecutor`, 데이터셋 기록 | 4 펌프 사용, 인터록 없음, pH ±0.3 유지 ≥ 90 %, 탁도 > 50 NTU, DOSE 중단 없음, 로드셀 판정 정상, 종료 SAFE, 측정 라벨, 프레임·라벨 |
+| B. ZeroMQ 2프로세스 | `io_node_main run --sim --sim-camera --time-scale 20` + `ai_node_main --camera telemetry --recipe` | AI 노드 정상 종료, 텔레메트리·레시피 로드, 완료, I/O RUN→SAFE, 피드 2줄 스트로크, 로그 열, pH 유지 |
+| C. 고장 변형 | 피드 도중 Na₂CO₃ 탱크 고갈 | NO_STROKE/TANK_LOW 알람, DOSE 중단 라벨, pH 유지 계속, 종료 SAFE |
+
+B 는 `--time-scale` 로 시뮬레이션 시간을 가속합니다(기본 20배, 레시피 25 분 → 약 80 s). 실제 보드에서는 1 로 둡니다.
+실제 장치로 같은 시나리오를 돌릴 때는 I/O 노드를 `run`(보드), AI 노드를 실제 카메라 설정으로 띄우고 같은 레시피를 쓰면 됩니다.
+보고서 예시는 `docs/integration_report_example.md` 에 있습니다.
+
+## 로드셀(HX711) 중량 유량 계측 (`loadcell.py`)
+
+스톡병마다 로드셀을 두고 무게 감소율로 **실제 유량**을 잽니다. 정량펌프는 개루프라 스트로크는 세는데 액이 안 나가는 고장
+(공기 유입, 튜브 마모, 체크밸브 역류)을 펌프 피드백만으로는 알 수 없고, 이 질량유량과 지령 유량·스트로크 부피의 차이가
+그 고장 신호이자 이상탐지의 정답 라벨이 됩니다.
+
+| 연결 | 설명 |
+|---|---|
+| `serial` (권장) | Arduino/ESP32 가 HX711 3개를 읽어 USB 시리얼로 `ms,raw0,raw1,raw2` 를 10 Hz 로 보냄. 스케치 `firmware/hx711_bridge.ino`. I/O 노드 USB 에 꽂음 |
+| `gpio` | Pi 5 GPIO 직결(lgpio). MCC HAT 이 안 쓰는 GPIO(5, 6, 22~25, 27)를 스태킹 헤더로 빼야 하고 타이밍이 민감 |
+| `sim` | 시뮬레이터 탱크에서 raw 생성(잡음·드리프트·병 건드림) |
+
+```bash
+python -m cmysim.loadcell read  --backend serial --port /dev/ttyUSB0   # raw 확인
+python -m cmysim.loadcell tare  --ch 0                                  # 빈 병 상태를 0 으로 (채널마다)
+python -m cmysim.loadcell calib --ch 0 --mass 500                       # 기준 분동 500 g → counts_per_g
+python -m cmysim.loadcell flow                                          # 질량·유량·누적 실시간
+python -m cmysim.loadcell demo                                          # 시뮬레이션: 50 s 공기 유입, 80 s 병 건드림
+```
+
+처리는 raw → 질량(g) → 밀도로 mL → 10 s 이동창 최소제곱 기울기 = 유량입니다. 병을 건드리면(회귀 예측에서 3 g 이상 점프)
+그 창을 무효 처리하고 3 s 뒤 다시 쌓습니다. I/O 노드는 1 Hz 마다 로드셀을 읽어 텔레메트리 `tanks` 에 질량·유량·누적·상태를
+싣고, 지령 유량 대비 60 % 미만이 6 s 이상 이어지면 `FLOW_LOW`, 스트로크 누적 대비 로드셀 누적이 70 % 미만이면
+`VOLUME_MISMATCH`, 질량이 기준 아래면 `TANK_LOW` 알람을 냅니다. 실제 보드에서는 `io_node.json` 에
+`"loadcell": {"config": "loadcell.json"}` 을 넣으면 붙습니다. 이상탐지 특징에도 `flow_*`, `r_flow_*`(기대 − 실측)가
+자동으로 들어갑니다(로드셀 열이 있는 로그에서만).
+
+주의: 로드셀 한 대당 5 kg 급이면 HX711 24 bit 에서 분해능은 충분하지만, 교반기 진동·튜브 장력이 병에 전달되면 잡음이
+됩니다. 병을 받침대 위에 두고 튜브를 느슨하게 고정하세요. 계측 간격 10 Hz 에 창 10 s 면 1 mL/min 수준 유량 차이가 보입니다.
+
+## 이상탐지: 다변량 시계열 오토인코더 (`anomaly.py`)
+
+대화의 AI 설계 세 번째 갈래입니다. 펌프 지령/피드백, 스트로크 잔차, 물질수지 잔차(스트로크로 기대되는 농도 − 카메라 추정),
+ĉ, ΔE, dΔE/dt, 압력, pH, 온도, rpm 을 0.5 s 간격으로 창(기본 20 = 10 s)으로 묶어 오토인코더가 복원하고,
+복원오차가 정상 분위수 임계를 넘으면 알람, 느린 드리프트는 CUSUM 으로 누적합니다.
+
+| 모델 | 구현 | 용도 |
+|---|---|---|
+| `pca` | numpy (창을 펼쳐 PCA 복원) | Pi 에서 기본. 의존성 없음 |
+| `conv` | PyTorch 1D-CNN 오토인코더 | 워크스테이션 학습. 가중치를 npz 로 저장해 Pi 에서 torch 없이 numpy 추론 |
+
+```bash
+python -m cmysim.anomaly gen   --out ad_ds --normal 24 --faults 16      # 시뮬레이션 정상/고장 시계열 (10종 고장 풀)
+python -m cmysim.anomaly train --data ad_ds --model conv --out ad_conv  # 학습 + 정상 val 분위수 임계 + 고장 평가
+python -m cmysim.anomaly score --csv results/run/timeseries.csv --model-dir ad_conv --plot score.png
+python -m cmysim.ai_node_main --io-ip 192.168.10.2 --recipe recipes/target_match.yaml --anomaly ad_conv
+```
+
+시뮬레이션 평가(정상 24 / 고장 16, 펌프 채널 2점 교정 후):
+
+| 모델 | 창 단위 오경보율 | 탐지 | 중앙 지연 |
+|---|---|---|---|
+| pca | 0.39 % | 16 / 16 | 0.9 s |
+| conv | 0.10 % | 14 / 16 | 0.6 s |
+
+온도 급변·pH 드리프트·탱크 고갈·신호 단선·카메라 드리프트는 1 s 안에, 교반 저하는 스트로크 잔차·물질수지 잔차로 10 s
+안팎에 잡힙니다. 공기 유입은 카메라 물질수지만으로는 12 s 걸렸지만 로드셀 유량 특징(`r_flow_*`)을 넣으면 0 s 에 잡힙니다.
+스톡 농도 오차(−15 %)는 스톡 자체가 묽은 것이라 유량은 정상이고 물질수지 잔차만 천천히 커져 1~2 분 뒤에 잡히거나 놓칩니다.
+도징이 끝난 뒤의 밸브 고착처럼 증상이 없는 고장은 탐지 대상이 아닙니다.
+**펌프 채널 2점 교정이 전제**입니다. 교정 전에는 채널 이득오차(±1.5 %)가 스트로크 잔차에 그대로 들어가 정상 편차로 학습됩니다.
+실제 장치에서는 정상 실행 로그(`ai_node_log.csv`)를 `ad_ds/normal/<run>/timeseries.csv` 로 모아 같은 명령으로 다시 학습합니다.
+
+`fusion_score()` 는 대화의 융합 점수 S = Σ wᵢ·zᵢ (ΔE, AE 점수, pH 오차, 유량 잔차, YOLO 확률)를 계산합니다.
+
+## 실제 보드로 옮길 때
+
+1. `daqhats_hal.DaqHatsHAL` 이 `io_node.json` 의 주소·핀 배정대로 daqhats 를 호출합니다. 실제 보드로는 실행하지 못했고,
+   `tests/fake_daqhats.py` 로 핀 배정·안전 순서·루프백 도징을 검증했습니다. Pi 에서는 `io_node_main bench` 로 핀을 먼저 확인하세요.
+2. `zmq_bridge.ZmqBus` 가 `Bus` 와 같은 인터페이스로 PUSH/PULL + PUB/SUB 를 제공합니다. I/O 노드: `python -m cmysim.zmq_bridge io`.
+3. AI 노드는 `cmysim/ai_node_main.py` 가 완성본입니다. `camera.py` 의 RealSense/Picamera2/OpenCV 백엔드가 ROI 평균 RGB 와
+   픽셀별 기준 영상 기반 흡광도를 `Controller.step(..., A=A)` 에 넣습니다.
+4. 보정 행렬 E 와 I0 는 `camera_tools` 로 실측해 `calibration.json` 에 저장되고 `ai_node_main` 이 자동으로 읽습니다.
+   `config.py` 의 값은 시뮬레이션용 설명값입니다.
+
+## 가정과 출처
+
+| 항목 | 값 | 근거 |
+|---|---|---|
+| 펌프 스트로크 | 0.19 mL (GMXa 1602), 최대 200 spm, ±1 % | gamma/X 매뉴얼 (대화에서 확인). 실제 모델명은 명판 확인 필요 |
+| mA 곡선 | 4.4 mA 시작, 19.6 mA 최고, <3.8 mA 알람 | gamma/X 매뉴얼 |
+| Pause 중 저전류 알람 무시 | 가정 | 펌프 메뉴의 신호 이상 처리 설정에 따라 다름 — 확인 항목 |
+| MCC 152 | 12 bit 0–5 V, 이득 ±1.5 % | Digilent 전기 사양 |
+| XTR111 | 4.016 mA/V (RSET 2.49 kΩ) | 대화의 보드 설계 |
+| 반응기 | 5 L, heel 2 L | 설계 가이드에서 5 L 로 확정 |
+| 스톡 | 2 L GL45, 1.00 g/L | 대화의 구매 목록·스톡 농도 제안 |
+| 혼합시간 | t_m = 3000/rpm s | 가정 (300 rpm 에서 10 s). 실측으로 바꿀 것 |
+| E 행렬, I0, 글레어 | 설명용 값 | PDF 보고서의 가상 예와 같은 성격. 조건수 κ = 1.57 |
+| 교반기 | 4–20 mA ↔ 0–1000 rpm | 가정. 교반기 외부 입력 사양 확인 필요 |
+| 카메라 | 감마 2.2, ROI 4000 픽셀, 픽셀 잡음 2 % | PDF 보고서 가정 + 일반적 값 |
+
+## 파일
+
+```
+coprecip_sim/
+├── cmysim/            시뮬레이션: config, optics, hardware, process, vision, nodes, control, experiment, __main__
+│                      실물(Pi): camera, camera_tools, ai_node_main (AI 노드) / daqhats_hal, io_node_main (I/O 노드) / zmq_bridge
+│                      학습: yolo_train (gen/prepare/train/export/infer/regress), yolo_infer (VisionEvents: .pt/.onnx/.hef)
+│                      레시피: recipe (YAML → 스텝 실행기), recipe_cli (example/validate/expand/run)
+│                      이상탐지: anomaly (특징, PCA/1D-CNN 오토인코더, CUSUM, gen/train/eval/score, 온라인 Detector)
+│                      로드셀: loadcell (HX711 serial/gpio/sim, FlowEstimator, FlowCheck, tare/calib/flow CLI)
+│                      pH: ph_control (PHModel/PHProbe, PHController PID+캡+안전, 릴레이 동조, titrate, sim/autotune CLI)
+│                      공침: precip (CaCO₃ 침전·탁도 모델), integration_test (Tier C 시나리오 A/B/C + 보고서)
+├── firmware/hx711_bridge.ino  Arduino HX711×3 → USB 시리얼 브리지
+├── recipes/           예시 레시피 8개 (색 매칭, 비율 스윕, 고장 주입, pH 스텝·자동동조·양방향, Tier C 공침·고장 변형)
+├── tests/fake_daqhats.py  PC 에서 I/O 노드 코드를 시험하는 가짜 daqhats
+├── tests/test_sim.py  물질수지·광학 역산·펌프 곡선·DAC 교정·인터록·워치독·폐루프·고장 테스트
+├── docs/              예시 그래프
+└── README.md
+```
