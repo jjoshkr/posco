@@ -1,6 +1,6 @@
 
 /* ============================================================
-   VIDEO — 91 s film assembled from the code-drawn scenes
+   VIDEO — 91 s film (subtitles + optional Korean voice narration via the browser's speech engine) assembled from the code-drawn scenes
    Scenes are rendered once at load (base layer + HUD layer), then the master
    timeline animates camera push, transitions, HUD reveal, captions, live FX and sound.
    ============================================================ */
@@ -88,12 +88,12 @@ const SH = [
   { id:'p02',  t0:14,   t1:21.5, z:[1.0, 1.06], f:[[700, 520], [720, 520]] },
   { id:'p03',  t0:21.5, t1:29,   z:[1.0, 1.07], f:[[800, 540], [820, 520]] },
   { id:'p04',  t0:29,   t1:36,   z:[1.0, 1.07], f:[[760, 540], [780, 530]] },
-  { id:'p05',  t0:36,   t1:43,   z:[1.0, 1.07], f:[[1100, 560], [1080, 540]] },
+  { id:'p05',  t0:36,   t1:43,   z:[1.0, 1.07], f:[[700, 520], [720, 500]] },
   { id:'p06',  t0:43,   t1:50,   z:[1.0, 1.07], f:[[860, 520], [900, 480]] },
   { id:'p07',  t0:50,   t1:56,   z:[1.0, 1.05], f:[[960, 520], [960, 500]] },
-  { id:'p08a', t0:56,   t1:64.5, z:[1.0, 1.06], f:[[760, 520], [760, 500]] },
+  { id:'p08a', t0:56,   t1:64.5, z:[1.0, 1.04], f:[[960, 540], [960, 530]] },
   { id:'p08b', t0:64.5, t1:72.5, z:[1.0, 1.07], f:[[760, 560], [820, 520]] },
-  { id:'p08c', t0:72.5, t1:81,   z:[1.0, 1.06], f:[[1000, 500], [1000, 560]] },
+  { id:'p08c', t0:72.5, t1:81,   z:[1.0, 1.05], f:[[1000, 560], [1000, 580]] },
   { id:'p09',  t0:81,   t1:87,   z:[1.0, 1.04], f:[[1250, 450], [1250, 430]] },
   { id:'end',  t0:87,   t1:91 }
 ];
@@ -103,6 +103,49 @@ const CAPS = [
   [14.5, 21.3, '① 원료 인입·전처리', ''], [22.1, 28.8, '② 열분해 반응기', ''], [29.6, 35.8, '③ 탄소 분리·저장', ''],
   [36.6, 42.8, '④ 수소 정제·압축·저장', ''], [43.6, 49.8, '⑤ 배관 이송', ''], [50.6, 55.8, '착공 전 관문을 모두 통과 — 안전하게 짓는다', '']
 ];
+// narration: [start, end, subtitle ('' = spoken only), speech text if it differs]
+const NARR = [
+  [1.2, 6.4, '2030년, 포스코가 짓는 청록수소 플랜트입니다.'],
+  [7.6, 13.6, '메탄을 수소와 고체탄소로 나누는, CO₂ 굴뚝이 없는 공장입니다.', '메탄을 수소와 고체탄소로 나누는, 이산화탄소 굴뚝이 없는 공장입니다.'],
+  [15.0, 21.2, '첫째, 원료 인입·전처리. 메탄 누출은 가스검지기와 자동 차단밸브로 막습니다.', '첫째, 원료 인입과 전처리. 메탄 누출은 가스검지기와 자동 차단밸브로 막습니다.'],
+  [22.2, 28.8, '둘째, 열분해 반응기. 1,500~2,000℃ 초고온, 정전 때 역류는 비상 인터록이 막습니다.', '둘째, 열분해 반응기. 천오백에서 이천 도의 초고온. 정전 때 역류는 비상 인터록이 막습니다.'],
+  [29.8, 35.8, '셋째, 탄소 분리·저장. 카본블랙 분진 폭발은 청록수소 고유의 위험입니다.', '셋째, 탄소 분리와 저장. 카본블랙 분진 폭발은 청록수소 고유의 위험입니다.'],
+  [36.8, 42.8, '넷째, 수소 압축 설비. 눈에 잘 안 보이는 수소 불꽃은 UV/IR 화염검지기가 잡습니다.', '넷째, 수소 압축 설비. 눈에 잘 안 보이는 수소 불꽃은 자외선 적외선 화염검지기가 잡습니다.'],
+  [43.8, 49.8, '다섯째, 배관 이송. 정기 검사와 누출 감지로 제철소까지 보냅니다.'],
+  [50.8, 55.8, '착공 전 관문을 모두 통과해, 안전하게 짓습니다.'],
+  [56.8, 60.4, '수소 1kg을 만들 때 나오는 탄소를 영수증처럼 따져 봅니다.', '수소 1킬로그램을 만들 때 나오는 탄소를 영수증처럼 따져 봅니다.'],
+  [60.6, 64.3, '합계 3.238. 기준 4.0 아래라 청정수소지만, 4등급입니다.', '합계 삼 점 이삼팔. 기준 사 점 영 아래라 청정수소지만, 사 등급입니다.'],
+  [65.0, 68.6, '고체탄소 3.2kg은 팔아서, 다시 태워지지 않는 곳에 씁니다.', '고체탄소 삼 점 이 킬로그램은 팔아서, 다시 태워지지 않는 곳에 씁니다.'],
+  [68.8, 72.3, '그 대가로 크레딧 8.0을 인정받습니다.', '그 대가로 크레딧 팔 점 영을 인정받습니다.'],
+  [73.0, 76.8, '3.238에서 8.0을 빼면, −4.762.', '삼 점 이삼팔에서 팔 점 영을 빼면, 마이너스 사 점 칠육이.'],
+  [77.0, 80.7, '1등급 기준 0.1보다 낮은, 청정수소 1등급입니다.', '일 등급 기준 영 점 일보다 낮은, 청정수소 일 등급입니다.'],
+  [82.0, 86.6, '', '안전하게 짓고, 청정수소 일 등급으로.'],
+  [87.6, 90.8, '', '포스코 하이렉스 수소환원제철에 청정수소를 공급합니다.']
+];
+const SUB = { on:true };
+function drawSub(t) {
+  if (!SUB.on) return;
+  const n = NARR.find(n => t >= n[0] && t <= n[1] + .2); if (!n || !n[2]) return;
+  const a = Math.min(ease(prog(t, n[0], n[0] + .25)), 1 - ease(prog(t, n[1], n[1] + .2)));
+  let size = 34; g.font = font(500, size); let w = g.measureText(n[2]).width; if (w > 1500) { size = Math.floor(34 * 1500 / w); g.font = font(500, size); w = g.measureText(n[2]).width; }
+  g.save(); g.globalAlpha = a; g.fillStyle = 'rgba(4,10,18,.62)'; g.beginPath(); g.roundRect(W / 2 - w / 2 - 22, 1004, w + 44, 54, 10); g.fill();
+  g.fillStyle = '#FFFFFF'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(n[2], W / 2, 1032); g.restore();
+}
+const VO = { on:false, voice:null, last:-1 };
+function pickVoice() {
+  if (!('speechSynthesis' in window)) return null;
+  const vs = speechSynthesis.getVoices().filter(v => /^ko/i.test(v.lang));
+  for (const p of ['SunHi', 'Heami', 'InJoon', 'Google', 'Yuna']) { const v = vs.find(v => v.name.includes(p)); if (v) return v; }
+  return vs[0] || null;
+}
+if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => { VO.voice = pickVoice(); };
+function voReset(t) { if ('speechSynthesis' in window) speechSynthesis.cancel(); VO.last = -1; NARR.forEach((n, i) => { if (n[0] < t - .4) VO.last = i; }); }
+function voTick(t) {
+  if (!VO.on || !PL.playing || !('speechSynthesis' in window)) return;
+  NARR.forEach((n, i) => { if (i > VO.last && t >= n[0] && t < n[0] + .8) { VO.last = i;
+    const u = new SpeechSynthesisUtterance(n[3] || n[2]); u.lang = 'ko-KR'; if (!VO.voice) VO.voice = pickVoice(); if (VO.voice) u.voice = VO.voice; u.rate = 1.08; u.pitch = 1; speechSynthesis.speak(u); } });
+}
+function setVoice(on) { VO.on = on; voReset(cur()); if (AU.master) AU.master.gain.setTargetAtTime(AU.muted ? 0 : (on ? .42 : .85), AU.ac.currentTime, .05); }
 const IMG = {}, FX = {};
 const LOADERS = [
   ['open-holo', () => { resetScene(); IMG.holo = renderHolo(); }],
@@ -111,13 +154,13 @@ const LOADERS = [
   ['p03', () => { resetScene(); SETUP.p03(); IMG.p03 = renderBase('overlay');
     FX.p03 = { glow: REACT.flatMap(([cx, cy]) => { const [fx, fy] = facing(cx, cy, 2.75); return [7.2, 10.6].map(z => [...P(fx, fy, z), S(fx, fy, z)]); }) }; }],
   ['p04', () => { resetScene(); SETUP.p04(); IMG.p04 = renderBase('overlay'); FX.p04 = { dust: P(136.5, 82, 7.4), hood: P(136.5, 82, 9.2), k: S(136.5, 82, 7) }; }],
-  ['p05', () => { resetScene(); SETUP.p05(); IMG.p05 = renderBase('overlay'); FX.p05 = { lamps: UVIR.map(([x, y, hh]) => P(x, y + .26, hh + .22)), leak: P(166, 82.5, 2.4) }; }],
+  ['p05', () => { resetScene(); IMG.p05 = renderIndoor(RQ, 'overlay'); camIndoor(); FX.p05 = { lamps: UVIR4.map(([x, y, z]) => P(x, y + .16, z)), leak: P(LEAK4[0], LEAK4[1], LEAK4[2] + .2) }; }],
   ['p06', () => { resetScene(); SETUP.p06(); IMG.p06 = renderBase('overlay');
     FX.p06 = { lamps: DETECT.map(([x, y]) => P(x + .22, y, 6.5)), main: [P(197.6, 50, 8.1), P(197.6, -30, 8.1)] }; }],
   ['p07', () => { resetScene(); SETUP.p07(); IMG.p07 = renderBase('overlay'); }],
-  ['p08a', () => { IMG.p08a = renderStudio(shotColumns, 'A'); }],
+  ['p08a', () => { IMG.p08a = renderStudio(shotChart, 'A'); }],
   ['p08b', () => { IMG.p08b = renderStudio(shotCarbon); }],
-  ['p08c', () => { IMG.p08c = renderStudio(shotColumns, 'C'); }],
+  ['p08c', () => { IMG.p08c = renderStudio(shotChart, 'C'); }],
   ['p09', () => { resetScene(); SETUP.p09(); IMG.p09 = renderBase('base'); }]
 ];
 
@@ -198,10 +241,11 @@ function renderFrame(t) {
   g.save(); g.globalAlpha = i > 0 ? ease(prog(t, s.t0, s.t0 + XF)) : 1; drawShot(s, t); g.restore();
   if (t < .8) { g.fillStyle = `rgba(0,0,0,${1 - ease(prog(t, 0, .8))})`; g.fillRect(0, 0, W, H); }
   CAPS.forEach(([a, b, title, sub]) => { const al = win(t, a, b, .5, .4); if (al > 0) { g.save(); g.globalAlpha = al; caption(g, title, sub); g.restore(); } });
+  drawSub(t);
 }
 
 /* ---- player ---- */
-const startEl = document.getElementById('start'), playBtn = document.getElementById('play'), loadEl = document.getElementById('load'), progEl = document.getElementById('prog'), fillEl = document.getElementById('fill');
+const startEl = document.getElementById('start'), playBtn = document.getElementById('play'), voiceBtn = document.getElementById('playv'), loadEl = document.getElementById('load'), progEl = document.getElementById('prog'), fillEl = document.getElementById('fill');
 let sdpr = 1, ssc = 1, sox = 0, soy = 0, LOADED = false;
 const PL = { playing:false, t:0, startT:0, startClock:0, clock:null };
 function resize() {
@@ -218,20 +262,23 @@ function draw(t) {
   renderFrame(t); cvx.restore();
   fillEl.style.width = (t / DUR * 100) + '%';
 }
-function vPlay() { if (PL.t >= DUR) PL.t = 0; PL.clock = (AU.ac && AU.ac.state === 'running') ? () => AU.ac.currentTime : () => performance.now() / 1000; PL.startClock = PL.clock(); PL.startT = PL.t; PL.playing = true; auStart(PL.t); }
-function vPause() { PL.t = cur(); PL.playing = false; auStop(); }
+function vPlay() { if (PL.t >= DUR) PL.t = 0; voReset(PL.t); PL.clock = (AU.ac && AU.ac.state === 'running') ? () => AU.ac.currentTime : () => performance.now() / 1000; PL.startClock = PL.clock(); PL.startT = PL.t; PL.playing = true; auStart(PL.t); }
+function vPause() { PL.t = cur(); PL.playing = false; auStop(); if ('speechSynthesis' in window) speechSynthesis.cancel(); }
 function vSeek(t) { const was = PL.playing; if (was) vPause(); PL.t = clamp(t, 0, DUR); if (was) vPlay(); else draw(PL.t); }
-function loop() { let t = cur(); if (PL.playing && t >= DUR) { PL.t = DUR; PL.playing = false; t = DUR; setTimeout(auStop, 200); } if (PL.playing) auTick(t); draw(t); requestAnimationFrame(loop); }
+function loop() { let t = cur(); if (PL.playing && t >= DUR) { PL.t = DUR; PL.playing = false; t = DUR; setTimeout(auStop, 200); } if (PL.playing) { auTick(t); voTick(t); } draw(t); requestAnimationFrame(loop); }
 setInterval(() => { if (PL.playing) auTick(cur()); }, 50);
-async function begin() { if (!LOADED) return; try { auInit(); await AU.ac.resume(); } catch (e) { console.warn('audio unavailable', e); } startEl.classList.add('hide'); PL.t = 0; vPlay(); poke(); }
-playBtn.addEventListener('click', begin);
+async function begin(withVoice = false) { if (!LOADED) return; try { auInit(); await AU.ac.resume(); } catch (e) { console.warn('audio unavailable', e); } startEl.classList.add('hide'); PL.t = 0; vPlay(); setVoice(withVoice); poke(); }
+playBtn.addEventListener('click', () => begin(false));
+voiceBtn.addEventListener('click', () => begin(true));
 addEventListener('keydown', e => {
   if (!startEl.classList.contains('hide')) { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); begin(); } return; }
   switch (e.code) {
     case 'Space': e.preventDefault(); PL.playing ? vPause() : vPlay(); break;
     case 'ArrowLeft': vSeek(cur() - 5); break;
     case 'ArrowRight': vSeek(cur() + 5); break;
-    case 'KeyM': auMute(!AU.muted); break;
+    case 'KeyM': auMute(!AU.muted); if (!AU.muted && VO.on) setVoice(true); break;
+    case 'KeyC': SUB.on = !SUB.on; break;
+    case 'KeyV': setVoice(!VO.on); break;
     case 'KeyR': PL.t = 0; if (!PL.playing) vPlay(); else vSeek(0); break;
     case 'KeyF': if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {}); else document.exitFullscreen(); break;
     default: return;
@@ -249,7 +296,8 @@ FONT_READY.then(() => {
   let i = 0;
   const step = () => {
     if (i < LOADERS.length) { loadEl.textContent = `장면 준비 중 ${i + 1} / ${LOADERS.length}`; setTimeout(() => { LOADERS[i][1](); i++; step(); }, 20); return; }
-    resetScene(); LOADED = true; loadEl.textContent = ''; playBtn.disabled = false;
+    resetScene(); LOADED = true; playBtn.disabled = false; voiceBtn.disabled = false;
+    VO.voice = pickVoice(); loadEl.textContent = ('speechSynthesis' in window) ? (VO.voice ? '음성: ' + VO.voice.name : '이 PC에 한국어 음성이 없으면 자막만 나옵니다') : '';
     const qt = new URLSearchParams(location.search).get('t');
     if (qt !== null && !isNaN(parseFloat(qt))) { startEl.classList.add('hide'); progEl.classList.add('idle'); PL.t = clamp(parseFloat(qt), 0, DUR); }
     draw(PL.t); requestAnimationFrame(loop); window.__ready = true;

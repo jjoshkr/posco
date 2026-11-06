@@ -15,13 +15,13 @@ canvas{position:absolute;left:0;top:0;width:100%;height:100%}
 <style>
 #start{position:absolute;inset:0;display:flex;flex-direction:column;gap:22px;align-items:center;justify-content:center;background:rgba(5,10,18,.55);z-index:3;font-family:"Pretendard","Noto Sans KR","Malgun Gothic",sans-serif}
 #start.hide{display:none}#play{font:600 40px "Pretendard","Noto Sans KR","Malgun Gothic",sans-serif;padding:20px 58px;border:1px solid rgba(255,255,255,.7);border-radius:999px;background:rgba(0,68,144,.85);color:#fff;cursor:pointer}
-#play:disabled{opacity:.45;cursor:default}#load{color:rgba(255,255,255,.8);font:500 22px "Pretendard","Noto Sans KR",sans-serif;min-height:30px}
+#playv{font:600 40px "Pretendard","Noto Sans KR","Malgun Gothic",sans-serif;padding:20px 58px;border:1px solid rgba(255,255,255,.7);border-radius:999px;background:rgba(27,163,156,.85);color:#fff;cursor:pointer}#play:disabled,#playv:disabled{opacity:.45;cursor:default}#load{color:rgba(255,255,255,.8);font:500 22px "Pretendard","Noto Sans KR",sans-serif;min-height:30px}
 #prog{position:absolute;left:0;right:0;bottom:0;height:6px;background:rgba(255,255,255,.2);z-index:2;cursor:pointer;transition:opacity .5s}#prog.idle{opacity:0}#fill{height:100%;width:0;background:#1BA39C}
 </style>
 </head>
 <body>
 <canvas id="cv"></canvas>
-<div id="start"><button id="play" disabled>▶ 재생</button><div id="load">장면 준비 중</div></div>
+<div id="start"><div style="display:flex;gap:18px"><button id="play" disabled>▶ 자막과 함께 재생</button><button id="playv" disabled>▶ 음성 해설로 재생</button></div><div id="load">장면 준비 중</div></div>
 <div id="prog" class="idle"><div id="fill"></div></div>
 <script>
 'use strict';
@@ -1568,6 +1568,264 @@ function shotCarbon() {
 }
 
 
+/* ============================================================
+   CERTIFICATION CHART v3 — readable at a glance
+   grade bands behind the bars (values from the handoff: 1등급 ≤0.1 · 2등급 ≤1.0 · 3등급 ≤2.0 · 4등급 ≤4.0),
+   large receipt on the left, big value labels, frontal pseudo-3D bars
+   ============================================================ */
+const GB = [
+  { lo:2.0, hi:4.0, name:'4등급', rule:'≤4.0', fill:'rgba(194,103,42,.13)', ink:'#B0581F' },
+  { lo:1.0, hi:2.0, name:'3등급', rule:'≤2.0', fill:'rgba(196,150,40,.11)', ink:'#9A7516' },
+  { lo:0.1, hi:1.0, name:'2등급', rule:'≤1.0', fill:'rgba(80,150,90,.11)', ink:'#3E7D4A' },
+  { lo:-99, hi:0.1, name:'1등급', rule:'≤0.1', fill:'rgba(27,163,156,.16)', ink:'#137F79' }
+];
+function chartFrame(vmin, vmax) {
+  const X0 = 860, X1 = 1590, top = 150, bot = 900, k = (bot - top) / (vmax - vmin);
+  return { X0, X1, top, bot, k, Y: v => bot - (Math.max(vmin, Math.min(vmax, v)) - vmin) * k, vmin, vmax };
+}
+function drawBands(F) {
+  GB.forEach(b => { const y0 = F.Y(b.hi), y1 = F.Y(Math.max(b.lo, F.vmin));
+    g.fillStyle = b.fill; g.fillRect(F.X0 - 40, y0, F.X1 - F.X0 + 80, y1 - y0);
+    const ym = Math.max(y0 + 30, Math.min(y1 - 12, (y0 + y1) / 2 + 12));
+    T(b.name, F.X1 + 66, ym, 34, 600, b.ink); T(b.rule, F.X1 + 66 + 108, ym, 26, 500, b.ink); });
+  // above 4.0: not clean hydrogen
+  g.fillStyle = 'rgba(120,110,100,.06)'; g.fillRect(F.X0 - 40, F.top - 20, F.X1 - F.X0 + 80, F.Y(4.0) - F.top + 20);
+  // 4.0 line
+  g.save(); g.setLineDash([12, 8]); g.strokeStyle = SK.red; g.lineWidth = 2; g.beginPath(); g.moveTo(F.X0 - 40, F.Y(4)); g.lineTo(F.X1 + 40, F.Y(4)); g.stroke(); g.restore();
+  T('청정수소 기준 4.0', F.X1 + 40, F.Y(4) - 14, 26, 600, SK.red, 'right');
+  // zero axis
+  g.strokeStyle = 'rgba(42,38,34,.75)'; g.lineWidth = 2; g.beginPath(); g.moveTo(F.X0 - 40, F.Y(0)); g.lineTo(F.X1 + 40, F.Y(0)); g.stroke();
+  T('0', F.X0 - 56, F.Y(0) + 9, 24, 500, SK.soft, 'right');
+  T('kgCO₂e/kgH₂', F.X0 - 40, F.top - 34, 24, 500, SK.soft);
+}
+function bar3(F, xc, v0, v1, col, w = 120) {
+  const yt = F.Y(Math.max(v0, v1)), yb = F.Y(Math.min(v0, v1)), x = xc - w / 2, dx = 22, dy = -14, h = Math.max(6, yb - yt);
+  g.save(); g.filter = 'blur(10px)'; g.fillStyle = 'rgba(60,45,30,.22)'; g.fillRect(x + 8, yt + 10, w + dx, h); g.restore();
+  // front
+  let q = g.createLinearGradient(x, 0, x + w, 0); q.addColorStop(0, shade(col, .12)); q.addColorStop(.5, col); q.addColorStop(1, shade(col, -.12));
+  g.fillStyle = q; g.fillRect(x, yt, w, h);
+  g.fillStyle = 'rgba(255,255,255,.16)'; g.fillRect(x + 6, yt, w * .22, h);
+  // side
+  g.fillStyle = shade(col, -.3); g.beginPath(); g.moveTo(x + w, yt); g.lineTo(x + w + dx, yt + dy); g.lineTo(x + w + dx, yt + h + dy); g.lineTo(x + w, yt + h); g.closePath(); g.fill();
+  // top
+  g.fillStyle = shade(col, .35); g.beginPath(); g.moveTo(x, yt); g.lineTo(x + dx, yt + dy); g.lineTo(x + w + dx, yt + dy); g.lineTo(x + w, yt); g.closePath(); g.fill();
+  return { x, yt, yb, w };
+}
+function receipt(rows, x, y) {
+  // rows: [label, value, style] ; style: 'b' bold, 'hr' rule, 'res' result line
+  rows.forEach(([l, v, st, col]) => {
+    if (st === 'hr') { g.strokeStyle = SK.ink; g.lineWidth = 2; g.beginPath(); g.moveTo(x, y - 30); g.lineTo(x + 560, y - 30); g.stroke(); y += 30; return; }
+    if (st === 'res') { T(l, x, y + 10, 48, 600, col || SK.ink); y += 84; return; }
+    const size = st === 'b' ? 40 : 36, wgt = st === 'b' ? 600 : 500, c = col || SK.ink;
+    T(l, x, y, size, wgt, c); T(v, x + 560, y, size, 600, c, 'right');
+    g.save(); g.setLineDash([2, 7]); g.strokeStyle = 'rgba(42,38,34,.3)'; g.lineWidth = 1.5; g.font = font(wgt, size);
+    const lw = g.measureText(l).width, vw = g.measureText(v).width; g.beginPath(); g.moveTo(x + lw + 18, y - 10); g.lineTo(x + 560 - vw - 18, y - 10); g.stroke(); g.restore();
+    y += st === 'b' ? 74 : 66; });
+  return y;
+}
+function shotChart(stage) {
+  cove();
+  const L = 130;
+  T('수소 1kg의 탄소 영수증', L, 200, 50, 600);
+  if (stage === 'A') {
+    T('kgCO₂e/kgH₂ · KEEI 산정', L, 246, 24, 500, SK.soft);
+    receipt([
+      ['원료 가스', '3.177'],
+      ['물·탈루', '+0.061'],
+      ['전기 (재생·원전)', '0', '', SK.green],
+      ['', '', 'hr'],
+      ['소계', '3.238', 'b'],
+      ['→ 4등급', '', 'res', '#B0581F']
+    ], L, 340);
+    const F = chartFrame(-.6, 4.7); drawBands(F);
+    const a = bar3(F, 980, 0, 3.177, '#7D93AD'), b = bar3(F, 1190, 3.177, 3.238, '#8FA6C2', 110), c = bar3(F, 1410, 0, 3.238, '#2E4C70');
+    T('3.177', 980, a.yt - 30, 40, 600, SK.ink, 'center'); T('+0.061', 1190, b.yt - 30, 34, 600, SK.soft, 'center'); T('3.238', 1410, c.yt - 30, 40, 600, SK.ink, 'center');
+    g.save(); g.setLineDash([4, 6]); g.strokeStyle = 'rgba(42,38,34,.45)'; g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(a.x + a.w, F.Y(3.177)); g.lineTo(b.x, F.Y(3.177)); g.moveTo(b.x + b.w, F.Y(3.238)); g.lineTo(c.x, F.Y(3.238)); g.stroke(); g.restore();
+    [['원료 가스', 980], ['물·탈루', 1190], ['소계', 1410]].forEach(([n, x]) => T(n, x, F.Y(0) + 50, 30, 500, SK.ink, 'center'));
+    // call-out: the subtotal ends inside the 4등급 band
+    g.strokeStyle = '#B0581F'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(c.x + c.w + 30, F.Y(3.238) + 4); g.lineTo(F.X1 + 50, F.Y(3.0)); g.stroke();
+    g.fillStyle = '#B0581F'; g.beginPath(); g.arc(c.x + c.w + 30, F.Y(3.238) + 4, 6, 0, 7); g.fill();
+  } else {
+    T('고체탄소 크레딧 반영 · KEEI 산정', L, 246, 24, 500, SK.soft);
+    receipt([
+      ['소계', '3.238'],
+      ['고체탄소 크레딧', '−8.0', '', SK.tq],
+      ['  3.2kg × 2.5', '', '', SK.soft],
+      ['', '', 'hr'],
+      ['최종', '−4.762', 'b', SK.tq],
+      ['→ 청정수소 1등급', '', 'res', '#137F79']
+    ], L, 340);
+    const F = chartFrame(-5.7, 4.7); drawBands(F);
+    const a = bar3(F, 980, 0, 3.238, '#2E4C70'), b = bar3(F, 1190, 3.238, -4.762, '#1BA39C', 110), c = bar3(F, 1410, 0, -4.762, '#137F79');
+    T('3.238', 980, a.yt + 56, 38, 600, '#FFFFFF', 'center');
+    T('−8.0', 1190, F.Y(-.4), 44, 600, '#FFFFFF', 'center');
+    T('−4.762', 1410, c.yb + 56, 44, 600, '#137F79', 'center');
+    g.save(); g.setLineDash([4, 6]); g.strokeStyle = 'rgba(42,38,34,.45)'; g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(a.x + a.w, F.Y(3.238)); g.lineTo(b.x, F.Y(3.238)); g.moveTo(b.x + b.w, F.Y(-4.762)); g.lineTo(c.x, F.Y(-4.762)); g.stroke(); g.restore();
+    [['소계', 980, F.Y(0) + 50], ['크레딧', 1190, F.Y(3.238) - 82], ['최종', 1410, F.Y(0) - 22]].forEach(([n, x, y]) => T(n, x, y, 30, 500, SK.ink, 'center'));
+    g.strokeStyle = '#137F79'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(c.x + c.w + 30, F.Y(-4.762) + 4); g.lineTo(F.X1 + 50, F.Y(-2.4)); g.stroke();
+    g.fillStyle = '#137F79'; g.beginPath(); g.arc(c.x + c.w + 30, F.Y(-4.762) + 4, 6, 0, 7); g.fill();
+  }
+  vignette(); grainPass();
+}
+
+
+/* ============================================================
+   SCENE ④ (indoor) — hydrogen compressor house
+   Hydrogen is lighter than air: a leak rises and collects under the roof,
+   so detectors sit at the ceiling and the roof is ventilated.
+   Room: x 0..26 (length), y 0..16 (depth), z 0..9 (height).
+   ============================================================ */
+const HALL = { L:30, D:20, Hh:9 };
+const LEAK4 = [8.4, 5.0, 3.15];
+const UVIR4 = [[3.2, .35, 5.6], [12.4, .35, 5.6]];
+const PSV4 = [5.4, 3.6, 4.35];
+const GAUGE4 = [11.2, 7.4, 1.75];
+const ZONE4 = [4.2, 2.6, 0, 18.4, 6.2, 4.6];
+function camIndoor() { setCam([28.6, 19.2, 4.4], [10.5, 3.6, 2.1], 58); }
+function polyV(pts, stops) {                          // filled polygon with a vertical screen-space gradient
+  const sp = projPoly(pts); if (sp.length < 3) return; path(sp);
+  const ys = sp.map(p => p[1]); const q = g.createLinearGradient(0, Math.min(...ys), 0, Math.max(...ys));
+  stops.forEach(([o, c]) => q.addColorStop(o, c)); g.fillStyle = q; g.fill();
+}
+function polyH(pts, stops) {
+  const sp = projPoly(pts); if (sp.length < 3) return; path(sp);
+  const xs = sp.map(p => p[0]); const q = g.createLinearGradient(Math.min(...xs), 0, Math.max(...xs), 0);
+  stops.forEach(([o, c]) => q.addColorStop(o, c)); g.fillStyle = q; g.fill();
+}
+function compressor(x0, y0) {
+  box(x0, y0, 0, 7.4, 3.4, .35, '#47525E', { top:'#5C6875' });                               // skid frame
+  box(x0 + .9, y0 + .5, .35, 3.2, 2.4, 1.7, '#3E6A9A', { top:'#5B86B8' });                   // crankcase
+  box(x0 + 4.4, y0 + .7, .35, 2.4, 2.0, 1.45, '#2E5585', { top:'#47719F' });                 // motor
+  for (let k = 0; k < 6; k++) line3([x0 + 6.8, y0 + .9 + k * .3, .5], [x0 + 6.8, y0 + .9 + k * .3, 1.7], 'rgba(20,30,45,.55)', 1);
+  box(x0 + 4.1, y0 + 1.4, .9, .3, .6, .6, '#26476F', { edge:false });                       // coupling guard
+  // two diaphragm heads on top: big bolted discs
+  [[x0 + 1.7, y0 + 1.7], [x0 + 3.1, y0 + 1.7]].forEach(([cx, cy]) => {
+    cyl(cx, cy, 2.05, .62, .5, '#C9D3DE', { bands:[[.12, 'rgba(60,70,85,.6)', .06], [.38, 'rgba(60,70,85,.6)', .06]] });
+    cyl(cx, cy, 2.55, .42, .45, '#B7C3D0', { capColor:'#DCE3EA' });
+    if (!HOLO) for (let a = 0; a < 6.283; a += .785) { const p = P(cx + Math.cos(a) * .55, cy + Math.sin(a) * .55, 2.56); g.fillStyle = '#4A5563'; g.beginPath(); g.arc(p[0], p[1], Math.max(1, .05 * S(cx, cy, 2.5)), 0, 7); g.fill(); }
+  });
+  // pulsation damper with safety valve and vent stack to the roof
+  cyl(x0 + .4, y0 + .1, .35, .42, 3.4, '#E3E8EE', { dome:.3, bands:[[.4, PAL.tq, .1]] });
+  pipe3([[x0 + 1.7, y0 + 1.7, 3.0], [x0 + 1.7, y0 + 1.7, 3.15], [x0 + .4, y0 + .1, 3.15]], .14, '#F1F4F7');
+  pipe3([[x0 + 3.1, y0 + 1.7, 3.0], [x0 + 3.1, y0 + 1.7, 3.15], [x0 + 3.1, y0 - 1.0, 3.15], [x0 + 3.1, .45, 3.15]], .14, '#F1F4F7');
+  flange(x0 + 3.1, y0 + .6, 3.15, 'y', .2, '#9AA6B4');
+}
+function drawHall() {
+  const { L, D, Hh } = HALL;
+  // ceiling with roof deck ribs
+  polyV([[0, 0, Hh], [L, 0, Hh], [L, D, Hh], [0, D, Hh]], [[0, '#5D6873'], [1, '#7C8792']]);
+  for (let x = 1; x < L; x += 1.2) line3([x, 0, Hh - .01], [x, D, Hh - .01], 'rgba(40,50,62,.35)', 1);
+  // back wall (y = 0): insulated panels, dado band, high louvres
+  polyV([[0, 0, 0], [L, 0, 0], [L, 0, Hh], [0, 0, Hh]], [[0, '#B5BEC6'], [.55, '#CCD3DA'], [1, '#DDE3E8']]);
+  polyV([[0, .01, 0], [L, .01, 0], [L, .01, 1.2], [0, .01, 1.2]], [[0, '#7E8B97'], [1, '#93A0AC']]);
+  for (let x = 2; x < L; x += 2) line3([x, .02, 0], [x, .02, Hh], 'rgba(90,100,112,.35)', 1);
+  const LV = [3, 9, 15, 21, 27];
+  LV.forEach(x => { polyV([[x, .02, 7.0], [x + 2.6, .02, 7.0], [x + 2.6, .02, 8.2], [x, .02, 8.2]], [[0, '#F4F1E6'], [1, '#FFFDF5']]);
+    for (let z = 7.15; z < 8.2; z += .2) line3([x, .03, z], [x + 2.6, .03, z], 'rgba(90,96,104,.6)', 1.2); });
+  // left wall (x = 0): roller door frame and MCC panels
+  polyH([[0, 0, 0], [0, D, 0], [0, D, Hh], [0, 0, Hh]], [[0, '#C3CBD2'], [1, '#A9B3BC']]);
+  polyV([[.01, 0, 0], [.01, D, 0], [.01, D, 1.2], [.01, 0, 1.2]], [[0, '#7A8794'], [1, '#8E9BA7']]);
+  for (let y = 2; y < D; y += 2) line3([.02, y, 0], [.02, y, Hh], 'rgba(90,100,112,.3)', 1);
+  // right wall (x = L), mostly behind the camera
+  polyH([[L, 0, 0], [L, D, 0], [L, D, Hh], [L, 0, Hh]], [[0, '#B9C2CA'], [1, '#9EA8B2']]);
+  // floor: epoxy, walkway lines, hatched keep-clear strips
+  polyV([[0, 0, 0], [L, 0, 0], [L, D, 0], [0, D, 0]], [[0, '#7E8A86'], [1, '#97A39E']]);
+  line3([0, 10.4, .01], [L, 10.4, .01], 'rgba(232,180,40,.95)', 3); line3([0, 11.6, .01], [L, 11.6, .01], 'rgba(232,180,40,.95)', 3);
+  for (let x = .5; x < L; x += 1.4) line3([x, 10.4, .012], [x + .7, 11.6, .012], 'rgba(232,180,40,.35)', 2);
+  // ceiling trusses and roof fans
+  for (let x = 2.5; x < L; x += 5) { box(x - .15, 0, Hh - .55, .3, D, .55, '#4A5562', { top:'#5B6673', edge:false }); }
+  [[6, 6], [13, 6], [20, 6], [27, 6]].forEach(([x, y]) => { const e = circ(x, y, Hh - .02, 1.0); g.fillStyle = '#2A3139'; g.beginPath(); g.ellipse(e[0], e[1], e[2], e[3], 0, 0, 7); g.fill();
+    g.strokeStyle = 'rgba(160,170,180,.7)'; g.lineWidth = 1.2; for (let a = 0; a < 6.283; a += 1.047) { const p = P(x + Math.cos(a) * .85, y + Math.sin(a) * .85, Hh - .03), c = P(x, y, Hh - .03); g.beginPath(); g.moveTo(c[0], c[1]); g.lineTo(p[0], p[1]); g.stroke(); } });
+  // hydrogen detectors at the ceiling (high point)
+  [[8.4, 5.0], [15.5, 5.0]].forEach(([x, y]) => { line3([x, y, Hh - .55], [x, y, Hh - .9], '#7F8FA3', 1.2); box(x - .18, y - .18, Hh - 1.25, .36, .36, .35, '#F4F6F8', { edge:false }); });
+  // structural column carrying a flame detector
+  // linear lights
+  [[5, 10], [12, 10], [19, 10], [26, 10], [5, 3], [12, 3], [19, 3], [26, 3]].forEach(([x, y]) => { line3([x, y, Hh - .55], [x, y, 7.6], '#5E6873', 1); box(x - 1.2, y - .1, 7.45, 2.4, .2, .15, '#F7F9FB', { edge:false, top:'#FFFFFF' }); });
+  // piping along the back wall, valves
+  pipe3([[.3, .45, 3.15], [L - .3, .45, 3.15]], .2, '#F1F4F7');
+  pipe3([[.3, .9, 2.4], [L - .3, .9, 2.4]], .16, '#E2B42B');
+  for (let x = 2; x < L; x += 4) { line3([x, .05, 3.0], [x, .7, 3.0], '#6E7F93', 1.4); flange(x + 1, .45, 3.15, 'x', .26, '#9AA6B4'); }
+  [[6.4, .45], [17.4, .45]].forEach(([x, y]) => { box(x - .2, y - .2, 3.0, .4, .4, .35, '#5E6B7A', { edge:false }); handwheel(x, y, 3.55, .22, 'z'); });
+  // aftercooler along the back
+  hcyl(14, 22.5, 1.6, 1.25, .55, '#D6DDE4', { bands:[16, 20] });
+  // compressors
+  compressor(4.5, 3.0);
+  compressor(14.4, 3.0);
+  // pressure gauge on a post in front of compressor A
+  line3([GAUGE4[0], GAUGE4[1], 0], [GAUGE4[0], GAUGE4[1], 1.35], '#7F8FA3', 2);
+  if (!HOLO) { const p = P(GAUGE4[0], GAUGE4[1], GAUGE4[2]), k = S(...GAUGE4), R = .3 * k;
+    g.fillStyle = '#2E3B4A'; g.beginPath(); g.arc(p[0], p[1], R * 1.15, 0, 7); g.fill(); g.fillStyle = '#FFFFFF'; g.beginPath(); g.arc(p[0], p[1], R, 0, 7); g.fill();
+    const arc = (a0, a1, c) => { g.strokeStyle = c; g.lineWidth = R * .2; g.beginPath(); g.arc(p[0], p[1], R * .78, a0, a1); g.stroke(); };
+    const A = t => Math.PI * .75 + t * Math.PI * 1.5; arc(A(0), A(.62), '#2E9E6A'); arc(A(.62), A(.8), '#E8B42B'); arc(A(.8), A(1), '#C0392B');
+    const an = A(.88); g.strokeStyle = '#16202B'; g.lineWidth = Math.max(1.2, R * .1); g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(p[0] + Math.cos(an) * R * .8, p[1] + Math.sin(an) * R * .8); g.stroke(); }
+  // flame detectors
+  UVIR4.forEach(([x, y, z]) => box(x - .22, y - .12, z - .14, .44, .3, .3, '#2B3A4C', { edge:false, top:'#44566B' }));
+  // safety valve (red) on the damper of compressor A, vent through the roof
+  pipe3([[PSV4[0], PSV4[1], 4.6], [PSV4[0], PSV4[1], Hh + .5]], .12, '#B9C4CF');
+  cyl(PSV4[0], PSV4[1], 3.75, .2, .6, '#C0392B', { capColor:'#E05A4A' });
+  // worker with tablet near compressor B
+  person(5.8, 10.0, -2.2, 'tablet'); person(9.0, 11.8, -1.9, 'stand');
+}
+function indoorFX() {
+  const [lx, ly, lz] = LEAK4;
+  // daylight shafts from the high louvres
+  g.save(); g.globalCompositeOperation = 'lighter';
+  [3, 9, 15, 21, 27].forEach(x => { const a = P(x, .05, 8.2), b = P(x + 2.6, .05, 8.2), c = P(x + 5.2, 9, 0), d = P(x + 2.6, 9, 0);
+    const q = g.createLinearGradient(a[0], a[1], d[0], d[1]); q.addColorStop(0, 'rgba(255,240,210,.045)'); q.addColorStop(1, 'rgba(255,240,210,0)');
+    g.fillStyle = q; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(c[0], c[1]); g.lineTo(d[0], d[1]); g.closePath(); g.fill(); });
+  g.restore();
+  // explosion-protected zone round the compressors
+  const [zx, zy, zz, zw, zd, zh] = ZONE4, Z = [[zx, zy], [zx + zw, zy], [zx + zw, zy + zd], [zx, zy + zd]];
+  g.save(); g.setLineDash([9, 7]); g.strokeStyle = 'rgba(255,170,90,.9)'; g.lineWidth = 1.6;
+  [zz, zz + zh].forEach(z => { const pts = Z.map(([x, y]) => P(x, y, z)); g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); g.stroke(); });
+  Z.forEach(([x, y]) => { const a = P(x, y, zz), b = P(x, y, zz + zh); g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); });
+  g.setLineDash([]); g.fillStyle = 'rgba(255,170,90,.07)'; const fl = Z.map(([x, y]) => P(x, y, .02)); g.beginPath(); fl.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); g.fill();
+  g.restore();
+  // leaking hydrogen rises and spreads under the roof (faint, cool tint)
+  g.save(); g.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 28; i++) { const k = i / 28, z = lz + k * (HALL.Hh - .7 - lz), p = P(lx + Math.sin(k * 4) * .3, ly, z), R = (.3 + k * 1.6) * S(lx, ly, z);
+    const c = g.createRadialGradient(p[0], p[1], 0, p[0], p[1], R); c.addColorStop(0, `rgba(160,215,255,${.035 * (1 - k * .4)})`); c.addColorStop(1, 'rgba(160,215,255,0)'); g.fillStyle = c; g.beginPath(); g.arc(p[0], p[1], R, 0, 7); g.fill(); }
+  { const a = P(lx - 4, ly - 2, HALL.Hh - .4), b = P(lx + 4, ly + 2, HALL.Hh - .4), c = P(lx, ly, HALL.Hh - .4), R = Math.hypot(b[0] - a[0], b[1] - a[1]) / 2;
+    const q = g.createRadialGradient(c[0], c[1], 0, c[0], c[1], R); q.addColorStop(0, 'rgba(170,220,255,.09)'); q.addColorStop(1, 'rgba(170,220,255,0)'); g.save(); g.translate(c[0], c[1]); g.scale(1, .35); g.translate(-c[0], -c[1]); g.fillStyle = q; g.beginPath(); g.arc(c[0], c[1], R, 0, 7); g.fill(); g.restore(); }
+  g.restore();
+  // nearly invisible flame: heat ripple at the head flange
+  g.save(); g.strokeStyle = 'rgba(235,245,255,.45)'; g.lineWidth = 1.3;
+  for (let s = -2; s <= 2; s++) { g.beginPath(); for (let z = 0; z < 1.6; z += .05) { const p = P(lx, ly, lz + .1 + z), k = S(lx, ly, lz + z); const x = p[0] + s * .12 * k + Math.sin(z * 7 + s * 1.3) * .07 * k * (1 + z); z === 0 ? g.moveTo(x, p[1]) : g.lineTo(x, p[1]); } g.stroke(); }
+  g.restore();
+  // UV/IR detection cones converging on the flange
+  UVIR4.forEach(([x, y, z]) => { const a = P(x, y, z), b = P(lx, ly, lz + .5), dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), nx = -dy / L, ny = dx / L, w = L * .22;
+    g.save(); const q = g.createLinearGradient(a[0], a[1], b[0], b[1]); q.addColorStop(0, 'rgba(255,190,120,.28)'); q.addColorStop(1, 'rgba(255,190,120,.04)');
+    g.fillStyle = q; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0] + nx * w, b[1] + ny * w); g.lineTo(b[0] - nx * w, b[1] - ny * w); g.closePath(); g.fill(); g.restore(); });
+}
+function indoorHUD(gm) {
+  scrim(gm, 970);
+  const m = P(...LEAK4); hudMarker(gm, m[0], m[1], 4);
+  hudTag(gm, 'UV/IR 화염검지', UVIR4[0][0], UVIR4[0][1], UVIR4[0][2] + .2, -240, -120);
+  hudTag(gm, '안전밸브', PSV4[0], PSV4[1], PSV4[2] + .1, -150, -60);
+  hudTag(gm, '고압', GAUGE4[0], GAUGE4[1], GAUGE4[2] + .3, -130, 60);
+  hudTag(gm, '방폭 구역', ZONE4[0], ZONE4[1] + ZONE4[4], 0, -110, 50);
+  hudPanel(gm, 1300, 230, 500,
+    [['위험', '고압 · 눈에 잘 안 보이는 수소 불꽃 · 수소취성', 'risk'], ['안전조치', 'UV/IR 화염검지 · 안전밸브 · 방폭 구역', 'safe']],
+    ['고압가스법 KGS 검사', '산안법 PSM']);
+}
+function renderIndoor(rq, withHUD = 'overlay') {
+  const w = Math.round(W * rq), h = Math.round(H * rq);
+  camIndoor(); DPR = rq;
+  const B = mk(w, h); g = B.getContext('2d'); g.setTransform(rq, 0, 0, rq, 0, 0);
+  g.fillStyle = '#2A3138'; g.fillRect(0, 0, W, H);
+  drawHall(); indoorFX();
+  const out = mk(w, h), gm = out.getContext('2d');
+  gm.filter = 'contrast(1.1) saturate(.92)'; gm.drawImage(B, 0, 0); gm.filter = 'none';
+  gm.setTransform(rq, 0, 0, rq, 0, 0); grade(gm, -400);
+  let ov = null;
+  if (withHUD === 'overlay') { ov = mk(w, h); const og = ov.getContext('2d'); og.setTransform(rq, 0, 0, rq, 0, 0); indoorHUD(og); }
+  else if (withHUD === 'base') indoorHUD(gm);
+  return { base: out, ov };
+}
+
+
 const SETUP = {};
 
 
@@ -2097,7 +2355,7 @@ function auMute(m) { AU.muted = m; if (AU.master) AU.master.gain.setTargetAtTime
 
 
 /* ============================================================
-   VIDEO — 91 s film assembled from the code-drawn scenes
+   VIDEO — 91 s film (subtitles + optional Korean voice narration via the browser's speech engine) assembled from the code-drawn scenes
    Scenes are rendered once at load (base layer + HUD layer), then the master
    timeline animates camera push, transitions, HUD reveal, captions, live FX and sound.
    ============================================================ */
@@ -2185,12 +2443,12 @@ const SH = [
   { id:'p02',  t0:14,   t1:21.5, z:[1.0, 1.06], f:[[700, 520], [720, 520]] },
   { id:'p03',  t0:21.5, t1:29,   z:[1.0, 1.07], f:[[800, 540], [820, 520]] },
   { id:'p04',  t0:29,   t1:36,   z:[1.0, 1.07], f:[[760, 540], [780, 530]] },
-  { id:'p05',  t0:36,   t1:43,   z:[1.0, 1.07], f:[[1100, 560], [1080, 540]] },
+  { id:'p05',  t0:36,   t1:43,   z:[1.0, 1.07], f:[[700, 520], [720, 500]] },
   { id:'p06',  t0:43,   t1:50,   z:[1.0, 1.07], f:[[860, 520], [900, 480]] },
   { id:'p07',  t0:50,   t1:56,   z:[1.0, 1.05], f:[[960, 520], [960, 500]] },
-  { id:'p08a', t0:56,   t1:64.5, z:[1.0, 1.06], f:[[760, 520], [760, 500]] },
+  { id:'p08a', t0:56,   t1:64.5, z:[1.0, 1.04], f:[[960, 540], [960, 530]] },
   { id:'p08b', t0:64.5, t1:72.5, z:[1.0, 1.07], f:[[760, 560], [820, 520]] },
-  { id:'p08c', t0:72.5, t1:81,   z:[1.0, 1.06], f:[[1000, 500], [1000, 560]] },
+  { id:'p08c', t0:72.5, t1:81,   z:[1.0, 1.05], f:[[1000, 560], [1000, 580]] },
   { id:'p09',  t0:81,   t1:87,   z:[1.0, 1.04], f:[[1250, 450], [1250, 430]] },
   { id:'end',  t0:87,   t1:91 }
 ];
@@ -2200,6 +2458,49 @@ const CAPS = [
   [14.5, 21.3, '① 원료 인입·전처리', ''], [22.1, 28.8, '② 열분해 반응기', ''], [29.6, 35.8, '③ 탄소 분리·저장', ''],
   [36.6, 42.8, '④ 수소 정제·압축·저장', ''], [43.6, 49.8, '⑤ 배관 이송', ''], [50.6, 55.8, '착공 전 관문을 모두 통과 — 안전하게 짓는다', '']
 ];
+// narration: [start, end, subtitle ('' = spoken only), speech text if it differs]
+const NARR = [
+  [1.2, 6.4, '2030년, 포스코가 짓는 청록수소 플랜트입니다.'],
+  [7.6, 13.6, '메탄을 수소와 고체탄소로 나누는, CO₂ 굴뚝이 없는 공장입니다.', '메탄을 수소와 고체탄소로 나누는, 이산화탄소 굴뚝이 없는 공장입니다.'],
+  [15.0, 21.2, '첫째, 원료 인입·전처리. 메탄 누출은 가스검지기와 자동 차단밸브로 막습니다.', '첫째, 원료 인입과 전처리. 메탄 누출은 가스검지기와 자동 차단밸브로 막습니다.'],
+  [22.2, 28.8, '둘째, 열분해 반응기. 1,500~2,000℃ 초고온, 정전 때 역류는 비상 인터록이 막습니다.', '둘째, 열분해 반응기. 천오백에서 이천 도의 초고온. 정전 때 역류는 비상 인터록이 막습니다.'],
+  [29.8, 35.8, '셋째, 탄소 분리·저장. 카본블랙 분진 폭발은 청록수소 고유의 위험입니다.', '셋째, 탄소 분리와 저장. 카본블랙 분진 폭발은 청록수소 고유의 위험입니다.'],
+  [36.8, 42.8, '넷째, 수소 압축 설비. 눈에 잘 안 보이는 수소 불꽃은 UV/IR 화염검지기가 잡습니다.', '넷째, 수소 압축 설비. 눈에 잘 안 보이는 수소 불꽃은 자외선 적외선 화염검지기가 잡습니다.'],
+  [43.8, 49.8, '다섯째, 배관 이송. 정기 검사와 누출 감지로 제철소까지 보냅니다.'],
+  [50.8, 55.8, '착공 전 관문을 모두 통과해, 안전하게 짓습니다.'],
+  [56.8, 60.4, '수소 1kg을 만들 때 나오는 탄소를 영수증처럼 따져 봅니다.', '수소 1킬로그램을 만들 때 나오는 탄소를 영수증처럼 따져 봅니다.'],
+  [60.6, 64.3, '합계 3.238. 기준 4.0 아래라 청정수소지만, 4등급입니다.', '합계 삼 점 이삼팔. 기준 사 점 영 아래라 청정수소지만, 사 등급입니다.'],
+  [65.0, 68.6, '고체탄소 3.2kg은 팔아서, 다시 태워지지 않는 곳에 씁니다.', '고체탄소 삼 점 이 킬로그램은 팔아서, 다시 태워지지 않는 곳에 씁니다.'],
+  [68.8, 72.3, '그 대가로 크레딧 8.0을 인정받습니다.', '그 대가로 크레딧 팔 점 영을 인정받습니다.'],
+  [73.0, 76.8, '3.238에서 8.0을 빼면, −4.762.', '삼 점 이삼팔에서 팔 점 영을 빼면, 마이너스 사 점 칠육이.'],
+  [77.0, 80.7, '1등급 기준 0.1보다 낮은, 청정수소 1등급입니다.', '일 등급 기준 영 점 일보다 낮은, 청정수소 일 등급입니다.'],
+  [82.0, 86.6, '', '안전하게 짓고, 청정수소 일 등급으로.'],
+  [87.6, 90.8, '', '포스코 하이렉스 수소환원제철에 청정수소를 공급합니다.']
+];
+const SUB = { on:true };
+function drawSub(t) {
+  if (!SUB.on) return;
+  const n = NARR.find(n => t >= n[0] && t <= n[1] + .2); if (!n || !n[2]) return;
+  const a = Math.min(ease(prog(t, n[0], n[0] + .25)), 1 - ease(prog(t, n[1], n[1] + .2)));
+  let size = 34; g.font = font(500, size); let w = g.measureText(n[2]).width; if (w > 1500) { size = Math.floor(34 * 1500 / w); g.font = font(500, size); w = g.measureText(n[2]).width; }
+  g.save(); g.globalAlpha = a; g.fillStyle = 'rgba(4,10,18,.62)'; g.beginPath(); g.roundRect(W / 2 - w / 2 - 22, 1004, w + 44, 54, 10); g.fill();
+  g.fillStyle = '#FFFFFF'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(n[2], W / 2, 1032); g.restore();
+}
+const VO = { on:false, voice:null, last:-1 };
+function pickVoice() {
+  if (!('speechSynthesis' in window)) return null;
+  const vs = speechSynthesis.getVoices().filter(v => /^ko/i.test(v.lang));
+  for (const p of ['SunHi', 'Heami', 'InJoon', 'Google', 'Yuna']) { const v = vs.find(v => v.name.includes(p)); if (v) return v; }
+  return vs[0] || null;
+}
+if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => { VO.voice = pickVoice(); };
+function voReset(t) { if ('speechSynthesis' in window) speechSynthesis.cancel(); VO.last = -1; NARR.forEach((n, i) => { if (n[0] < t - .4) VO.last = i; }); }
+function voTick(t) {
+  if (!VO.on || !PL.playing || !('speechSynthesis' in window)) return;
+  NARR.forEach((n, i) => { if (i > VO.last && t >= n[0] && t < n[0] + .8) { VO.last = i;
+    const u = new SpeechSynthesisUtterance(n[3] || n[2]); u.lang = 'ko-KR'; if (!VO.voice) VO.voice = pickVoice(); if (VO.voice) u.voice = VO.voice; u.rate = 1.08; u.pitch = 1; speechSynthesis.speak(u); } });
+}
+function setVoice(on) { VO.on = on; voReset(cur()); if (AU.master) AU.master.gain.setTargetAtTime(AU.muted ? 0 : (on ? .42 : .85), AU.ac.currentTime, .05); }
 const IMG = {}, FX = {};
 const LOADERS = [
   ['open-holo', () => { resetScene(); IMG.holo = renderHolo(); }],
@@ -2208,13 +2509,13 @@ const LOADERS = [
   ['p03', () => { resetScene(); SETUP.p03(); IMG.p03 = renderBase('overlay');
     FX.p03 = { glow: REACT.flatMap(([cx, cy]) => { const [fx, fy] = facing(cx, cy, 2.75); return [7.2, 10.6].map(z => [...P(fx, fy, z), S(fx, fy, z)]); }) }; }],
   ['p04', () => { resetScene(); SETUP.p04(); IMG.p04 = renderBase('overlay'); FX.p04 = { dust: P(136.5, 82, 7.4), hood: P(136.5, 82, 9.2), k: S(136.5, 82, 7) }; }],
-  ['p05', () => { resetScene(); SETUP.p05(); IMG.p05 = renderBase('overlay'); FX.p05 = { lamps: UVIR.map(([x, y, hh]) => P(x, y + .26, hh + .22)), leak: P(166, 82.5, 2.4) }; }],
+  ['p05', () => { resetScene(); IMG.p05 = renderIndoor(RQ, 'overlay'); camIndoor(); FX.p05 = { lamps: UVIR4.map(([x, y, z]) => P(x, y + .16, z)), leak: P(LEAK4[0], LEAK4[1], LEAK4[2] + .2) }; }],
   ['p06', () => { resetScene(); SETUP.p06(); IMG.p06 = renderBase('overlay');
     FX.p06 = { lamps: DETECT.map(([x, y]) => P(x + .22, y, 6.5)), main: [P(197.6, 50, 8.1), P(197.6, -30, 8.1)] }; }],
   ['p07', () => { resetScene(); SETUP.p07(); IMG.p07 = renderBase('overlay'); }],
-  ['p08a', () => { IMG.p08a = renderStudio(shotColumns, 'A'); }],
+  ['p08a', () => { IMG.p08a = renderStudio(shotChart, 'A'); }],
   ['p08b', () => { IMG.p08b = renderStudio(shotCarbon); }],
-  ['p08c', () => { IMG.p08c = renderStudio(shotColumns, 'C'); }],
+  ['p08c', () => { IMG.p08c = renderStudio(shotChart, 'C'); }],
   ['p09', () => { resetScene(); SETUP.p09(); IMG.p09 = renderBase('base'); }]
 ];
 
@@ -2295,10 +2596,11 @@ function renderFrame(t) {
   g.save(); g.globalAlpha = i > 0 ? ease(prog(t, s.t0, s.t0 + XF)) : 1; drawShot(s, t); g.restore();
   if (t < .8) { g.fillStyle = `rgba(0,0,0,${1 - ease(prog(t, 0, .8))})`; g.fillRect(0, 0, W, H); }
   CAPS.forEach(([a, b, title, sub]) => { const al = win(t, a, b, .5, .4); if (al > 0) { g.save(); g.globalAlpha = al; caption(g, title, sub); g.restore(); } });
+  drawSub(t);
 }
 
 /* ---- player ---- */
-const startEl = document.getElementById('start'), playBtn = document.getElementById('play'), loadEl = document.getElementById('load'), progEl = document.getElementById('prog'), fillEl = document.getElementById('fill');
+const startEl = document.getElementById('start'), playBtn = document.getElementById('play'), voiceBtn = document.getElementById('playv'), loadEl = document.getElementById('load'), progEl = document.getElementById('prog'), fillEl = document.getElementById('fill');
 let sdpr = 1, ssc = 1, sox = 0, soy = 0, LOADED = false;
 const PL = { playing:false, t:0, startT:0, startClock:0, clock:null };
 function resize() {
@@ -2315,20 +2617,23 @@ function draw(t) {
   renderFrame(t); cvx.restore();
   fillEl.style.width = (t / DUR * 100) + '%';
 }
-function vPlay() { if (PL.t >= DUR) PL.t = 0; PL.clock = (AU.ac && AU.ac.state === 'running') ? () => AU.ac.currentTime : () => performance.now() / 1000; PL.startClock = PL.clock(); PL.startT = PL.t; PL.playing = true; auStart(PL.t); }
-function vPause() { PL.t = cur(); PL.playing = false; auStop(); }
+function vPlay() { if (PL.t >= DUR) PL.t = 0; voReset(PL.t); PL.clock = (AU.ac && AU.ac.state === 'running') ? () => AU.ac.currentTime : () => performance.now() / 1000; PL.startClock = PL.clock(); PL.startT = PL.t; PL.playing = true; auStart(PL.t); }
+function vPause() { PL.t = cur(); PL.playing = false; auStop(); if ('speechSynthesis' in window) speechSynthesis.cancel(); }
 function vSeek(t) { const was = PL.playing; if (was) vPause(); PL.t = clamp(t, 0, DUR); if (was) vPlay(); else draw(PL.t); }
-function loop() { let t = cur(); if (PL.playing && t >= DUR) { PL.t = DUR; PL.playing = false; t = DUR; setTimeout(auStop, 200); } if (PL.playing) auTick(t); draw(t); requestAnimationFrame(loop); }
+function loop() { let t = cur(); if (PL.playing && t >= DUR) { PL.t = DUR; PL.playing = false; t = DUR; setTimeout(auStop, 200); } if (PL.playing) { auTick(t); voTick(t); } draw(t); requestAnimationFrame(loop); }
 setInterval(() => { if (PL.playing) auTick(cur()); }, 50);
-async function begin() { if (!LOADED) return; try { auInit(); await AU.ac.resume(); } catch (e) { console.warn('audio unavailable', e); } startEl.classList.add('hide'); PL.t = 0; vPlay(); poke(); }
-playBtn.addEventListener('click', begin);
+async function begin(withVoice = false) { if (!LOADED) return; try { auInit(); await AU.ac.resume(); } catch (e) { console.warn('audio unavailable', e); } startEl.classList.add('hide'); PL.t = 0; vPlay(); setVoice(withVoice); poke(); }
+playBtn.addEventListener('click', () => begin(false));
+voiceBtn.addEventListener('click', () => begin(true));
 addEventListener('keydown', e => {
   if (!startEl.classList.contains('hide')) { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); begin(); } return; }
   switch (e.code) {
     case 'Space': e.preventDefault(); PL.playing ? vPause() : vPlay(); break;
     case 'ArrowLeft': vSeek(cur() - 5); break;
     case 'ArrowRight': vSeek(cur() + 5); break;
-    case 'KeyM': auMute(!AU.muted); break;
+    case 'KeyM': auMute(!AU.muted); if (!AU.muted && VO.on) setVoice(true); break;
+    case 'KeyC': SUB.on = !SUB.on; break;
+    case 'KeyV': setVoice(!VO.on); break;
     case 'KeyR': PL.t = 0; if (!PL.playing) vPlay(); else vSeek(0); break;
     case 'KeyF': if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {}); else document.exitFullscreen(); break;
     default: return;
@@ -2346,7 +2651,8 @@ FONT_READY.then(() => {
   let i = 0;
   const step = () => {
     if (i < LOADERS.length) { loadEl.textContent = `장면 준비 중 ${i + 1} / ${LOADERS.length}`; setTimeout(() => { LOADERS[i][1](); i++; step(); }, 20); return; }
-    resetScene(); LOADED = true; loadEl.textContent = ''; playBtn.disabled = false;
+    resetScene(); LOADED = true; playBtn.disabled = false; voiceBtn.disabled = false;
+    VO.voice = pickVoice(); loadEl.textContent = ('speechSynthesis' in window) ? (VO.voice ? '음성: ' + VO.voice.name : '이 PC에 한국어 음성이 없으면 자막만 나옵니다') : '';
     const qt = new URLSearchParams(location.search).get('t');
     if (qt !== null && !isNaN(parseFloat(qt))) { startEl.classList.add('hide'); progEl.classList.add('idle'); PL.t = clamp(parseFloat(qt), 0, DUR); }
     draw(PL.t); requestAnimationFrame(loop); window.__ready = true;

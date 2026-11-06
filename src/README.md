@@ -6,10 +6,11 @@
 - `b2.js`, `c2.js`: 지형과 플랜트 설비 모델
 - `d2_core.js`, `hud.js`: 렌더러, 색보정, 자막, HUD
 - `human09.js`, `hero09.js`: 작업자 인물
-- `d3.js`: 홀로그램 장면, `p08v2.js`: 인증 장면
+- `d3.js`: 홀로그램 장면, `p08v2.js`: 고체탄소 장면, `p08_chart.js`: 탄소 영수증·1등급 그래프
+- `p05_indoor.js`: 장면 ④ 수소 압축기실(실내)
 - `tail_p02.js` ~ `tail_p07.js`, `p09v3_*.js`: 장면별 카메라, 효과, HUD
 - `p6.js`, `audio_events.js`: Web Audio 사운드
-- `video_player.js`: 시간표, 카메라 이동, 전환, 재생 제어
+- `video_player.js`: 시간표, 카메라 이동, 전환, 자막·음성 해설, 재생 제어
 
 다시 만들기:
 

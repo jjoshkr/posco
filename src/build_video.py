@@ -7,10 +7,10 @@ head = rd('a2.html')
 head = head.replace('<title>장면 01 · 시네마틱 전경</title>', '<title>2030 POSCO 청록수소 플랜트</title>')
 ui_css = ('<style>\n#start{position:absolute;inset:0;display:flex;flex-direction:column;gap:22px;align-items:center;justify-content:center;background:rgba(5,10,18,.55);z-index:3;font-family:"Pretendard","Noto Sans KR","Malgun Gothic",sans-serif}\n'
           '#start.hide{display:none}#play{font:600 40px "Pretendard","Noto Sans KR","Malgun Gothic",sans-serif;padding:20px 58px;border:1px solid rgba(255,255,255,.7);border-radius:999px;background:rgba(0,68,144,.85);color:#fff;cursor:pointer}\n'
-          '#play:disabled{opacity:.45;cursor:default}#load{color:rgba(255,255,255,.8);font:500 22px "Pretendard","Noto Sans KR",sans-serif;min-height:30px}\n'
+          '#playv{font:600 40px "Pretendard","Noto Sans KR","Malgun Gothic",sans-serif;padding:20px 58px;border:1px solid rgba(255,255,255,.7);border-radius:999px;background:rgba(27,163,156,.85);color:#fff;cursor:pointer}#play:disabled,#playv:disabled{opacity:.45;cursor:default}#load{color:rgba(255,255,255,.8);font:500 22px "Pretendard","Noto Sans KR",sans-serif;min-height:30px}\n'
           '#prog{position:absolute;left:0;right:0;bottom:0;height:6px;background:rgba(255,255,255,.2);z-index:2;cursor:pointer;transition:opacity .5s}#prog.idle{opacity:0}#fill{height:100%;width:0;background:#1BA39C}\n</style>\n')
 head = head.replace('</head>', ui_css + '</head>', 1)
-head = head.replace('<canvas id="cv"></canvas>', '<canvas id="cv"></canvas>\n<div id="start"><button id="play" disabled>▶ 재생</button><div id="load">장면 준비 중</div></div>\n<div id="prog" class="idle"><div id="fill"></div></div>')
+head = head.replace('<canvas id="cv"></canvas>', '<canvas id="cv"></canvas>\n<div id="start"><div style="display:flex;gap:18px"><button id="play" disabled>▶ 자막과 함께 재생</button><button id="playv" disabled>▶ 음성 해설로 재생</button></div><div id="load">장면 준비 중</div></div>\n<div id="prog" class="idle"><div id="fill"></div></div>')
 assert 'id="start"' in head
 
 def strip_tail(s):
@@ -25,6 +25,8 @@ d3 = rd('d3.js')
 parts.append('\n' + d3[d3.index('function duskSky'):d3.index("const cv = document.getElementById('cv');")])
 p08 = rd('p08v2.js')
 parts.append('\n' + p08[:p08.index("const cv = document.getElementById('cv');")])
+parts.append(rd('p08_chart.js'))
+parts.append(rd('p05_indoor.js'))
 parts.append('\nconst SETUP = {};\n')
 for n, f in [('p02', 'tail_p02.js'), ('p03', 'tail_p03.js'), ('p04', 'tail_p04.js'), ('p05', 'tail_p05.js'), ('p06', 'tail_p06.js'), ('p07', 'tail_p07.js')]:
     parts.append(wrap(n, strip_tail(rd(f))))
