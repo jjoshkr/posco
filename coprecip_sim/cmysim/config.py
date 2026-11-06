@@ -119,6 +119,10 @@ class SystemConfig:
     net: NetworkSpec = field(default_factory=NetworkSpec)
     dt: float = 0.1                  # 시뮬레이션 시간 간격 [s]
     seed: int = 0
+    # 펌프 제어 방식: "analog" = MCC 152 AO → XTR111 → 4–20 mA,  "pulse" = MCC 152 DIO → 포토커플러 → 접점 입력(1펄스 = 1스트로크)
+    # pulse 는 XTR111 보드 없이 빵판으로 바로 시작할 수 있고 투입량이 스트로크 수로 정확하다. AI 노드 명령(dose/pump)은 그대로 쓴다.
+    pump_mode: str = "analog"
+    pump_modes: dict = field(default_factory=dict)   # 펌프별 예외 {"P-103": "analog"}
     # MCC 152 2장 채널 배정 (대화에서 확정된 것)
     channel_map: dict = field(default_factory=lambda: {
         "P-101": ("mcc152#1", "AO0"), "P-102": ("mcc152#1", "AO1"),
@@ -126,6 +130,8 @@ class SystemConfig:
         "XV-101": ("mcc152#1", "DIO4"), "XV-102": ("mcc152#1", "DIO5"),
         "XV-103": ("mcc152#2", "DIO4"), "RUN_ENABLE": ("mcc152#2", "DIO5"),
         "P-104": ("mcc152#2", "DIO6"), "XV-104": ("mcc152#2", "DIO7"),       # 펄스 펌프 + 밸브 (예비 DIO 사용)
+        # pump_mode == "pulse" 일 때 P-101~103 접점 펄스 핀 (XTR111 이 없으면 OD/EF 핀이 비므로 #2 DIO0 을 쓴다)
+        "P-101.pulse": ("mcc152#1", "DIO6"), "P-102.pulse": ("mcc152#1", "DIO7"), "P-103.pulse": ("mcc152#2", "DIO0"),
         "FB-101": ("mcc118", "CH1"), "FB-102": ("mcc118", "CH2"), "FB-103": ("mcc118", "CH3"),
         "PH": ("mcc118", "CH0"), "PRESSURE": ("mcc118", "CH4"), "TEMP": ("mcc134", "CH0"),
     })
@@ -134,3 +140,26 @@ class SystemConfig:
 def pump_max_rate_mL_min(cfg: SystemConfig) -> float:
     p = cfg.pump
     return p.stroke_mL * p.stroke_length * p.max_spm
+
+
+def pump_control_mode(cfg: "SystemConfig", pid: str) -> str:
+    """펌프별 제어 방식. P-104 는 항상 pulse."""
+    if pid in PULSE_PUMP_IDS:
+        return "pulse"
+    return cfg.pump_modes.get(pid, cfg.pump_mode)
+
+
+def rig_prominent_feeder(pump_mode: str = "pulse") -> "SystemConfig":
+    """실제 장비(ProMinent CHEMICAL FEEDER 패널) 프리셋.
+
+    - gamma/X 3대 (Metal / NaOH / Ammonia 라벨, 색소 실험에서는 C / M / Y 스톡으로 사용)
+    - 라인마다: 펌프 헤드 다기능 밸브 → 튜브 → 패널 수직관 → 티(볼밸브 분기) → 압력계 자리(트랜스미터 추가) → HIDRACAR 0.09 L 댐퍼
+      → ProMinent DHV-U DN10 배압 밸브(0.5~10 bar, PVDF/EPDM) → 출구(솔레노이드 밸브 추가 예정) → 반응기
+    - 배압 밸브 설정 2 bar 권장: 댐퍼 10 bar·압력계 10 bar 한계 안, 솔레노이드 밸브(대부분 2~3 bar 급)와 맞음
+    """
+    cfg = SystemConfig()
+    cfg.pump_mode = pump_mode
+    cfg.pump.relief_bar = 2.0                 # DHV-U 설정값(릴리프 역할): 출구가 막히면 이 압력으로 다기능 밸브/배압 밸브가 되돌림
+    cfg.reactor.heel_mL = 2000.0
+    cfg.reactor.v_max_mL = 5000.0
+    return cfg

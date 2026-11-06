@@ -39,7 +39,10 @@ class IOConfig:
                                                  "P-103": ["mcc152#2", 1], "STIRRER": ["mcc152#2", 3]})
     dio: dict = field(default_factory=lambda: {"XV-101": ["mcc152#1", 4], "XV-102": ["mcc152#1", 5],
                                               "XV-103": ["mcc152#2", 4], "RUN_ENABLE": ["mcc152#2", 5],
-                                              "P-104": ["mcc152#2", 6], "XV-104": ["mcc152#2", 7]})   # 펄스 펌프(산) + 밸브
+                                              "P-104": ["mcc152#2", 6], "XV-104": ["mcc152#2", 7],    # 펄스 펌프(산) + 밸브
+                                              # pump_mode "pulse" 일 때 P-101~103 접점 펄스 핀 (XTR111 없음 → OD/EF 핀 비어 있음)
+                                              "P-101": ["mcc152#1", 6], "P-102": ["mcc152#1", 7], "P-103": ["mcc152#2", 0]})
+    pump_mode: str = "analog"        # "pulse" 면 P-101~103 도 접점 펄스로 구동 (OD/EF 핀 초기화 생략)
     pulse_ms: float = 20.0
     # 아날로그 입력: 4–20 mA → 션트 → V → 공학단위 (eu_lo @ 4 mA, eu_hi @ 20 mA)
     ai: dict = field(default_factory=lambda: {
@@ -100,13 +103,17 @@ class DaqHatsHAL(HAL):
             if name.startswith("mcc152"):
                 brd.a_out_write_all([0.0, 0.0])
                 brd.dio_reset()                                  # 전부 입력 + 풀업 (OD High 유지)
-        for key, (bname, ch) in self.io.ef_pin.items():          # EF: 입력, 풀업
-            brd = self.b[bname]
-            brd.dio_config_write_bit(ch, self.dh.DIOConfigItem.DIRECTION, 1)
-            brd.dio_config_write_bit(ch, self.dh.DIOConfigItem.PULL_ENABLE, 1)
-        for key, (bname, ch) in self.io.od_pin.items():          # OD: 출력, 먼저 High(꺼짐) 로 쓴 뒤 방향 전환
-            self._dio_out(bname, ch, self.io.od_disable_level)
-        for key, (bname, ch) in self.io.dio.items():             # 밸브·운전허가: 출력, OFF
+        pulse_mode = self.io.pump_mode == "pulse"
+        if not pulse_mode:
+            for key, (bname, ch) in self.io.ef_pin.items():      # EF: 입력, 풀업
+                brd = self.b[bname]
+                brd.dio_config_write_bit(ch, self.dh.DIOConfigItem.DIRECTION, 1)
+                brd.dio_config_write_bit(ch, self.dh.DIOConfigItem.PULL_ENABLE, 1)
+            for key, (bname, ch) in self.io.od_pin.items():      # OD: 출력, 먼저 High(꺼짐) 로 쓴 뒤 방향 전환
+                self._dio_out(bname, ch, self.io.od_disable_level)
+        for key, (bname, ch) in self.io.dio.items():             # 밸브·운전허가·펄스: 출력, OFF
+            if key in ("P-101", "P-102", "P-103") and not pulse_mode:
+                continue                                          # 아날로그 모드에서는 이 핀을 건드리지 않는다 (OD/EF 와 겹칠 수 있음)
             self._dio_out(bname, ch, 0 if self.io.valve_active_high else 1)
         for key, spec in self.io.tc.items():                     # 열전대 타입
             tct = getattr(self.dh.TcTypes, "TYPE_" + spec.get("type", "K"))

@@ -14,7 +14,7 @@ from __future__ import annotations
 from collections import deque
 import json
 import numpy as np
-from .config import SystemConfig, PUMP_IDS, VALVE_IDS, PULSE_PUMP_IDS, PULSE_VALVES
+from .config import SystemConfig, PUMP_IDS, VALVE_IDS, PULSE_PUMP_IDS, PULSE_VALVES, pump_control_mode
 from .hardware import PumpChannel, GammaXPump, SolenoidValveNC, Mcc118, Mcc134, Stirrer, PulsePump
 from .process import StockTank, Reactor
 from .vision import SyntheticCamera
@@ -74,7 +74,13 @@ class SimPlant:
             for ch in self.channels.values():
                 ch.enable(True); ch.calibrate_two_point(lambda ch=ch: self.adc.read_mA_via_shunt(ch.actual_mA)); ch.enable(False)
         self.pumps = {pid: GammaXPump(cfg.pump, self.rng, pid) for pid in PUMP_IDS}
+        # 펄스 모드 펌프: P-104 + pump_mode == "pulse" 인 P-101~103 (스트로크 부피는 아날로그 사양과 같은 펌프)
         self.pulse_pumps = {pid: PulsePump(cfg.pulse_pump, self.rng, pid) for pid in PULSE_PUMP_IDS}
+        for pid in PUMP_IDS:
+            if pump_control_mode(cfg, pid) == "pulse":
+                from dataclasses import replace as _rp
+                self.pulse_pumps[pid] = PulsePump(_rp(cfg.pulse_pump, stroke_mL=cfg.pump.stroke_mL, stroke_length=cfg.pump.stroke_length,
+                                                      max_spm=cfg.pump.max_spm), self.rng, pid)
         self.valves = {vid: SolenoidValveNC(vid) for vid in list(VALVE_IDS) + list(PULSE_VALVES.values())}
         self.tanks = [StockTank(ts, d) for ts, d in zip(cfg.tanks, ("C", "M", "Y", "A"))]
         self.reactor = Reactor(cfg.reactor, self.rng)
@@ -153,7 +159,9 @@ class SimHAL(HAL):
 
     def pulse(self, pid):
         """접점 펄스 1회 → 펌프 스트로크 1회 (밸브 열림·운전 허가·수위 OK 일 때 반응기로)."""
-        p = self.p; j = 3 + list(PULSE_PUMP_IDS).index(pid); tank = p.tanks[j]
+        p = self.p
+        j = PUMP_IDS.index(pid) if pid in PUMP_IDS else 3 + list(PULSE_PUMP_IDS).index(pid)
+        tank = p.tanks[j]; valve_id = VALVE_IDS[j] if pid in PUMP_IDS else PULSE_VALVES[pid]
         pump = p.pulse_pumps[pid]; pump.paused = not p.run_enabled; pump.level_ok = tank.level_ok
 
         def deliver(v):
@@ -166,7 +174,7 @@ class SimHAL(HAL):
                 p.reactor.add_feed(tank.spec.role, drawn, tank.spec.conc_mol_L)
             else:
                 p.reactor.add(min(j, 2), drawn, tank.conc_mg_L)
-        return pump.pulse(p.t, p.valves[PULSE_VALVES[pid]].is_open, deliver)
+        return pump.pulse(p.t, p.valves[valve_id].is_open, deliver)
 
     def step(self, dt):
         self.p.step(dt)
@@ -189,11 +197,12 @@ class IONode:
         self.strokes = {pid: 0.0 for pid in PUMP_IDS}
         self.dosed_mL = {pid: 0.0 for pid in PUMP_IDS}
         # 펄스 펌프 (P-104 …): 지령 spm, 남은 스트로크, 위상 누적, 계수
-        self.pulse_spm = {pid: 0.0 for pid in PULSE_PUMP_IDS}
-        self.pulse_target = {pid: None for pid in PULSE_PUMP_IDS}
-        self.pulse_phase = {pid: 0.0 for pid in PULSE_PUMP_IDS}
-        self.pulse_strokes = {pid: 0 for pid in PULSE_PUMP_IDS}
-        self.pulse_dosed_mL = {pid: 0.0 for pid in PULSE_PUMP_IDS}
+        self.pulse_ids = tuple(PULSE_PUMP_IDS) + tuple(pid for pid in PUMP_IDS if pump_control_mode(cfg, pid) == "pulse")
+        self.pulse_spm = {pid: 0.0 for pid in self.pulse_ids}
+        self.pulse_target = {pid: None for pid in self.pulse_ids}
+        self.pulse_phase = {pid: 0.0 for pid in self.pulse_ids}
+        self.pulse_strokes = {pid: 0 for pid in self.pulse_ids}
+        self.pulse_dosed_mL = {pid: 0.0 for pid in self.pulse_ids}
         self.has_pulse = hasattr(hal, "pulse")
         self.publish_sim_camera = False          # io_node_main run --sim 에서 켠다
         self.alarms: list = []
@@ -221,7 +230,7 @@ class IONode:
             self.hal.pump_set_mA(pid, 0.0)
             self.hal.pump_enable(pid, False)    # 2) XTR111 OD High → 0 mA
             self.dose_target[pid] = None
-        for pid in PULSE_PUMP_IDS:
+        for pid in self.pulse_ids:
             self.pulse_spm[pid] = 0.0; self.pulse_target[pid] = None
         for vid in list(VALVE_IDS) + list(PULSE_VALVES.values()):   # 3) 밸브 닫힘 (NC)
             self.valve_on[vid] = False
@@ -254,12 +263,20 @@ class IONode:
         elif c == "stirrer_rpm":
             self.stirrer_mA = 4.0 + 16.0 * float(np.clip(m["rpm"] / self.cfg.reactor.rpm_max, 0, 1))
             self.hal.stirrer_set_mA(self.stirrer_mA)
-        elif c == "pump":                       # 연속 운전 (mA 직접)
-            self._set_pump(m["id"], float(m["mA"]))
+        elif c == "pump":                       # 연속 운전 (mA 직접). 펄스 모드 펌프면 같은 유량의 spm 으로
+            pid = m["id"]
+            if pid in self.pulse_ids:
+                self._set_pulse(pid, self._spm_from_mA(float(m["mA"])))
+            else:
+                self._set_pump(pid, float(m["mA"]))
         elif c == "dose":                       # 스트로크 계수 도징: I/O 노드가 끝까지 책임
             pid = m["id"]
-            self.dose_target[pid] = float(m["strokes"])
-            self._set_pump(pid, float(m["mA"]))
+            if pid in self.pulse_ids:
+                self.pulse_target[pid] = int(round(float(m["strokes"])))
+                self._set_pulse(pid, self._spm_from_mA(float(m["mA"])))
+            else:
+                self.dose_target[pid] = float(m["strokes"])
+                self._set_pump(pid, float(m["mA"]))
         elif c == "pulse_rate":                 # 펄스 펌프 연속 운전: spm
             self._set_pulse(m["id"], float(m["spm"]))
         elif c == "pulse_dose":                 # 펄스 펌프 스트로크 계수 도징
@@ -270,7 +287,7 @@ class IONode:
             for pid in PUMP_IDS:
                 self.dosed_mL[pid] = 0.0; self.strokes[pid] = 0.0; self.flow_est[pid].reset_batch()
         elif c == "stop":
-            if m["id"] in PULSE_PUMP_IDS:
+            if m["id"] in self.pulse_ids:
                 self.pulse_spm[m["id"]] = 0.0; self.pulse_target[m["id"]] = None
             else:
                 self._set_pump(m["id"], 0.0)
@@ -280,10 +297,14 @@ class IONode:
                 for pp in self.hal.p.pumps.values():
                     pp.reset_fault()
 
+    def _spm_from_mA(self, mA):
+        p = self.cfg.pump
+        return 0.0 if mA < p.i_start_mA else float(min(p.max_spm, p.max_spm * (mA - p.i_start_mA) / (p.i_full_mA - p.i_start_mA)))
+
     def _set_pulse(self, pid, spm):
         if self.mode != "RUN":
             self.alarm(f"REJECT {pid}: node not armed"); return
-        vid = PULSE_VALVES[pid]
+        vid = PULSE_VALVES[pid] if pid in PULSE_VALVES else VALVE_IDS[PUMP_IDS.index(pid)]
         if spm > 0 and not self.valve_on[vid]:
             self.alarm(f"INTERLOCK {pid}: valve {vid} closed"); return
         if spm > 0 and not self.run_en:
@@ -347,7 +368,7 @@ class IONode:
                 masses = [None] * 3; self.alarm(f"LOADCELL read error: {e!r}")
             for j, pid in enumerate(PUMP_IDS):
                 st = self.flow_est[pid].push(t, masses[j] if j < len(masses) else None)
-                exp_spm = self.cfg.pump.max_spm * max(0.0, (self.cmd_mA[pid] - self.cfg.pump.i_start_mA)) / (self.cfg.pump.i_full_mA - self.cfg.pump.i_start_mA) if self.cmd_mA[pid] >= self.cfg.pump.i_start_mA else 0.0
+                exp_spm = self.pulse_spm[pid] if pid in self.pulse_ids else self._spm_from_mA(self.cmd_mA[pid])
                 exp_now = min(exp_spm, self.cfg.pump.max_spm) * self.cfg.pump.stroke_mL * self.cfg.pump.stroke_length
                 hist_e = self._exp_hist[pid]; hist_e.append((t, exp_now))
                 self._exp_hist[pid] = hist_e = [(tt, v) for tt, v in hist_e if t - tt <= self.lc_cfg.window_s]
@@ -366,15 +387,18 @@ class IONode:
                     self.alarm(f"VOLUME_MISMATCH {pid}: strokes say {self.dosed_mL[pid]:.1f} mL, loadcell {st['delivered_mL']:.1f} mL")
 
         # 펄스 펌프: 위상 누적 → 펄스 출력 (틱당 최대 2회)
-        for pid in PULSE_PUMP_IDS:
+        for pid in self.pulse_ids:
             if self.pulse_spm[pid] > 0 and self.mode == "RUN":
                 self.pulse_phase[pid] += self.pulse_spm[pid] / 60.0 * dt
                 n = min(int(self.pulse_phase[pid]), 2)
+                spec = self.cfg.pump if pid in PUMP_IDS else self.cfg.pulse_pump
                 for _ in range(n):
                     self.pulse_phase[pid] -= 1.0
                     if self.hal.pulse(pid):
                         self.pulse_strokes[pid] += 1
-                        self.pulse_dosed_mL[pid] += self.cfg.pulse_pump.stroke_mL * self.cfg.pulse_pump.stroke_length
+                        self.pulse_dosed_mL[pid] += spec.stroke_mL * spec.stroke_length
+                        if pid in PUMP_IDS:                 # 아날로그 펌프와 같은 집계에 반영 (AI 노드는 pumps[...] 만 본다)
+                            self.strokes[pid] += 1; self.dosed_mL[pid] += spec.stroke_mL * spec.stroke_length
                         if self.pulse_target[pid] is not None:
                             self.pulse_target[pid] -= 1
                             if self.pulse_target[pid] <= 0:
@@ -384,7 +408,7 @@ class IONode:
             else:
                 self.pulse_phase[pid] = 0.0
 
-        est_V = self.cfg.reactor.heel_mL + sum(self.dosed_mL.values()) + sum(self.pulse_dosed_mL.values())
+        est_V = self.cfg.reactor.heel_mL + sum(self.dosed_mL.values()) + sum(v for k, v in self.pulse_dosed_mL.items() if k not in PUMP_IDS)
         if est_V > self.cfg.reactor.v_max_mL * 0.98 and self.mode == "RUN":
             self.safe("reactor volume limit (stroke-count estimate)")
         p_bar = self.hal.read_pressure_bar()
@@ -400,10 +424,13 @@ class IONode:
             self._last_tele = t
             self.bus.publish(dict(
                 t=round(t, 3), mode=self.mode, run_enable=self.run_en,
-                pumps={pid: dict(cmd_mA=round(self.cmd_mA[pid], 3), fb_mA=round(fb[pid][0], 3),
-                                 spm=round(fb[pid][1], 1), strokes=round(self.strokes[pid], 2),
-                                 dosed_mL=round(self.dosed_mL[pid], 3),
-                                 dosing=self.dose_target[pid] is not None) for pid in PUMP_IDS},
+                pumps={pid: (dict(cmd_mA=0.0, fb_mA=None, spm=round(self.pulse_spm[pid], 1), strokes=round(self.strokes[pid], 2),
+                                  dosed_mL=round(self.dosed_mL[pid], 3), dosing=self.pulse_target[pid] is not None, mode="pulse")
+                             if pid in self.pulse_ids else
+                             dict(cmd_mA=round(self.cmd_mA[pid], 3), fb_mA=round(fb[pid][0], 3),
+                                  spm=round(fb[pid][1], 1), strokes=round(self.strokes[pid], 2),
+                                  dosed_mL=round(self.dosed_mL[pid], 3),
+                                  dosing=self.dose_target[pid] is not None, mode="analog")) for pid in PUMP_IDS},
                 valves=dict(self.valve_on), ph=round(self.hal.read_ph(), 3),
                 pressure_bar=round(p_bar, 3), temp_C=round(self.hal.read_temp_C(), 2),
                 turbidity_ntu=round(self.hal.read_turbidity_ntu(), 1) if hasattr(self.hal, "read_turbidity_ntu") else None,
@@ -411,7 +438,7 @@ class IONode:
                 tanks={pid: dict(self.flow_state[pid]) for pid in PUMP_IDS} if self.has_loadcell else {},
                 pulse_pumps={pid: dict(spm=round(self.pulse_spm[pid], 2), strokes=self.pulse_strokes[pid],
                                        dosed_mL=round(self.pulse_dosed_mL[pid], 3), dosing=self.pulse_target[pid] is not None)
-                             for pid in PULSE_PUMP_IDS},
+                             for pid in self.pulse_ids},
                 sim_camera=(dict(rgb=[int(v) for v in self.hal.p.camera.roi_rgb8(self.hal.p.reactor.c_obs)])
                             if hasattr(self.hal, "p") and self.publish_sim_camera else None)))
 

@@ -84,6 +84,10 @@ def cmd_run(a, io: IOConfig):
     from .zmq_bridge import ZmqBus
     cfg = SystemConfig(dt=1.0 / a.hz)
     cfg.net.telemetry_hz = a.hz
+    if a.pump_mode:
+        io.pump_mode = a.pump_mode
+    cfg.pump_mode = io.pump_mode
+    print(f"펌프 제어 방식: {cfg.pump_mode}" + ("  (DIO 접점 펄스, XTR111 불필요)" if cfg.pump_mode == "pulse" else "  (AO → XTR111 → 4–20 mA)"))
     scale = a.time_scale if a.sim else 1.0
     cfg.net.heartbeat_timeout_s *= scale                 # 워치독은 벽시계 1 s 기준 (가속 시 시뮬레이션 시간으로 환산)
     if a.sim:
@@ -163,6 +167,7 @@ def main(argv=None):
     p.add_argument("--sim-camera", action="store_true", help="--sim 에서 카메라 관측(ROI RGB)을 텔레메트리에 실어 AI 노드가 telemetry 카메라로 보게 함")
     p.add_argument("--time-scale", type=float, default=1.0, help="--sim 전용: 시뮬레이션 시간 가속 (텔레메트리 t 도 가속된 시간)")
     p.add_argument("--recipe", help="--sim 전용: 레시피의 반응기·탱크 역할(naoh/acid/cacl2/na2co3)을 시뮬레이션 공정에 적용")
+    p.add_argument("--pump-mode", choices=("analog", "pulse"), default=None, help="P-101~103 제어 방식 (기본: io_node.json 의 pump_mode)")
     p.add_argument("--log", default="io_log.csv"); p.add_argument("--cmd-port", type=int, default=5555); p.add_argument("--tele-port", type=int, default=5556)
     p.add_argument("--verbose", "-v", action="store_true")
     p = sp.add_parser("bench"); p.add_argument("args", nargs="+"); p.add_argument("--board", default="mcc152#1"); p.add_argument("--hold", type=float, default=3.0)

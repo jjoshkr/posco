@@ -577,3 +577,37 @@ def test_precip_model_basics():
     for _ in range(600):
         st = pm.step(0.1, ph.pH())
     assert st["solid_g_L"] > 0 and st["turbidity_ntu"] > 0 and pm.S >= 1.0 and ph.pH() < p2   # 침전 → 탁도, pH 하강
+
+
+# ---------------- 펄스(접점) 모드로 P-101~103 구동
+def test_pulse_mode_all_pumps_closed_loop_and_translation():
+    from cmysim.config import rig_prominent_feeder, pump_control_mode
+    cfg = rig_prominent_feeder("pulse"); cfg.seed = 3
+    assert pump_control_mode(cfg, "P-101") == "pulse" and pump_control_mode(cfg, "P-104") == "pulse"
+    plant = SimPlant(cfg); bus = Bus(); io = IONode(cfg, SimHAL(plant), bus)
+    assert set(io.pulse_ids) == {"P-101", "P-102", "P-103", "P-104"}
+    bus.send_cmd(dict(cmd="arm")); bus.send_cmd(dict(cmd="run_enable", on=True))
+    bus.send_cmd(dict(cmd="valve", id="XV-101", open=True)); bus.send_cmd(dict(cmd="dose", id="P-101", mA=12.0, strokes=30))
+    t = 0.0
+    for _ in range(400):
+        t += 0.1; bus.send_cmd(dict(cmd="heartbeat")); io.tick(t); plant.step(0.1)
+        if io.pulse_target["P-101"] is None and io.strokes["P-101"] >= 30:
+            break
+    tele = bus.latest()
+    assert tele["pumps"]["P-101"]["mode"] == "pulse" and tele["pumps"]["P-101"]["strokes"] == 30 and not tele["pumps"]["P-101"]["dosing"]
+    assert plant.pulse_pumps["P-101"].strokes_total == 30 and abs(plant.reactor.V_mL - 2000 - 30 * 0.19) < 0.2
+    assert 17 < t < 20                                                        # 12 mA ≙ 100 spm → 30 스트로크 ≈ 18 s
+    assert not any("NO_STROKE" in a[1] or "INTERLOCK" in a[1] for a in io.alarms)
+    rec, _ = make_recipe(cfg, "#5A8F7B", dose_minutes=1.0)
+    res = run_once(cfg, rec, 300.0)
+    assert res["pump_mode"] == "pulse" and res["matched"] and res["strokes"]["P-101"] > 300
+
+
+def test_daqhats_pulse_mode_pins():
+    io = IOConfig(ai_average=1, pump_mode="pulse")
+    fdh.LOG.clear(); hal = DaqHatsHAL(io, daqhats_module=fdh)
+    b1, b2 = hal.b["mcc152#1"], hal.b["mcc152#2"]
+    assert b1.direction[6] == 0 and b1.direction[7] == 0 and b2.direction[0] == 0          # 펄스 핀 출력
+    assert b1.direction[1] == 1 and b1.direction[0] == 1                                 # OD/EF 는 건드리지 않음 (입력 그대로)
+    hal.io.pulse_ms = 0.0; fdh.LOG.clear()
+    assert hal.pulse("P-103") and fdh.LOG[:2] == [(1, "dio", 0, 1), (1, "dio", 0, 0)]
