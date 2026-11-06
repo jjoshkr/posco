@@ -1,10 +1,10 @@
 
 /* ============================================================
-   VIDEO — 80 s film assembled from the code-drawn scenes
+   VIDEO — 91 s film assembled from the code-drawn scenes
    Scenes are rendered once at load (base layer + HUD layer), then the master
    timeline animates camera push, transitions, HUD reveal, captions, live FX and sound.
    ============================================================ */
-const DUR = 80.0, XF = .6, RQ = 1.1;                       // total length, crossfade, prerender scale (push-in headroom)
+const DUR = 91.0, XF = .6, RQ = 1.1;                       // total length, crossfade, prerender scale (push-in headroom)
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const lerp = (a, b, k) => a + (b - a) * k;
 const ease = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
@@ -85,18 +85,17 @@ function heroOver(src, sunXY) {
 // ---- shot list (times in seconds)
 const SH = [
   { id:'open', t0:0,    t1:14,   z:[1.0, 1.09], f:[[960, 600], [1000, 560]] },
-  { id:'p02w', t0:14,   t1:17,   z:[1.0, 1.04], f:[[1250, 460], [1230, 450]] },
-  { id:'p02',  t0:17,   t1:21.5, z:[1.0, 1.06], f:[[700, 520], [720, 520]] },
+  { id:'p02',  t0:14,   t1:21.5, z:[1.0, 1.06], f:[[700, 520], [720, 520]] },
   { id:'p03',  t0:21.5, t1:29,   z:[1.0, 1.07], f:[[800, 540], [820, 520]] },
   { id:'p04',  t0:29,   t1:36,   z:[1.0, 1.07], f:[[760, 540], [780, 530]] },
   { id:'p05',  t0:36,   t1:43,   z:[1.0, 1.07], f:[[1100, 560], [1080, 540]] },
   { id:'p06',  t0:43,   t1:50,   z:[1.0, 1.07], f:[[860, 520], [900, 480]] },
   { id:'p07',  t0:50,   t1:56,   z:[1.0, 1.05], f:[[960, 520], [960, 500]] },
-  { id:'p08a', t0:56,   t1:60.8, z:[1.0, 1.05], f:[[760, 520], [760, 500]] },
-  { id:'p08b', t0:60.8, t1:65.4, z:[1.0, 1.06], f:[[760, 560], [820, 520]] },
-  { id:'p08c', t0:65.4, t1:70.5, z:[1.0, 1.05], f:[[1000, 500], [1000, 560]] },
-  { id:'p09',  t0:70.5, t1:76.5, z:[1.0, 1.04], f:[[1250, 450], [1250, 430]] },
-  { id:'end',  t0:76.5, t1:80 }
+  { id:'p08a', t0:56,   t1:64.5, z:[1.0, 1.06], f:[[760, 520], [760, 500]] },
+  { id:'p08b', t0:64.5, t1:72.5, z:[1.0, 1.07], f:[[760, 560], [820, 520]] },
+  { id:'p08c', t0:72.5, t1:81,   z:[1.0, 1.06], f:[[1000, 500], [1000, 560]] },
+  { id:'p09',  t0:81,   t1:87,   z:[1.0, 1.04], f:[[1250, 450], [1250, 430]] },
+  { id:'end',  t0:87,   t1:91 }
 ];
 const CAPS = [
   [0.9, 5.0, '2030 · POSCO 청록수소 플랜트', '메탄을 수소와 고체탄소로 — CO₂ 굴뚝이 없는 수소 공장'],
@@ -109,7 +108,6 @@ const LOADERS = [
   ['open-holo', () => { resetScene(); IMG.holo = renderHolo(); }],
   ['open-day', () => { resetScene(); IMG.open = renderBase('none'); }],
   ['p02', () => { resetScene(); SETUP.p02(); IMG.p02 = renderBase('overlay'); FX.p02 = { alarm: P(19.5, 114.41, 2.85) }; }],
-  ['p02w', () => { resetScene(); SETUP.p02(); POST = null; const b = renderBase('none'); IMG.p02w = heroOver(b.base, [1610, 92]); }],
   ['p03', () => { resetScene(); SETUP.p03(); IMG.p03 = renderBase('overlay');
     FX.p03 = { glow: REACT.flatMap(([cx, cy]) => { const [fx, fy] = facing(cx, cy, 2.75); return [7.2, 10.6].map(z => [...P(fx, fy, z), S(fx, fy, z)]); }) }; }],
   ['p04', () => { resetScene(); SETUP.p04(); IMG.p04 = renderBase('overlay'); FX.p04 = { dust: P(136.5, 82, 7.4), hood: P(136.5, 82, 9.2), k: S(136.5, 82, 7) }; }],
@@ -176,15 +174,15 @@ function liveFX(s, t, k) {
   g.restore();
 }
 function drawP09Title(t) {
-  const a = win(t, 71.6, 77.1, .9, .5); if (!a) return;
+  const a = win(t, 82.1, 87.6, .9, .5); if (!a) return;
   g.save(); g.globalAlpha = a; g.shadowColor = 'rgba(0,10,25,.6)'; g.shadowBlur = 14; g.fillStyle = '#FFFFFF'; g.font = font(500, 60); g.textAlign = 'left'; g.textBaseline = 'alphabetic';
-  const dy = (1 - a) * 14; g.fillText('안전하게 짓고,', 150, 760 + dy); g.globalAlpha = win(t, 72.4, 77.1, .9, .5); g.fillText('청정수소 1등급으로', 150, 842 + dy); g.restore();
+  const dy = (1 - a) * 14; g.fillText('안전하게 짓고,', 150, 760 + dy); g.globalAlpha = win(t, 82.9, 87.6, .9, .5); g.fillText('청정수소 1등급으로', 150, 842 + dy); g.restore();
 }
 function drawEnd(t) {
   g.fillStyle = '#050608'; g.fillRect(0, 0, W, H);
   const q = g.createRadialGradient(W / 2, H * .46, 20, W / 2, H * .46, 700); q.addColorStop(0, 'rgba(27,163,156,.10)'); q.addColorStop(1, 'rgba(27,163,156,0)'); g.fillStyle = q; g.fillRect(0, 0, W, H);
   const Tx = (s, y, size, w, col, a) => { g.save(); g.globalAlpha = a; g.font = font(w, size); g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillText(s, W / 2, y); g.restore(); };
-  const a1 = ease(prog(t, 77.0, 77.9)), a2 = ease(prog(t, 77.4, 78.3)), a3 = ease(prog(t, 78.0, 78.8));
+  const a1 = ease(prog(t, 87.4, 88.3)), a2 = ease(prog(t, 87.8, 88.7)), a3 = ease(prog(t, 88.3, 89.1));
   Tx('POSCO HyREX 수소환원제철에', 488, 52, 500, '#FFFFFF', a1);
   Tx('청정수소 공급', 562, 52, 500, '#FFFFFF', a2);
   g.save(); g.globalAlpha = a2; g.strokeStyle = 'rgba(27,163,156,.8)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(W / 2 - 28 * a2, 626); g.lineTo(W / 2 + 28 * a2, 626); g.stroke(); g.restore();

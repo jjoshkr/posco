@@ -39,6 +39,8 @@ a6 = rd('p6.js')
 i0 = a6.index('function buildEvents() {'); i1 = a6.index('// session = one continuous playback run')
 a6 = a6[:i0] + rd('audio_events.js') + '\n' + a6[i1:]
 a6 = a6.replace("const v0 = T0 < 78.5 ? 1 : clamp(1 - (T0 - 78.5) / 1.5);", "const v0 = T0 < 78.5 ? 1 : Math.max(0, 1 - (T0 - 78.5) / 1.5);")
+a6 = a6.replace('T0 < 78.5 ? 1 : Math.max(0, 1 - (T0 - 78.5) / 1.5)', 'T0 < DUR - 1.5 ? 1 : Math.max(0, 1 - (T0 - DUR + 1.5) / 1.5)').replace('if (T0 < 78.5) f.gain.setValueAtTime(1, s.base + 78.5); f.gain.linearRampToValueAtTime(0, s.base + 80);', 'if (T0 < DUR - 1.5) f.gain.setValueAtTime(1, s.base + DUR - 1.5); f.gain.linearRampToValueAtTime(0, s.base + DUR);')
+assert '78.5' not in a6 and 's.base + 80' not in a6, 'fade not patched'
 parts.append(a6)
 parts.append(rd('video_player.js'))
 out = '\n'.join(parts)
