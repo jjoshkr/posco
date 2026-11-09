@@ -15,7 +15,7 @@
 - 염료 스톡 3종(1 g/L)과 피펫. 염료마다 농도 4~5점(예 5, 10, 15, 20 mg/L)을 만들 수 있어야 함. 반응기 2 L 기준 1 g/L 스톡 10 mL = 5 mg/L.
 - 카메라는 삼각대 등으로 고정. 보정 뒤 위치·노출을 바꾸면 처음부터 다시.
 
-## 순서 (모두 `coprecip_sim` 폴더에서)
+## 순서 (모두 `dye_color_matching` 폴더에서)
 
 ```bash
 python -m cmysim.camera_tools settings --kind realsense --exposure 120 --gain 16 --wb 4600 --width 640 --height 480

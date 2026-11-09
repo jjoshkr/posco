@@ -3,7 +3,7 @@
 ## 1. 워크스테이션에서 (보드·카메라 없이)
 
 ```bash
-cd coprecip_sim
+cd dye_color_matching
 python -m pytest -q tests                                   # 37 테스트
 python -m cmysim run --target "#5A8F7B" --mode closed --plot run.png
 python -m cmysim.recipe_cli run recipes/target_match.yaml --out results --plot

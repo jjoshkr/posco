@@ -1,4 +1,4 @@
-# coprecip_sim — 식용색소 색 매칭 자동화 (전구체 공침 반응기 1단계)
+# dye_color_matching — 식용색소(CMY) 색 매칭 자동화 (전구체 공침 반응기 1단계)
 
 ProMinent CHEMICAL FEEDER 패널(gamma/X 펌프 3대)에 **시안·마젠타·옐로 식용색소**를 물려, 목표색을 자동으로 만들고
 카메라로 얼마나 가까운지(ΔE2000) 판정하는 실험의 소프트웨어입니다. 하드웨어가 오기 전에는 시뮬레이터로 제어를 검증하고,
@@ -20,7 +20,7 @@ Tier C 통합 시험 `integration_test`)은 **공침 단계용**으로 저장소
 ## 1. 시뮬레이션 바로 해 보기
 
 ```bash
-cd coprecip_sim
+cd dye_color_matching
 pip install numpy matplotlib          # UI 는 numpy 만 있으면 됨
 python -m cmysim.ui                   # → 브라우저에서 http://localhost:8050
 ```

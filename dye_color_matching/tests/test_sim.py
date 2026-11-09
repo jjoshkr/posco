@@ -1,4 +1,4 @@
-"""python -m pytest coprecip_sim/tests -q  (저장소 루트에서) 또는 cd coprecip_sim && python -m pytest -q"""
+"""python -m pytest dye_color_matching/tests -q  (저장소 루트에서) 또는 cd dye_color_matching && python -m pytest -q"""
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import numpy as np

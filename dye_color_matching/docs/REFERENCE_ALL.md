@@ -1,6 +1,6 @@
 > 이 문서는 모든 모듈(공침 단계용 pH 제어·산 펌프·침전·로드셀·이상탐지·레시피·Tier C 통합 시험 포함)의 전체 참조입니다. 지금 진행 중인 식용색소 실험의 안내는 [../README.md](../README.md) 를 보세요.
 
-# coprecip_sim — CMY 식용색소 도징 · target color 매칭 시뮬레이터
+# dye_color_matching — CMY 식용색소 도징 · target color 매칭 시뮬레이터
 
 전구체 공침 반응기 실험의 1단계(식용색소 실험)를 보드 없이 통째로 돌려 보는 코드입니다.
 시안·마젠타·옐로 스톡을 gamma/X 펌프 3대로 반응기에 넣어 **목표색을 만들고**, 펌프 유량(=흘려주는 색소 양)을
@@ -35,7 +35,7 @@ AI 노드 (Pi 5 + AI HAT+, RealSense)              I/O 노드 (Pi 5 + MCC 118 + 
 ## 빠른 시작
 
 ```bash
-cd coprecip_sim
+cd dye_color_matching
 python -m cmysim plan  --target "#5A8F7B"                       # 투입량·유량·mA 계획만
 python -m cmysim run   --target "#5A8F7B" --mode closed --plot run.png --csv run.csv --dataset ds/
 python -m cmysim run   --target "#5A8F7B" --mode open  --fault stock_conc:P-101=900 --e-cal-err 0.03
@@ -137,7 +137,7 @@ daqhats_list_boards                                                             
 빵판 단계(24 V 없이, 대화의 `mcc152_bench.py` 와 같은 점검):
 
 ```bash
-cd coprecip_sim
+cd dye_color_matching
 python -m cmysim.io_node_main list                       # 보드 인식
 python -m cmysim.io_node_main bench ramp 0               # AO0 0→5 V 계단, 멀티미터로 확인
 python -m cmysim.io_node_main bench dio 4 1              # DIO4 LED 켜기
@@ -163,7 +163,7 @@ AI 노드 하트비트 1 s 끊기면 SAFE, 지령은 있는데 스트로크 피�
 ### 카메라 보정 순서 (PDF 8장 절차를 그대로 명령으로)
 
 ```bash
-cd coprecip_sim
+cd dye_color_matching
 python -m cmysim.camera_tools settings --kind realsense --exposure 120 --gain 16 --wb 4600   # 수동 고정
 python -m cmysim.camera_tools preview --save shot.png        # ROI 가 액체 안에 들어가는지 확인
 python -m cmysim.camera_tools roi --roi 220,140,200,200       # 또는 --pick (모니터 있을 때 마우스로)
@@ -251,7 +251,7 @@ YOLO 는 기포·거품·침전·이물 같은 '사건' 과 액체 ROI 의 on/of
 CVAT/LabelImg 로 추가합니다(같은 YOLO txt 형식).
 
 ```bash
-cd coprecip_sim
+cd dye_color_matching
 python -m cmysim.yolo_train gen --out ds_sim --runs 12                  # 시뮬레이션 12회 → 라벨 달린 프레임
 python -m cmysim.yolo_train prepare --src ds_sim/* ds_run1 --out yolo_ds # 실행 단위 train/val 분할, data.yaml, regression.csv
 python -m cmysim.yolo_train train --data yolo_ds/data.yaml --model yolo11n.pt --epochs 50 --imgsz 320 --device 0
@@ -457,7 +457,7 @@ python -m cmysim.ai_node_main --io-ip 192.168.10.2 --recipe recipes/target_match
 ## 파일
 
 ```
-coprecip_sim/
+dye_color_matching/
 ├── cmysim/            시뮬레이션: config, optics, hardware, process, vision, nodes, control, experiment, __main__
 │                      실물(Pi): camera, camera_tools, ai_node_main (AI 노드) / daqhats_hal, io_node_main (I/O 노드) / zmq_bridge
 │                      학습: yolo_train (gen/prepare/train/export/infer/regress), yolo_infer (VisionEvents: .pt/.onnx/.hef)
