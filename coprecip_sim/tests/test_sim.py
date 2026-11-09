@@ -632,3 +632,25 @@ def test_ui_session_engine_runs_and_serializes():
     m.manual(dict(cmd="valve", id="XV-101", open=True)); m.manual(dict(cmd="dose", id="P-101", mA=12, strokes=10))
     for _ in range(200): m.step()
     assert m.state(0)["io"]["pumps"]["P-101"]["strokes"] == 10
+
+
+# ---------------- 운전 중 실시간 오버라이드 (속도 배율·보류)
+def test_ionode_live_rate_scale_and_hold():
+    from cmysim.config import rig_prominent_feeder
+    cfg = rig_prominent_feeder("pulse"); plant = SimPlant(cfg); bus = Bus(); io = IONode(cfg, SimHAL(plant), bus)
+    bus.send_cmd(dict(cmd="arm")); bus.send_cmd(dict(cmd="run_enable", on=True)); bus.send_cmd(dict(cmd="valve", id="XV-101", open=True))
+    bus.send_cmd(dict(cmd="dose", id="P-101", mA=19.6, strokes=1000)); io.tick(0.1)
+    assert abs(io.pulse_spm["P-101"] - 200) < 1e-6
+    bus.send_cmd(dict(cmd="rate_scale", id="P-101", factor=0.5)); io.tick(0.2)
+    assert abs(io.pulse_spm["P-101"] - 100) < 1e-6 and io.pulse_target["P-101"] == 1000          # 목표 유지, 속도 절반
+    bus.send_cmd(dict(cmd="hold", id="P-101", on=True)); io.tick(0.3)
+    n0 = io.strokes["P-101"]; t = 0.3
+    for _ in range(30): t += 0.1; bus.send_cmd(dict(cmd="heartbeat")); io.tick(t); plant.step(0.1)
+    assert io.strokes["P-101"] == n0 and bus.latest()["pumps"]["P-101"]["hold"] is True
+    bus.send_cmd(dict(cmd="hold", id="P-101", on=False)); bus.send_cmd(dict(cmd="rate_scale", id="P-101", factor=1.0))
+    for _ in range(30): t += 0.1; bus.send_cmd(dict(cmd="heartbeat")); io.tick(t); plant.step(0.1)
+    assert io.strokes["P-101"] > n0 + 5 and bus.latest()["pumps"]["P-101"]["scale"] == 1.0
+    cfg2 = SystemConfig(); plant2 = SimPlant(cfg2); bus2 = Bus(); io2 = IONode(cfg2, SimHAL(plant2), bus2)
+    bus2.send_cmd(dict(cmd="arm")); bus2.send_cmd(dict(cmd="run_enable", on=True)); bus2.send_cmd(dict(cmd="valve", id="XV-102", open=True))
+    bus2.send_cmd(dict(cmd="pump", id="P-102", mA=19.6)); bus2.send_cmd(dict(cmd="rate_scale", id="P-102", factor=0.5)); io2.tick(0.1)
+    assert abs(io2.cmd_mA["P-102"] - 12.0) < 1e-6                                              # 100 spm ≙ 12.0 mA

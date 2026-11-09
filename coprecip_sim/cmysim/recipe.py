@@ -262,7 +262,7 @@ class RecipeExecutor(Controller):
     def _dose_running(self, t, tele, bus) -> bool:
         """DOSE 진행; 끝나면 밸브 닫고 True."""
         finished = tele and t - self.t_state > 0.5 and not any(tele["pumps"][d["id"]]["dosing"] for d in self._active_plan)
-        timeout = t - self.t_state > max((d["minutes"] for d in self._active_plan), default=0) * 60.0 * 1.5 + 10.0
+        timeout = self._dose_stalled(t, tele)
         if finished:
             short = [d["id"] for d in self._active_plan if d["strokes"] >= 1.0
                      and tele["pumps"][d["id"]]["strokes"] - self._strokes0.get(d["id"], 0) < 0.5 * d["strokes"]]

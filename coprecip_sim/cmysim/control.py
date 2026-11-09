@@ -109,6 +109,7 @@ class Controller:
     def _send_doses(self, bus, plan):
         tele = bus.latest()
         self._strokes0 = {d["id"]: (tele["pumps"][d["id"]]["strokes"] if tele else 0.0) for d in plan}
+        self._progress = {}
         for d in plan:
             if d["strokes"] >= 1.0:
                 bus.send_cmd(dict(cmd="valve", id=d["valve"], open=True))
@@ -116,6 +117,26 @@ class Controller:
             if d["strokes"] >= 1.0:
                 bus.send_cmd(dict(cmd="dose", id=d["id"], mA=d["mA"], strokes=d["strokes"]))
         self.V_est += sum(d["volume_mL"] for d in plan)
+
+    def _dose_stalled(self, t, tele, stall_s=30.0):
+        """도징 중단 판정: 도징 중인 펌프 전부가 stall_s 동안 스트로크 진전이 없고 보류 상태도 아닐 때.
+        (속도 배율·보류로 느려지거나 멈춘 것은 중단 사유가 아니다. 하드 리밋: 계획 시간 × 4 + 120 s)"""
+        if not tele:
+            return False
+        dosing = {pid: p for pid, p in tele["pumps"].items() if p.get("dosing")}
+        if not dosing:
+            return False
+        if not hasattr(self, "_progress"):
+            self._progress = {}
+        progressed = False
+        for pid, p in dosing.items():
+            last = self._progress.get(pid, (None, t))
+            if last[0] is None or p["strokes"] > last[0] + 1e-9 or p.get("hold"):
+                self._progress[pid] = (p["strokes"], t); progressed = True
+            elif t - last[1] < stall_s:
+                progressed = True
+        hard = t - self.t_state > max((d["minutes"] for d in self.plan), default=1.0) * 60.0 * 4.0 + 120.0
+        return (not progressed) or hard
 
     def mixing_time(self):
         rpm = self.r.rpm or self.cfg.reactor.rpm
@@ -137,7 +158,7 @@ class Controller:
                 self._go(t, "DOSE")
         elif self.state == "DOSE":
             finished = tele and t - self.t_state > 0.5 and not any(p["dosing"] for p in tele["pumps"].values())
-            timeout = t - self.t_state > max(d["minutes"] for d in self.plan) * 60.0 * 1.5 + 10.0
+            timeout = self._dose_stalled(t, tele)
             if timeout and not finished:                        # 펌프가 끝내지 못함 (수위/신호/밸브 고장)
                 self.aborted = "DOSE timeout: " + ", ".join(
                     f"{pid} {p['strokes']:.0f} str" for pid, p in tele["pumps"].items() if p["dosing"])

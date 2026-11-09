@@ -205,6 +205,12 @@ class IONode:
         self.pulse_dosed_mL = {pid: 0.0 for pid in self.pulse_ids}
         self.pulse_last_t = {pid: -1e9 for pid in self.pulse_ids}
         self.has_pulse = hasattr(hal, "pulse")
+        # 실시간 오버라이드: 운전 중 펌프 속도 배율(0~1.5) 과 일시 보류. 도징 목표(스트로크 수)는 그대로 둔다
+        all_ids = tuple(PUMP_IDS) + tuple(PULSE_PUMP_IDS)
+        self.rate_scale = {pid: 1.0 for pid in all_ids}
+        self.hold = {pid: False for pid in all_ids}
+        self.base_spm = {pid: 0.0 for pid in all_ids}      # 명령 원본 (배율 적용 전)
+        self.base_mA = {pid: 0.0 for pid in all_ids}
         self.publish_sim_camera = False          # io_node_main run --sim 에서 켠다
         self.alarms: list = []
         self.last_hb = 0.0
@@ -284,10 +290,15 @@ class IONode:
             pid = m["id"]
             self.pulse_target[pid] = int(m["strokes"])
             self._set_pulse(pid, float(m.get("spm", self.cfg.pulse_pump.max_spm)))
+        elif c == "rate_scale":                 # 실시간: 펌프 속도 배율 (0 = 정지, 1 = 지령대로, 최대 1.5)
+            pid = m["id"]; self.rate_scale[pid] = float(np.clip(float(m["factor"]), 0.0, 1.5)); self._reapply(pid)
+        elif c == "hold":                       # 실시간: 펌프 일시 보류/재개 (도징 목표 유지)
+            pid = m["id"]; self.hold[pid] = bool(m["on"]); self._reapply(pid)
         elif c == "batch_reset":                # 스트로크 누적·로드셀 누적 기준을 지금으로
             for pid in PUMP_IDS:
                 self.dosed_mL[pid] = 0.0; self.strokes[pid] = 0.0; self.flow_est[pid].reset_batch()
         elif c == "stop":
+            self.base_spm[m["id"]] = 0.0; self.base_mA[m["id"]] = 0.0
             if m["id"] in self.pulse_ids:
                 self.pulse_spm[m["id"]] = 0.0; self.pulse_target[m["id"]] = None
             else:
@@ -298,11 +309,27 @@ class IONode:
                 for pp in self.hal.p.pumps.values():
                     pp.reset_fault()
 
+    def _effective(self, pid, value):
+        return 0.0 if self.hold.get(pid) else value * self.rate_scale.get(pid, 1.0)
+
+    def _mA_from_spm(self, spm):
+        p = self.cfg.pump
+        return 0.0 if spm <= 0 else float(p.i_start_mA + (p.i_full_mA - p.i_start_mA) * min(spm, p.max_spm) / p.max_spm)
+
+    def _reapply(self, pid):
+        """배율/보류가 바뀌면 현재 명령을 다시 적용한다."""
+        if pid in self.pulse_ids:
+            if self.base_spm[pid] > 0 or self.pulse_spm[pid] > 0:
+                self._set_pulse(pid, self.base_spm[pid], _raw=True)
+        else:
+            if self.base_mA[pid] > 0 or self.cmd_mA[pid] > 0:
+                self._set_pump(pid, self.base_mA[pid], _raw=True)
+
     def _spm_from_mA(self, mA):
         p = self.cfg.pump
         return 0.0 if mA < p.i_start_mA else float(min(p.max_spm, p.max_spm * (mA - p.i_start_mA) / (p.i_full_mA - p.i_start_mA)))
 
-    def _set_pulse(self, pid, spm):
+    def _set_pulse(self, pid, spm, _raw=False):
         if self.mode != "RUN":
             self.alarm(f"REJECT {pid}: node not armed"); return
         vid = PULSE_VALVES[pid] if pid in PULSE_VALVES else VALVE_IDS[PUMP_IDS.index(pid)]
@@ -312,9 +339,11 @@ class IONode:
             self.alarm(f"INTERLOCK {pid}: run_enable off"); return
         if not self.has_pulse:
             self.alarm(f"REJECT {pid}: HAL has no pulse output"); return
-        self.pulse_spm[pid] = float(min(spm, self.cfg.pulse_pump.max_spm))
+        self.base_spm[pid] = float(spm)
+        spec = self.cfg.pump if pid in PUMP_IDS else self.cfg.pulse_pump
+        self.pulse_spm[pid] = float(min(self._effective(pid, spm), spec.max_spm))
 
-    def _set_pump(self, pid, mA):
+    def _set_pump(self, pid, mA, _raw=False):
         if self.mode != "RUN":
             self.alarm(f"REJECT {pid}: node not armed")
             return
@@ -325,6 +354,8 @@ class IONode:
         if mA > 0 and not self.run_en:
             self.alarm(f"INTERLOCK {pid}: run_enable off")
             return
+        self.base_mA[pid] = float(mA)
+        mA = self._mA_from_spm(self._effective(pid, self._spm_from_mA(mA))) if mA > 0 else 0.0
         self.cmd_mA[pid] = mA
         self.hal.pump_enable(pid, mA > 0)
         self.hal.pump_set_mA(pid, mA)
@@ -428,12 +459,15 @@ class IONode:
             self.bus.publish(dict(
                 t=round(t, 3), mode=self.mode, run_enable=self.run_en,
                 pumps={pid: (dict(cmd_mA=0.0, fb_mA=None, spm=round(self.pulse_spm[pid], 1), strokes=round(self.strokes[pid], 2),
-                                  dosed_mL=round(self.dosed_mL[pid], 3), dosing=self.pulse_target[pid] is not None, mode="pulse")
+                                  dosed_mL=round(self.dosed_mL[pid], 3), dosing=self.pulse_target[pid] is not None, mode="pulse",
+                                  scale=self.rate_scale[pid], hold=self.hold[pid], remaining=self.pulse_target[pid])
                              if pid in self.pulse_ids else
                              dict(cmd_mA=round(self.cmd_mA[pid], 3), fb_mA=round(fb[pid][0], 3),
                                   spm=round(fb[pid][1], 1), strokes=round(self.strokes[pid], 2),
                                   dosed_mL=round(self.dosed_mL[pid], 3),
-                                  dosing=self.dose_target[pid] is not None, mode="analog")) for pid in PUMP_IDS},
+                                  dosing=self.dose_target[pid] is not None, mode="analog",
+                                  scale=self.rate_scale[pid], hold=self.hold[pid],
+                                  remaining=(None if self.dose_target[pid] is None else round(self.dose_target[pid])))) for pid in PUMP_IDS},
                 valves=dict(self.valve_on), ph=round(self.hal.read_ph(), 3),
                 pressure_bar=round(p_bar, 3), temp_C=round(self.hal.read_temp_C(), 2),
                 turbidity_ntu=round(self.hal.read_turbidity_ntu(), 1) if hasattr(self.hal, "read_turbidity_ntu") else None,

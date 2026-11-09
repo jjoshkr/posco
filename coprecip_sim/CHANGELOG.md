@@ -15,3 +15,4 @@
 11. **문서화** — docs/ (아키텍처, 프로토콜, 하드웨어, 레시피, 설정, 운영, API), CHANGELOG.
 12. **펄스 모드·실제 장비 프리셋** — P-101~103 접점 펄스 구동(XTR111 없이), `rig_prominent_feeder()`.
 13. **브라우저 UI·README 재구성** — `cmysim.ui` 시뮬레이션 인터페이스(목표색, 그래프, 고장 주입, 수동 모드), README 를 색소 실험 네 핵심 중심으로 다시 씀(이전 README 는 docs/REFERENCE_ALL.md).
+14. **UI 2차** — Pretendard, 단계 표시줄·사용 안내, 장비 모식도, 운전 중 실시간 제어(펌프 속도 배율·보류·밸브·교반·목표 변경·지금 트림), I/O 노드 `rate_scale`/`hold` 명령.
