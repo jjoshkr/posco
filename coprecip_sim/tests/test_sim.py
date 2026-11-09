@@ -654,3 +654,31 @@ def test_ionode_live_rate_scale_and_hold():
     bus2.send_cmd(dict(cmd="arm")); bus2.send_cmd(dict(cmd="run_enable", on=True)); bus2.send_cmd(dict(cmd="valve", id="XV-102", open=True))
     bus2.send_cmd(dict(cmd="pump", id="P-102", mA=19.6)); bus2.send_cmd(dict(cmd="rate_scale", id="P-102", factor=0.5)); io2.tick(0.1)
     assert abs(io2.cmd_mA["P-102"] - 12.0) < 1e-6                                              # 100 spm ≙ 12.0 mA
+
+
+def test_ui_step_mode_and_immediate_target_change():
+    from cmysim.ui import SimSession
+    s = SimSession(); s.reset(dict(target="#5A8F7B", dose_min=1.0, seed=4))
+    assert s.state(0)["stage"]["key"] == "PLAN" and s.t == 0.0 and len(s.plan) == 3          # 준비(0 s): 계획만
+    s.step_mode = True
+    seen = []
+    for _ in range(4000):
+        if s.paused:
+            seen.append(s.ctl.state); s.paused = False
+        s.step()
+        if s.ctl.state == "DONE" and s.paused:
+            seen.append("DONE"); break
+    assert seen[:4] == ["PRIME", "DOSE", "SETTLE", "MEASURE"] and "DONE" in seen            # 단계마다 멈춤
+    de0 = s.ctl.de
+    s.change_target("#4A6FA5")                                                                # DONE 에서 목표 변경 → 즉시 재측정·트림
+    assert s.ctl.state == "MEASURE" and s.state(0)["target_hex"] == "#4A6FA5" and s.ctl.de > de0
+    s.paused = False; s.step_mode = False
+    for _ in range(3000):
+        s.step()
+        if s.ctl.done: break
+    assert s.ctl.done and s.ctl.trims >= 1
+    s2 = SimSession(); s2.reset(dict(target="#5A8F7B")); s2.run_until = "SETTLE"
+    for _ in range(3000):
+        s2.step()
+        if s2.paused: break
+    assert s2.paused and s2.ctl.state == "SETTLE" and s2.run_until is None

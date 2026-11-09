@@ -28,6 +28,9 @@ class SimSession:
         self.paused = False
         self.speed = 10.0
         self.params = {}
+        self.step_mode = False            # 단계가 바뀔 때마다 자동 일시정지
+        self.run_until = None             # 이 단계에 도달하면 일시정지
+        self._last_stage = None
         self.reset()
 
     # ---- 구성
@@ -58,6 +61,10 @@ class SimSession:
         self.events = []
         self.plan = plan_doses(cfg, cfg.reactor.heel_mL, rec.c_target, rec.dose_minutes, rec.flow_factor)
         self._n_alarm = 0
+        self._last_stage = self.ctl.state
+        self.run_until = None
+        cam = cfg.camera
+        self.reachable_hex = optics.rgb8_to_hex(rec.target_rgb8)     # 모델이 낼 수 있는 가장 가까운 색
         if p["manual"]:                                    # 수동 모드: 노드 무장 + 운전 허가만 해 둔다
             self.bus.send_cmd(dict(cmd="arm")); self.bus.send_cmd(dict(cmd="run_enable", on=True))
 
@@ -99,6 +106,13 @@ class SimSession:
             last = self.ctl.events[-1]
             if not any(e[1] == "AI" and e[2] == last[1] and e[0] == round(last[0], 1) for e in self.events[-10:]):
                 self.events.append((round(last[0], 1), "AI", last[1]))
+        # 단계 모드 / 특정 단계까지 진행: 단계가 바뀌면 멈춘다
+        if self.ctl.state != self._last_stage:
+            self._last_stage = self.ctl.state
+            if self.step_mode or (self.run_until and self.ctl.state == self.run_until):
+                self.paused = True
+                if self.run_until == self.ctl.state:
+                    self.run_until = None
 
     def _loop(self):
         acc = 0.0; last = time.monotonic()
@@ -110,13 +124,22 @@ class SimSession:
                 with self.lock:
                     for _ in range(min(n, 200)):
                         self.step()
+                        if self.paused:                      # 단계 모드/run_until 로 멈추면 그 틱에서 바로 선다
+                            acc = 0.0; break
             time.sleep(0.02)
 
-    def start(self):
+    def start(self, paused=False):
         if self.thread and self.thread.is_alive():
             self.running = False; self.thread.join(1.0)
-        self.running, self.paused = True, False
+        self.running, self.paused = True, paused
         self.thread = threading.Thread(target=self._loop, daemon=True); self.thread.start()
+
+    def advance(self, seconds: float):
+        """일시정지 상태에서 시뮬레이션을 seconds 만큼만 진행 (한 틱씩 보기)."""
+        n = int(round(seconds / self.cfg.dt))
+        with self.lock:
+            for _ in range(max(1, min(n, 6000))):
+                self.step()
 
     # ---- 상태 (JSON)
     def state(self, since: int = 0) -> dict:
@@ -128,7 +151,9 @@ class SimSession:
             cam = self.cfg.camera
             return dict(
                 t=round(self.t, 1), running=self.running, paused=self.paused, speed=self.speed, params=self.params,
+                step_mode=self.step_mode, run_until=self.run_until, requested_target=self.params.get("target"),
                 target_hex=optics.rgb8_to_hex(self.recipe.target_rgb8), target_resid=round(float(self.target_resid), 2),
+                pressure_bar=tele.get("pressure_bar"),
                 c_target=[round(float(v), 2) for v in self.recipe.c_target],
                 camera_hex=optics.rgb8_to_hex(self.ctl.rgb), true_hex=(h["rgb_true"][-1] if n else None),
                 ctl_state=self.ctl.state, done=self.ctl.done, dE=(None if self.ctl.de != self.ctl.de else round(float(self.ctl.de), 2)),
@@ -191,8 +216,18 @@ class SimSession:
                 rec, resid = make_recipe(self.cfg, None, [float(v) for v in str(target).split(",")], mode=p["mode"],
                                          dose_minutes=float(p["dose_min"]), de_match=float(p["de_match"]), flow_factor=np.array([float(p["flow_factor"])] * 3))
             self.params = p; self.recipe.target_rgb8 = rec.target_rgb8; self.recipe.c_target = rec.c_target; self.target_resid = resid
-            self.ctl.r = self.recipe
+            self.ctl.r = self.recipe; self.reachable_hex = optics.rgb8_to_hex(rec.target_rgb8)
+            self.ctl.estimate(self.ctl.rgb)                                  # ΔE 를 새 목표로 즉시 다시 계산
+            self.plan = plan_doses(self.cfg, self.cfg.reactor.heel_mL, rec.c_target, rec.dose_minutes, rec.flow_factor)
             self.events.append((round(self.t, 1), "UI", f"목표 변경 → {optics.rgb8_to_hex(rec.target_rgb8)} c*={np.round(rec.c_target, 1).tolist()}"))
+            st = self.ctl.state
+        if st in ("DONE", "SETTLE", "MEASURE") and not self.params["manual"]:
+            self.trim_now()                                                  # 바로 측정→트림 한 사이클 (부족분만 추가)
+        elif st in ("PLAN", "PRIME"):
+            pass                                                             # 아직 투입 전: 새 계획으로 그대로 진행
+        else:
+            with self.lock:
+                self.events.append((round(self.t, 1), "UI", "투입 중: 새 목표는 다음 측정(MEASURE)부터 반영"))
 
     def trim_now(self):
         """지금 측정→트림 한 사이클 더. DONE 이후면 노드를 다시 무장한다."""
@@ -204,6 +239,9 @@ class SimSession:
                 self.ctl.result = None; self.ctl.trims = 0; self.ctl.aborted = ""
             self.ctl.state, self.ctl.t_state = "MEASURE", self.t
             self.ctl.events.append((round(self.t, 2), "UI → MEASURE (수동 트림 요청)"))
+            self._last_stage = "MEASURE"
+            if self.running and self.paused and not self.step_mode:
+                self.paused = False
 
 
 # ------------------------------------------------------------------ HTML
@@ -230,7 +268,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}td,th{padding:3px 4px;b
 .badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:12px;background:#eee;font-weight:600}.badge.run{background:#e3f2fd;color:#0d47a1}.badge.safe{background:#fdecea;color:var(--bad)}.badge.done{background:#e8f5e9;color:var(--ok)}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12.5px}.kv b{color:var(--mut);font-weight:500}
 small,.help{color:var(--mut);font-size:12px;line-height:1.5}
-.stages{display:flex;gap:4px;margin:6px 0 4px}.stages div{flex:1;text-align:center;font-size:11px;padding:6px 2px;border-radius:6px;background:#f0f1f3;color:#8a8f98}.stages div.cur{background:var(--acc);color:#fff;font-weight:600}.stages div.past{background:#dfe8f8;color:#2a4a7a}
+.stages{display:flex;gap:4px;margin:6px 0 4px}.stages div{flex:1;text-align:center;font-size:11px;padding:6px 2px;border-radius:6px;background:#f0f1f3;color:#8a8f98}.stages div.cur{background:var(--acc);color:#fff;font-weight:600}.stages div.past{background:#dfe8f8;color:#2a4a7a}.stages div{cursor:pointer}.stages div.until{outline:2px dashed var(--acc)}
 .pump{border:1px solid var(--line);border-radius:8px;padding:8px;margin-top:8px}.pump .hd{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600}.pump .hd span{font-weight:500;color:var(--mut)}
 .help ol{margin:4px 0 0 18px;padding:0}.help li{margin:3px 0}
 svg text{font-family:inherit}
@@ -261,8 +299,11 @@ svg text{font-family:inherit}
    <div><label>펌프 구동</label><select id="pump_mode"><option value="pulse">pulse (접점)</option><option value="analog">analog (4–20 mA)</option></select></div></div>
   <div class="row"><div><label>도징 시간 [min]</label><input type="number" id="dose_min" value="1.5" step="0.5"></div><div><label>피드포워드 배율</label><input type="number" id="ff" value="0.97" step="0.01"></div></div>
   <div class="row"><div><label>카메라 잡음</label><input type="number" id="noise" value="0.02" step="0.005"></div><div><label>시드</label><input type="number" id="seed" value="0"></div></div>
+  <div class="row" style="margin-top:6px;align-items:flex-end"><div><label>도달 가능한 가장 가까운 색</label><div class="box" id="swReach" style="height:28px;border-radius:6px;border:1px solid var(--line)"></div></div><div><small id="reachNote">—</small></div></div>
   <label><input type="checkbox" id="manual"> 수동 모드 (제어기 없이 직접 밸브·펌프 조작)</label>
-  <div class="row" style="margin-top:10px"><button class="pri" onclick="start()">시작 / 재시작</button><button onclick="pause()" id="pbtn">일시정지</button></div>
+  <label><input type="checkbox" id="stepmode" onchange="stepMode(this.checked)"> 단계마다 멈춤 (PLAN → PRIME → … 한 단계씩 보기)</label>
+  <div class="row" style="margin-top:10px"><button onclick="prepare()">준비 (0 s)</button><button class="pri" onclick="start()">시작 / 재시작</button><button onclick="pause()" id="pbtn">일시정지</button></div>
+  <div class="row" style="margin-top:6px"><button onclick="nextStage()">▶ 다음 단계</button><button onclick="stepSec(1)">+1 s</button><button onclick="stepSec(10)">+10 s</button><button onclick="stepSec(60)">+60 s</button></div>
   <label>속도 <span id="spv">10</span>×</label><input type="range" id="speed" min="1" max="60" value="10" oninput="setSpeed(this.value)">
  </div>
  <div class="card"><h2>실시간 제어 (운전 중)</h2>
@@ -287,8 +328,10 @@ svg text{font-family:inherit}
 <section>
  <div class="card">
   <div class="stages" id="stages"></div><div class="help" id="stagedesc">—</div>
+  <small>칩을 누르면 그 단계 설명이 보이고, 운전 중이면 그 단계에 도달할 때 자동으로 멈춥니다.</small>
  </div>
- <div class="card"><h2>장비 모식도</h2><svg id="mimic" viewBox="0 0 760 250" width="100%" height="250"></svg></div>
+ <div class="card"><h2>장비 모식도 (P&amp;ID, 실제 패널 배치)</h2><svg id="mimic" viewBox="0 0 900 430" width="100%" height="430"></svg>
+  <small>라인마다: 스톡병 → gamma/X 펌프(다기능 밸브) → 튜브 → 패널 수직관 → 티(볼밸브 분기, 수동) → 압력계/트랜스미터 PT → 맥동 댐퍼 PD → DHV-U 배압 밸브(2 bar) → 솔레노이드 XV(신설) → 체크밸브 → 반응기</small></div>
  <div class="card">
   <div class="sw"><div><div class="box" id="swT"></div>목표 <span id="hexT"></span></div><div><div class="box" id="swC"></div>카메라 <span id="hexC"></span></div><div><div class="box" id="swR"></div>실제 <span id="hexR"></span></div></div>
   <div class="kv"><b>상태</b><span><span class="badge" id="iomode">—</span> <span id="ctl"></span></span>
@@ -305,15 +348,23 @@ svg text{font-family:inherit}
 const $=id=>document.getElementById(id);
 let H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]},n=0,ct=[0,0,0],paused=false,S=null;
 const COL=["#00AEEF","#EC008C","#E6B800"],PUMPS=["P-101","P-102","P-103"],DYE=["C","M","Y"];
-$('pick').oninput=e=>{$('target').value=e.target.value.toUpperCase()};$('pick2').oninput=e=>{$('target2').value=e.target.value.toUpperCase()};
+$('pick').oninput=e=>{$('target').value=e.target.value.toUpperCase();reach()};$('target').onchange=reach;$('pick2').oninput=e=>{$('target2').value=e.target.value.toUpperCase()};
+async function reach(){try{const r=await (await fetch('/api/reach?target='+encodeURIComponent($('target').value))).json();$('swReach').style.background=r.hex;
+ $('reachNote').textContent=r.resid>1.5?`⚠ 이 염료로는 정확히 못 만듦 (잔차 ΔE ${r.resid}). 가장 가까운 색 ${r.hex}, c*=${r.c.join('/')}`:`도달 가능 (ΔE ${r.resid}), c*=${r.c.join('/')} mg/L`}catch(e){}}
 $('manual').onchange=e=>{$('manualcard').style.display=e.target.checked?'block':'none'};
 function toggleHelp(){const h=$('helpcard');h.style.display=h.style.display==='none'?'block':'none'}
 async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});return r.json()}
 async function start(){H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;
- await post('/api/start',{target:$('target').value,heel_mL:+$('heel').value,rpm:+$('rpm').value,mode:$('mode').value,pump_mode:$('pump_mode').value,
-  dose_min:+$('dose_min').value,flow_factor:+$('ff').value,pixel_noise:+$('noise').value,seed:+$('seed').value,manual:$('manual').checked,speed:+$('speed').value});
+ await post('/api/start',cfgBody());await post('/api/stepmode',{on:$('stepmode').checked});
  $('rpmlive').value=$('rpm').value;$('rpmv').textContent=$('rpm').value;$('target2').value=$('target').value;}
 async function pause(){const s=await post('/api/pause');paused=s.paused;$('pbtn').textContent=paused?'계속':'일시정지'}
+function cfgBody(){return {target:$('target').value,heel_mL:+$('heel').value,rpm:+$('rpm').value,mode:$('mode').value,pump_mode:$('pump_mode').value,
+  dose_min:+$('dose_min').value,flow_factor:+$('ff').value,pixel_noise:+$('noise').value,seed:+$('seed').value,manual:$('manual').checked,speed:+$('speed').value}}
+async function prepare(){H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;await post('/api/reset',cfgBody());$('rpmlive').value=$('rpm').value;$('rpmv').textContent=$('rpm').value;$('target2').value=$('target').value}
+async function nextStage(){$('stepmode').checked=true;await post('/api/next')}
+async function stepSec(sec){await post('/api/step',{seconds:sec})}
+async function stepMode(on){await post('/api/stepmode',{on})}
+async function runUntil(stage){await post('/api/run_until',{stage})}
 async function setSpeed(v){$('spv').textContent=v;await post('/api/speed',{speed:+v})}
 async function fault(k,a){await post('/api/fault',{kind:k,arg:a})}
 async function live(b){await post('/api/live',b)}
@@ -343,27 +394,56 @@ function line(cv,series,opts){const c=cv.getContext('2d');const W=cv.width=cv.cl
 function draw(){line($('c1'),[0,1,2].flatMap(j=>[{y:H.c_true.map(v=>v[j]),color:COL[j]},{y:H.c_hat.map(v=>v[j]),color:COL[j],dash:[4,3],width:1}]),{hlines:ct,dec:1});
  line($('c2'),[{y:H.dE_true,color:'#000'},{y:H.dE,color:'#888',dash:[4,3],width:1}],{ymin:5,hlines:[1.5],hcolors:['#2e7d32'],dec:1});
  line($('c3'),[0,1,2].map(j=>({y:H.spm.map(v=>v[j]),color:COL[j]})),{ymin:50,dec:0});}
-// 장비 모식도
+// 장비 모식도 — 실제 패널 P&ID (라인 3개 수직, 하단 펌프·스톡병, 우측 반응기)
 let blink=0;
 function mimic(s){blink=(blink+1)%2;const g=$('mimic');const tanks=s.reactor.tanks,V=s.reactor.V_mL;const rt=s.true_hex?'#'+s.true_hex.map(v=>v.toString(16).padStart(2,'0')).join(''):'#ffffff';
- let out='';PUMPS.forEach((p,j)=>{const x=40+j*120;const lv=Math.max(0,Math.min(1,tanks[j]/2000));const pm=s.pumps_live[p]||{};const on=(pm.spm||0)>0;const v=s.io.valves['XV-'+p.slice(2)];
-  out+=`<rect x="${x}" y="20" width="56" height="80" rx="6" fill="#fff" stroke="#9aa"/><rect x="${x+2}" y="${20+78*(1-lv)}" width="52" height="${78*lv}" rx="4" fill="${COL[j]}" opacity=".55"/>
-  <text x="${x+28}" y="112" text-anchor="middle" font-size="11" fill="#555">${DYE[j]} 스톡 ${Math.round(tanks[j])} mL</text>
-  <line x1="${x+28}" y1="100" x2="${x+28}" y2="128" stroke="#999" stroke-width="3"/>
-  <circle cx="${x+28}" cy="142" r="14" fill="${on?(blink?COL[j]:'#fff'):'#f3f3f3'}" stroke="${on?COL[j]:'#999'}" stroke-width="2"/><text x="${x+28}" y="146" text-anchor="middle" font-size="10" fill="${on&&blink?'#fff':'#333'}">P</text>
-  <text x="${x+28}" y="172" text-anchor="middle" font-size="11" fill="#555">${p.slice(2)} ${pm.spm||0} spm · ${pm.strokes||0} str${pm.hold?' · 보류':''}${pm.scale!=null&&pm.scale!=1?' · ×'+pm.scale:''}</text>
-  <line x1="${x+28}" y1="156" x2="${x+28}" y2="188" stroke="#999" stroke-width="3"/>
-  <rect x="${x+16}" y="188" width="24" height="16" rx="3" fill="${v?'#4caf50':'#bdbdbd'}"/><text x="${x+28}" y="216" text-anchor="middle" font-size="10" fill="#555">XV ${v?'열림':'닫힘'}</text>
-  <path d="M${x+28},204 L${x+28},224 L${520},224" fill="none" stroke="${v?'#4caf50':'#ccc'}" stroke-width="3"/>`;});
- const lv=Math.max(0,Math.min(1,V/5000));out+=`<rect x="520" y="40" width="200" height="190" rx="12" fill="#fff" stroke="#888" stroke-width="2"/><rect x="524" y="${44+182*(1-lv)}" width="192" height="${182*lv}" rx="10" fill="${rt}"/>
-  <text x="620" y="30" text-anchor="middle" font-size="12" fill="#444">반응기 ${V} mL · ${s.reactor.rpm} rpm</text><text x="620" y="244" text-anchor="middle" font-size="11" fill="#555">ΔE2000 ${s.dE==null?'—':s.dE}${s.io.run_enable?' · 운전허가 ON':' · 운전허가 OFF'}</text>
-  <line x1="620" y1="60" x2="620" y2="210" stroke="#999" stroke-width="2" stroke-dasharray="4 3"/><rect x="590" y="200" width="60" height="6" fill="#999" transform="rotate(${blink?12:-12} 620 203)"/>`;g.innerHTML=out;}
-function stages(s){const st=s.stage;$('stages').innerHTML=st.names.map((nm,i)=>`<div class="${i===st.index?'cur':(i<st.index?'past':'')}">${st.keys[i]}<br>${nm}</div>`).join('');
- $('stagedesc').textContent=(st.index>=0?`${st.keys[st.index]} · ${st.desc} · 경과 ${st.elapsed} s`:st.desc)}
+ const names=['Metal/C','NaOH/M','Ammonia/Y'];let out=`<defs><marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#777"/></marker></defs>`;
+ out+=`<text x="12" y="18" font-size="12" fill="#444">CHEMICAL FEEDER 패널 (ProMinent)  ·  배압 DHV-U 2 bar  ·  댐퍼 HIDRACAR 0.09 L  ·  압력 ${s.pressure_bar==null?'—':s.pressure_bar} bar</text>`;
+ const yOut=40,yDHV=70,yPD=108,yPT=150,yTee=200,yBall=232,yTube=262,yPump=320,yBottle=388;
+ PUMPS.forEach((p,j)=>{const x=90+j*150;const pm=s.pumps_live[p]||{};const on=(pm.spm||0)>0;const v=s.io.valves['XV-'+p.slice(2)];const lv=Math.max(0,Math.min(1,tanks[j]/2000));
+  // 출구 → 반응기 라인 (상단 헤더)
+  out+=`<path d="M${x},${yOut} L${x},28 L640,28" fill="none" stroke="${v?'#4caf50':'#ccc'}" stroke-width="3"/>`;
+  // 솔레노이드 XV (신설) + 체크밸브
+  out+=`<rect x="${x-14}" y="${yOut-2}" width="28" height="16" rx="3" fill="${v?'#4caf50':'#bdbdbd'}"/><text x="${x+20}" y="${yOut+11}" font-size="10" fill="#555">XV-${p.slice(2)} ${v?'열림':'닫힘'}</text>
+   <polygon points="${x-7},${yOut+22} ${x+7},${yOut+22} ${x},${yOut+32}" fill="#999"/><text x="${x+12}" y="${yOut+31}" font-size="9" fill="#777">CV</text>`;
+  // DHV-U 배압 밸브 (주황)
+  out+=`<line x1="${x}" y1="${yOut+16}" x2="${x}" y2="${yDHV}" stroke="#999" stroke-width="3"/><circle cx="${x}" cy="${yDHV+12}" r="12" fill="#f57c00"/><text x="${x+16}" y="${yDHV+16}" font-size="10" fill="#555">DHV-U 2 bar</text>`;
+  // 맥동 댐퍼 (노랑 라벨)
+  out+=`<line x1="${x}" y1="${yDHV+24}" x2="${x}" y2="${yPD}" stroke="#999" stroke-width="3"/><rect x="${x-10}" y="${yPD}" width="20" height="30" rx="4" fill="#efe9d8" stroke="#bbb"/><rect x="${x-10}" y="${yPD+10}" width="20" height="8" fill="#f9d64b"/><text x="${x+16}" y="${yPD+20}" font-size="10" fill="#555">PD</text>`;
+  // 압력계 / 트랜스미터
+  out+=`<line x1="${x}" y1="${yPD+30}" x2="${x}" y2="${yPT}" stroke="#999" stroke-width="3"/><circle cx="${x}" cy="${yPT+12}" r="12" fill="#fff" stroke="#888" stroke-width="2"/><text x="${x}" y="${yPT+16}" text-anchor="middle" font-size="9" fill="#333">PT</text><text x="${x+16}" y="${yPT+16}" font-size="10" fill="#555">압력계→4–20 mA</text>`;
+  // 티 + 볼밸브 분기 (수동)
+  out+=`<line x1="${x}" y1="${yPT+24}" x2="${x}" y2="${yTee}" stroke="#999" stroke-width="3"/><circle cx="${x}" cy="${yTee}" r="4" fill="#777"/>
+   <line x1="${x}" y1="${yTee}" x2="${x-34}" y2="${yTee}" stroke="#999" stroke-width="3"/><line x1="${x-34}" y1="${yTee}" x2="${x-34}" y2="${yBall}" stroke="#999" stroke-width="3"/>
+   <rect x="${x-44}" y="${yBall}" width="20" height="10" fill="#fff" stroke="#1976d2" stroke-width="2"/><line x1="${x-34}" y1="${yBall}" x2="${x-34}" y2="${yBall-10}" stroke="#1976d2" stroke-width="3"/><text x="${x-58}" y="${yBall+24}" font-size="9" fill="#777">볼밸브(수동)</text>`;
+  // 패널 수직관 → 튜브 → 펌프
+  out+=`<line x1="${x}" y1="${yTee}" x2="${x}" y2="${yTube}" stroke="#999" stroke-width="3"/><path d="M${x},${yTube} C${x+30},${yTube+20} ${x+30},${yPump-30} ${x},${yPump-18}" fill="none" stroke="#ccc" stroke-width="3" stroke-dasharray="5 3"/>`;
+  // 펌프 gamma/X + 다기능 밸브
+  out+=`<rect x="${x-24}" y="${yPump-18}" width="48" height="36" rx="6" fill="${on?(blink?'#ff9800':'#ffe0b2'):'#ffe0b2'}" stroke="#e65100" stroke-width="2"/><text x="${x}" y="${yPump+4}" text-anchor="middle" font-size="10" fill="#333">${p.slice(2)}</text>
+   <rect x="${x-10}" y="${yPump-30}" width="20" height="10" fill="#333"/><circle cx="${x+10}" cy="${yPump-25}" r="4" fill="#d32f2f"/>
+   <text x="${x}" y="${yPump+32}" text-anchor="middle" font-size="10" fill="#555">${names[j]} · ${pm.spm||0} spm · ${pm.strokes||0} str${pm.hold?' · 보류':''}${pm.scale!=null&&pm.scale!=1?' · ×'+pm.scale:''}</text>`;
+  // 스톡병 (흡입)
+  out+=`<line x1="${x}" y1="${yPump+18}" x2="${x}" y2="${yBottle}" stroke="#999" stroke-width="2"/><rect x="${x-16}" y="${yBottle}" width="32" height="36" rx="5" fill="#fff" stroke="#9aa"/><rect x="${x-14}" y="${yBottle+2+32*(1-lv)}" width="28" height="${32*lv}" rx="3" fill="${COL[j]}" opacity=".6"/>
+   <text x="${x}" y="${yBottle+34+14}" text-anchor="middle" font-size="9" fill="#555">${DYE[j]} ${Math.round(tanks[j])} mL</text>`;});
+ const lv=Math.max(0,Math.min(1,V/5000));
+ out+=`<path d="M640,28 L700,28 L700,60" fill="none" stroke="#999" stroke-width="3" marker-end="url(#arr)"/>
+  <rect x="600" y="60" width="200" height="220" rx="14" fill="#fff" stroke="#888" stroke-width="2"/><rect x="604" y="${64+212*(1-lv)}" width="192" height="${212*lv}" rx="12" fill="${rt}"/>
+  <line x1="700" y1="60" x2="700" y2="250" stroke="#999" stroke-width="2" stroke-dasharray="4 3"/><rect x="665" y="238" width="70" height="7" fill="#999" transform="rotate(${blink?12:-12} 700 241)"/>
+  <text x="700" y="298" text-anchor="middle" font-size="12" fill="#444">반응기 ${V} mL · ${s.reactor.rpm} rpm</text><text x="700" y="316" text-anchor="middle" font-size="11" fill="#555">ΔE2000 ${s.dE==null?'—':s.dE} · 운전허가 ${s.io.run_enable?'ON':'OFF'} · I/O ${s.io.mode}</text>
+  <rect x="612" y="330" width="40" height="30" fill="#eee" stroke="#aaa"/><text x="632" y="349" text-anchor="middle" font-size="9" fill="#555">카메라</text><line x1="652" y1="345" x2="700" y2="300" stroke="#aaa" stroke-dasharray="3 3"/>
+  <text x="700" y="400" text-anchor="middle" font-size="10" fill="#777">파란 사각 = 수동 볼밸브 · 주황 원 = 배압 밸브 · 초록/회색 = 솔레노이드 열림/닫힘 · 주황 상자 = 펌프(돌면 깜빡임)</text>`;
+ g.innerHTML=out;}
+const STAGE_DESC={PLAN:'목표색을 농도 c*(C,M,Y)로 역산하고 펌프별 투입 부피·스트로크·속도를 정한다',PRIME:'I/O 노드 무장(arm), 교반기 지령, 운전 허가, 밸브 열기',DOSE:'세 펌프가 스트로크를 세며 동시에 색소를 넣는다. 끝나면 밸브를 닫는다',SETTLE:'혼합시간 × 3 만큼 기다린다 (교반 rpm 이 낮으면 길어짐)',MEASURE:'카메라 2 s 평균 → ĉ 와 ΔE2000',TRIM:'ĉ 가 목표보다 모자란 염료만 추가 투입 (과투입은 되돌릴 수 없음)',DONE:'운전 허가 OFF, SAFE. 지금 트림으로 한 사이클 더 할 수 있음'};
+let pickedStage=null;
+function stages(s){const st=s.stage;$('stages').innerHTML=st.names.map((nm,i)=>`<div class="${i===st.index?'cur':(i<st.index?'past':'')}${s.run_until===st.keys[i]?' until':''}" onclick="pickStage('${st.keys[i]}')" title="클릭: 설명 보기 / 이 단계에서 멈춤">${st.keys[i]}<br>${nm}</div>`).join('');
+ const base=(st.index>=0?`${st.keys[st.index]} · ${st.desc} · 경과 ${st.elapsed} s`:st.desc);
+ $('stagedesc').innerHTML=base+(s.paused?' · <b>일시정지</b>':'')+(s.step_mode?' · 단계마다 멈춤':'')+(s.run_until?` · ${s.run_until} 에서 멈춤 예정`:'')+(pickedStage&&pickedStage!==st.key?`<br><span style="color:#2a6fdb">${pickedStage}: ${STAGE_DESC[pickedStage]}</span>`:'')}
+function pickStage(k){pickedStage=k;if(S&&S.running&&S.stage.index<S.stage.keys.indexOf(k))runUntil(k)}
 async function poll(){try{const s=await (await fetch('/api/state?since='+n)).json();
  if(s.n<n){H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;const s2=await (await fetch('/api/state?since=0')).json();Object.assign(s,s2)}
  for(const k of Object.keys(H))H[k]=H[k].concat(s.hist[k]||[]);n=s.n;ct=s.c_target;S=s;
  $('hdr').textContent=`t = ${s.t} s · ${s.speed}× · ${s.params.pump_mode} 펌프 · ${s.params.mode}${s.paused?' · 일시정지':''}`;
+ paused=s.paused;$('pbtn').textContent=s.paused?'계속':'일시정지';$('stepmode').checked=s.step_mode;
  $('swT').style.background=s.target_hex;$('hexT').textContent=s.target_hex;$('swC').style.background=s.camera_hex;$('hexC').textContent=s.camera_hex;
  const rt=s.true_hex?'#'+s.true_hex.map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase():'#FFFFFF';$('swR').style.background=rt;$('hexR').textContent=rt;
  const b=$('iomode');b.textContent='I/O '+s.io.mode;b.className='badge '+(s.io.mode==='RUN'?'run':'safe');
@@ -378,7 +458,7 @@ async function poll(){try{const s=await (await fetch('/api/state?since='+n)).jso
   if(document.activeElement!==$('pcr'+j)&&pm.scale!=null){$('pcr'+j).value=Math.round(pm.scale*100);$('pcv'+j).textContent=Math.round(pm.scale*100)}});
  $('log').innerHTML=s.events.slice().reverse().map(e=>`<div><span style="color:#888">${e[0]}s</span> <b>${e[1]}</b> ${e[2]}</div>`).join('');
  stages(s);mimic(s);draw();}catch(e){console.log(e)}setTimeout(poll,500)}
-poll();window.addEventListener('resize',draw);
+poll();reach();window.addEventListener('resize',draw);
 </script></body></html>"""
 
 
@@ -393,6 +473,18 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code); self.send_header("Content-Type", "application/json; charset=utf-8"); self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b)
 
     def do_GET(self):
+        if self.path.startswith("/api/reach"):
+            from urllib.parse import unquote
+            tgt = unquote(self.path.split("target=")[1].split("&")[0]) if "target=" in self.path else "#5A8F7B"
+            cfg = self.session.cfg
+            try:
+                if tgt.startswith("#"):
+                    rec, resid = make_recipe(cfg, tgt, None)
+                else:
+                    rec, resid = make_recipe(cfg, None, [float(v) for v in tgt.split(",")])
+                return self._json(dict(hex=optics.rgb8_to_hex(rec.target_rgb8), resid=round(float(resid), 2), c=[round(float(v), 1) for v in rec.c_target]))
+            except Exception as e:
+                return self._json(dict(error=str(e)), 400)
         if self.path.startswith("/api/state"):
             since = 0
             if "since=" in self.path:
@@ -414,6 +506,30 @@ class Handler(BaseHTTPRequestHandler):
             s.speed = speed; s.start(); return self._json(dict(ok=True))
         if self.path == "/api/pause":
             s.paused = not s.paused; return self._json(dict(paused=s.paused))
+        if self.path == "/api/reset":                      # 준비 (0 s): 계획만 세우고 멈춰 있음
+            speed = float(body.pop("speed", s.speed))
+            with s.lock:
+                s.reset(body)
+            s.speed = speed; s.start(paused=True); return self._json(dict(ok=True))
+        if self.path == "/api/step":                       # 일시정지 중 N 초 진행
+            if not s.running:
+                s.start(paused=True)
+            s.paused = True; s.advance(float(body.get("seconds", 1.0))); return self._json(dict(t=s.t))
+        if self.path == "/api/stepmode":
+            s.step_mode = bool(body.get("on"))
+            if not s.step_mode and s.running and s.paused:
+                s.paused = False                                   # 단계 모드를 끄면 바로 이어서 진행
+            return self._json(dict(step_mode=s.step_mode))
+        if self.path == "/api/next":                       # 다음 단계까지 진행 (단계 모드 켬)
+            s.step_mode = True
+            if not s.running:
+                s.start(paused=False)
+            s.paused = False; return self._json(dict(ok=True))
+        if self.path == "/api/run_until":                  # 특정 단계에 도달하면 멈춤
+            s.run_until = body.get("stage")
+            if not s.running:
+                s.start(paused=False)
+            s.paused = False; return self._json(dict(run_until=s.run_until))
         if self.path == "/api/speed":
             s.speed = float(np.clip(float(body.get("speed", 10)), 0.1, 200)); return self._json(dict(speed=s.speed))
         if self.path == "/api/fault":
