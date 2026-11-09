@@ -398,6 +398,7 @@ svg text{font-family:inherit}
 <section>
  <div class="card">
   <div class="stages" id="stages"></div><div class="help" id="stagedesc">—</div>
+  <div class="cap" id="stagedetail" style="margin-top:6px;line-height:1.55;white-space:pre-line"></div>
   <small>칩을 누르면 그 단계 설명이 보이고, 운전 중이면 그 단계에 도달할 때 자동으로 멈춥니다.</small>
  </div>
  <div class="card"><h2>장비 모식도 (P&amp;ID, 실제 패널 배치)</h2><svg id="mimic" viewBox="0 0 900 430" width="100%" height="430"></svg>
@@ -430,7 +431,8 @@ $('pick').oninput=e=>{$('target').value=e.target.value.toUpperCase();dirtyTarget
 function markDirty(){if(S&&S.running)$('targetNote').textContent='⚠ 바뀐 목표색이 아직 적용되지 않았습니다 — 적용 을 누르세요';else $('targetNote').textContent='시작하면 이 색을 목표로 씁니다'}
 async function applyTarget(){if(S&&S.running){const r=await live({op:'target',target:$('target').value});dirtyTarget=false;$('targetNote').textContent='적용됨: 운전 중 목표를 '+$('target').value.toUpperCase()+' 로 바꿈'}else{dirtyTarget=false;$('targetNote').textContent='시작하면 이 색을 목표로 씁니다'}}
 async function reach(){try{const r=await (await fetch('/api/reach?target='+encodeURIComponent($('target').value))).json();$('swReach').style.background=r.hex;
- $('reachNote').textContent=r.resid>1.5?`⚠ 이 염료로는 정확히 못 만듦 (잔차 ΔE ${r.resid}). 가장 가까운 색 ${r.hex}, c*=${r.c.join('/')}`:`도달 가능 (ΔE ${r.resid}), c*=${r.c.join('/')} mg/L`}catch(e){}}
+ $('reachNote').innerHTML=r.resid>1.5?`⚠ 이 염료로는 정확히 못 만듦 (잔차 ΔE ${r.resid}). 가장 가까운 색 ${r.hex}, c*=${r.c.join('/')} mg/L. <button onclick="useReach('${r.hex}')" style="padding:2px 8px;font-size:12px">이 색을 목표로</button><br><span class="q" title="CMY 염료는 물(흰색)에서 빛을 빼기만 한다. 그래서 물보다 밝은 색, 어느 한 채널이 255 에 가까운 색(#59FF00 의 G=255 처럼 그 파장을 전혀 흡수하지 않아야 하는 색), 세 염료의 흡수 스펙트럼 조합 밖의 선명한 색은 만들 수 없다. 운전은 가장 가까운 도달 가능 색을 목표로 삼아 진행되고, 최종 ΔE 는 그 색 기준으로 판정된다">왜 못 만드나 ?</span>`:`도달 가능 (ΔE ${r.resid}), c*=${r.c.join('/')} mg/L`}catch(e){}}
+function useReach(hex){$('target').value=hex.toUpperCase();$('pick').value=hex;dirtyTarget=true;markDirty();reach()}
 $('manual').onchange=e=>{$('manualcard').style.display=e.target.checked?'block':'none'};
 function toggleHelp(){const h=$('helpcard');h.style.display=h.style.display==='none'?'block':'none'}
 async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});return r.json()}
@@ -534,6 +536,25 @@ function mimic(s){blink=(blink+1)%2;const g=$('mimic');const tanks=s.reactor.tan
   <rect x="612" y="330" width="40" height="30" fill="#eee" stroke="#aaa"/><text x="632" y="349" text-anchor="middle" font-size="9" fill="#555">카메라</text><line x1="652" y1="345" x2="700" y2="300" stroke="#aaa" stroke-dasharray="3 3"/>
   <text x="700" y="400" text-anchor="middle" font-size="10" fill="#777">파란 사각 = 수동 볼밸브 · 주황 원 = 배압 밸브 · 초록/회색 = 솔레노이드 열림/닫힘 · 주황 상자 = 펌프(돌면 깜빡임)</text>`;
  g.innerHTML=out;}
+const STAGE_DETAIL={
+PLAN:`• 목표색(hex)을 "이 RGB 가 나오려면 C, M, Y 가 몇 mg/L 들어 있어야 하나" 로 역산한다 (비어·람베르트 법칙의 역, 보정 행렬 E 사용). 그 농도가 c*.
+• CMY 염료는 빛을 빼기만 하므로 물보다 밝은 색, 어느 한 채널이 255 인 색(예 #59FF00)은 못 만든다. 그런 목표는 도달 가능한 가장 가까운 색으로 바뀌고 '잔차 ΔE' 로 그 거리를 보여 준다.
+• c* × 액량 ÷ 스톡 농도 = 염료별 투입 부피 → 0.19 mL/스트로크로 나눠 스트로크 수, 도징 시간으로 나눠 펌프 속도(spm/mA). 피드포워드 배율(기본 0.97)로 일부러 3 % 모자라게 계획한다 — 모자라면 TRIM 으로 채울 수 있지만 넘치면 뺄 수 없기 때문.`,
+PRIME:`• I/O 노드에 arm(무장) → 하트비트 감시 시작, 교반기 rpm 지령, 운전 허가 ON, 세 라인의 솔레노이드 밸브 열기.
+• 0.5 s 기다리는 이유: 밸브가 실제로 열리고 교반이 안정될 시간. 밸브가 닫힌 채 펌프가 돌면 I/O 노드가 INTERLOCK 으로 거부한다.`,
+DOSE:`• 세 펌프가 동시에 돈다. I/O 노드가 스트로크를 세어 계획한 수에 닿으면 그 펌프만 멈춘다 (시간이 아니라 '횟수' 로 끝내므로 속도 배율을 바꿔도 최종 투입량은 같다).
+• 세 펌프가 모두 멈추면 밸브를 닫고 SETTLE 로. 30 s 넘게 스트로크가 안 늘면 고장(탱크 고갈·밸브·신호)으로 보고 중단한다.`,
+SETTLE:`• 넣은 색소가 통 전체에 고르게 퍼질 때까지 기다린다. 넣은 자리는 진하고 반대편은 연한 상태에서 재면 ĉ 가 틀린다.
+• 혼합시간 t_m = 3000 / rpm [s] (300 rpm → 10 s). 교반조에서 '임펠러 회전수 × 혼합시간 ≈ 일정' 이라는 경험식에서 온 것으로, 3000 은 임펠러 약 50 회전이면 섞인다는 가정값이다. 실제 장비에서는 색소 한 방울 넣고 색이 안정되는 시간을 재서 바꿔야 한다.
+• × 3 인 이유: 혼합은 지수함수처럼 수렴해서 t_m 뒤에는 63 %, 3 t_m 뒤에야 95 % 이상 섞인다. 그래서 10 s 가 아니라 30 s 를 기다린다. 이것은 '한 번 넣은 것이 퍼지는 시간' 이고, 목표색까지 걸리는 전체 시간은 투입(도징 시간) + 정착 + 측정 + 트림 반복의 합이다.`,
+MEASURE:`• 카메라는 초당 10 장을 찍지만 한 장은 노이즈가 있어, 2 s 동안 20 장의 ROI 평균 RGB 를 한 번의 측정값으로 쓴다.
+• ĉ (c-hat): 그 RGB 를 보정 행렬 E 로 역산한 C, M, Y 농도 추정값 [mg/L]. '모자(hat)' 는 측정에서 추정한 값이라는 뜻이고, 시뮬레이터만 아는 진짜 농도 c 와 구별한다.
+• ΔE2000: 카메라가 본 색과 목표색이 사람 눈에 얼마나 달라 보이는지. 0 같은 색 · 1 전문가가 겨우 구분 · 2~4 일반인도 구분 · 6+ 다른 색. 1.5 미만이면 매칭 → DONE, 아니면 → TRIM.`,
+TRIM:`• 염료별 오차 = c*(목표) − ĉ(추정). 0.4 mg/L 보다 크게 '부족한' 염료만 고른다 (0.4 미만은 카메라 노이즈 수준). '과잉' 인 염료는 뺄 방법이 없으니 아무것도 하지 않는다.
+• 추가량 = 부족분 × 현재 액량 ÷ (스톡 농도 − 목표 농도). 예: C 가 1.2 mg/L 부족, 액량 500 mL, 스톡 1000 mg/L → 약 0.6 mL ≈ 3 스트로크. 이것을 30 s 안에 넣는 속도로 지령한다.
+• 그 뒤 DOSE → SETTLE → MEASURE 를 다시 돌아 ΔE 를 재고, 1.5 미만이면 DONE. 최대 4 회. 추가할 염료가 없으면(전부 과잉이거나 오차 < 0.4) 바로 DONE. 왼쪽 '염료별 ĉ − c* 오차 막대' 가 이 판단을 그대로 보여 준다.`,
+DONE:`• 운전 허가 OFF → 펌프 0 → 밸브 닫힘(SAFE). 결과: 최종 ΔE2000, ĉ, 트림 횟수.
+• '지금 트림' 을 누르면 노드를 다시 무장하고 MEASURE 부터 한 사이클 더 한다. 목표색을 바꾸고 적용하면 새 목표에 대해 모자란 염료를 추가 투입한다 (더 연한 색으로는 못 돌아간다).`};
 const STAGE_DESC={PLAN:'목표색을 농도 c*(C,M,Y)로 역산하고 펌프별 투입 부피·스트로크·속도를 정한다',PRIME:'I/O 노드 무장(arm), 교반기 지령, 운전 허가, 밸브 열기',DOSE:'세 펌프가 스트로크를 세며 동시에 색소를 넣는다. 끝나면 밸브를 닫는다',SETTLE:'혼합시간 × 3 만큼 기다린다 (교반 rpm 이 낮으면 길어짐)',MEASURE:'카메라 2 s 평균 → ĉ 와 ΔE2000',TRIM:'ĉ 가 목표보다 모자란 염료만 추가 투입 (과투입은 되돌릴 수 없음)',DONE:'운전 허가 OFF, SAFE. 지금 트림으로 한 사이클 더 할 수 있음'};
 let pickedStage=null;
 function matchGauge(s){const de=s.dE;const txt=$('gaugeTxt'),mk=$('gaugeMk');
@@ -547,6 +568,7 @@ function matchGauge(s){const de=s.dE;const txt=$('gaugeTxt'),mk=$('gaugeMk');
  $('dyeErr').innerHTML=html;}
 function stages(s){const st=s.stage;$('stages').innerHTML=st.names.map((nm,i)=>`<div class="${i===st.index?'cur':(i<st.index?'past':'')}${s.run_until===st.keys[i]?' until':''}" onclick="pickStage('${st.keys[i]}')" title="클릭: 설명 보기 / 이 단계에서 멈춤">${st.keys[i]}<br>${nm}</div>`).join('');
  const base=(st.index>=0?`${st.keys[st.index]} · ${st.desc} · 경과 ${st.elapsed} s`:st.desc);
+ {const k=(pickedStage&&STAGE_DETAIL[pickedStage])?pickedStage:st.key;$('stagedetail').textContent=STAGE_DETAIL[k]?`[${k}] 자세히\n${STAGE_DETAIL[k]}`:''}
  $('stagedesc').innerHTML=base+(s.aborted?` · <b style="color:var(--bad)">중단: ${s.aborted}</b>`:'')+(s.paused?' · <b>일시정지</b>':'')+(s.step_mode?' · 단계마다 멈춤':'')+(s.run_until?` · ${s.run_until} 에서 멈춤 예정`:'')+(pickedStage&&pickedStage!==st.key?`<br><span style="color:#2a6fdb">${pickedStage}: ${STAGE_DESC[pickedStage]}</span>`:'')}
 function pickStage(k){pickedStage=k;if(S&&S.running&&S.stage.index<S.stage.keys.indexOf(k))runUntil(k)}
 async function poll(){try{const s=await (await fetch('/api/state?since='+n)).json();
