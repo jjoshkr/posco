@@ -268,6 +268,9 @@ table{width:100%;border-collapse:collapse;font-size:12px}td,th{padding:3px 4px;b
 .badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:12px;background:#eee;font-weight:600}.badge.run{background:#e3f2fd;color:#0d47a1}.badge.safe{background:#fdecea;color:var(--bad)}.badge.done{background:#e8f5e9;color:var(--ok)}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12.5px}.kv b{color:var(--mut);font-weight:500}
 small,.help{color:var(--mut);font-size:12px;line-height:1.5}
+.q{display:inline-block;width:15px;height:15px;line-height:15px;text-align:center;border-radius:50%;background:#e8ebf0;color:#556;font-size:10px;margin-left:4px;cursor:help;vertical-align:middle}
+.cap{display:block;color:#8a8f98;font-size:11px;margin-top:2px;line-height:1.4}
+abbr{text-decoration:none;border-bottom:1px dotted #999;cursor:help}
 .stages{display:flex;gap:4px;margin:6px 0 4px}.stages div{flex:1;text-align:center;font-size:11px;padding:6px 2px;border-radius:6px;background:#f0f1f3;color:#8a8f98}.stages div.cur{background:var(--acc);color:#fff;font-weight:600}.stages div.past{background:#dfe8f8;color:#2a4a7a}.stages div{cursor:pointer}.stages div.until{outline:2px dashed var(--acc)}
 .pump{border:1px solid var(--line);border-radius:8px;padding:8px;margin-top:8px}.pump .hd{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600}.pump .hd span{font-weight:500;color:var(--mut)}
 .help ol{margin:4px 0 0 18px;padding:0}.help li{margin:3px 0}
@@ -290,30 +293,41 @@ svg text{font-family:inherit}
   <li><b>색 견본</b>: 목표 / 카메라가 본 색 / 실제 색. ΔE2000 이 1.5 아래면 매칭.</li>
   <li><b>그래프</b>: 농도(실선 실제, 점선 카메라 추정, 가는 점선 목표), ΔE2000, 펌프 spm.</li>
   <li><b>이벤트·알람</b>: AI 노드 상태 전이, I/O 노드 알람(INTERLOCK, NO_STROKE, SAFE…), 고장 주입, UI 조작.</li></ol>
+  <b>용어</b><ol>
+  <li><b>ΔE2000</b>: 사람 눈 기준 두 색의 거리(CIEDE2000). 1 이하 거의 구분 못 함, 2~4 일반인이 구분, 5 이상 다른 색. 1.5 아래를 매칭으로 본다.</li>
+  <li><b>c*</b> 목표 농도, <b>ĉ</b> 카메라가 추정한 농도, <b>c</b> 진짜 농도(시뮬레이터만 앎). 단위 mg/L.</li>
+  <li><b>스트로크(str)</b>: 다이아프램 펌프의 1회 토출, 0.19 mL. <b>spm</b>: 분당 스트로크 = 펌프 속도(최대 200 = 38 mL/min).</li>
+  <li><b>펄스</b>: 접점 신호 1회 = 스트로크 1회로 펌프를 구동하는 방식. <b>아날로그</b>: 4–20 mA 전류로 속도 지령.</li>
+  <li><b>피드포워드</b>: 계산한 양을 먼저 넣는 것. <b>트림(카메라 트림)</b>: 카메라로 재서 모자란 염료만 추가하는 보정. <b>피드포워드 배율</b> 0.97 = 3 % 적게 넣고 트림으로 채움.</li>
+  <li><b>도징 시간</b>: 계산한 양을 몇 분에 걸쳐 넣을지. <b>속도 배율</b>: 운전 중 펌프 속도에 곱하는 값(투입량은 불변). <b>시드</b>: 난수 시작값(재현용).</li></ol>
   <b>실제 장비에서의 대응</b>: 왼쪽 설정·실시간 제어 = AI 노드(ai_node_main)가 보내는 명령, 오른쪽 상태 = I/O 노드 텔레메트리. 버튼 하나가 명령 JSON 하나다(docs/PROTOCOL.md).</div></div>
  <div class="card"><h2>실험 설정</h2>
-  <label>목표색 (hex 또는 C,M,Y mg/L)</label>
+  <label>목표색 (hex 또는 C,M,Y mg/L)<span class="q" title="만들고 싶은 색. #RRGGBB 또는 염료 농도 C,M,Y (mg/L). 카메라 모델로 역산해 목표 농도 c* 를 만든다">?</span></label>
   <div class="row"><input type="color" id="pick" value="#5A8F7B" style="width:46px;flex:none;height:34px;padding:0;border:1px solid var(--line);border-radius:7px"><input type="text" id="target" value="#5A8F7B"></div>
-  <div class="row"><div><label>초기 물 [mL]</label><input type="number" id="heel" value="2000"></div><div><label>교반 rpm</label><input type="number" id="rpm" value="300"></div></div>
-  <div class="row"><div><label>제어</label><select id="mode"><option value="closed">closed (카메라 트림)</option><option value="open">open (피드포워드만)</option></select></div>
-   <div><label>펌프 구동</label><select id="pump_mode"><option value="pulse">pulse (접점)</option><option value="analog">analog (4–20 mA)</option></select></div></div>
-  <div class="row"><div><label>도징 시간 [min]</label><input type="number" id="dose_min" value="1.5" step="0.5"></div><div><label>피드포워드 배율</label><input type="number" id="ff" value="0.97" step="0.01"></div></div>
-  <div class="row"><div><label>카메라 잡음</label><input type="number" id="noise" value="0.02" step="0.005"></div><div><label>시드</label><input type="number" id="seed" value="0"></div></div>
+  <div class="row"><div><label>초기 물 [mL]<span class="q" title="반응기에 미리 넣어 둔 물(heel). 같은 염료량이라도 물이 많으면 농도가 낮아진다">?</span></label><input type="number" id="heel" value="2000"></div><div><label>교반 rpm<span class="q" title="교반기 회전수. 혼합시간 ≈ 3000/rpm 초. 낮으면 색이 고르게 섞이는 데 오래 걸려 정착(SETTLE)이 길어진다">?</span></label><input type="number" id="rpm" value="300"></div></div>
+  <div class="row"><div><label>제어<span class="q" title="closed: 투입 뒤 카메라로 재서 모자란 염료를 추가(트림). open: 계산한 양만 넣고 끝(피드포워드만)">?</span></label><select id="mode"><option value="closed">closed (카메라 트림)</option><option value="open">open (피드포워드만)</option></select></div>
+   <div><label>펌프 구동<span class="q" title="pulse: MCC 152 DIO 접점 펄스 1회 = 펌프 스트로크 1회 (XTR111 보드 없음). analog: 4–20 mA 전류로 속도 지령">?</span></label><select id="pump_mode"><option value="pulse">pulse (접점)</option><option value="analog">analog (4–20 mA)</option></select></div></div>
+  <div class="row"><div><label>도징 시간 [min]<span class="q" title="계산된 투입량을 몇 분에 걸쳐 넣을지. 가장 많이 넣는 펌프가 최대 속도(200 spm)를 넘지 않게 자동으로 늘어난다">?</span></label><input type="number" id="dose_min" value="1.5" step="0.5"></div><div><label>피드포워드 배율<span class="q" title="계산한 투입량에 곱하는 값. 0.97 = 3 % 적게 넣고 모자란 만큼 카메라 트림으로 채운다. 과투입은 되돌릴 수 없어서 일부러 적게 넣는다">?</span></label><input type="number" id="ff" value="0.97" step="0.01"></div></div>
+  <div class="row"><div><label>카메라 잡음<span class="q" title="픽셀 밝기 잡음(표준편차, 0~1 선형). 클수록 카메라 추정 ĉ 가 흔들린다. ROI 평균으로 줄어든다">?</span></label><input type="number" id="noise" value="0.02" step="0.005"></div><div><label>시드<span class="q" title="난수 시작값. 같은 시드면 잡음·펌프 오차가 똑같이 재현된다. 바꾸면 다른 실험 한 번">?</span></label><input type="number" id="seed" value="0"></div></div>
   <div class="row" style="margin-top:6px;align-items:flex-end"><div><label>도달 가능한 가장 가까운 색</label><div class="box" id="swReach" style="height:28px;border-radius:6px;border:1px solid var(--line)"></div></div><div><small id="reachNote">—</small></div></div>
-  <label><input type="checkbox" id="manual"> 수동 모드 (제어기 없이 직접 밸브·펌프 조작)</label>
-  <label><input type="checkbox" id="stepmode" onchange="stepMode(this.checked)"> 단계마다 멈춤 (PLAN → PRIME → … 한 단계씩 보기)</label>
-  <div class="row" style="margin-top:10px"><button onclick="prepare()">준비 (0 s)</button><button class="pri" onclick="start()">시작 / 재시작</button><button onclick="pause()" id="pbtn">일시정지</button></div>
-  <div class="row" style="margin-top:6px"><button onclick="nextStage()">▶ 다음 단계</button><button onclick="stepSec(1)">+1 s</button><button onclick="stepSec(10)">+10 s</button><button onclick="stepSec(60)">+60 s</button></div>
-  <label>속도 <span id="spv">10</span>×</label><input type="range" id="speed" min="1" max="60" value="10" oninput="setSpeed(this.value)">
+  <label><input type="checkbox" id="manual"> 수동 모드 (제어기 없이 직접 밸브·펌프 조작)<span class="q" title="자동 제어기를 끄고 아래 '수동 조작' 카드로 밸브 열기 → 스트로크 수 투입을 직접 한다. 실제 장비 첫 시운전과 같은 절차">?</span></label>
+  <label><input type="checkbox" id="stepmode" onchange="stepMode(this.checked)"> 단계마다 멈춤 (PLAN → PRIME → … 한 단계씩 보기)<span class="q" title="단계가 바뀔 때마다 자동 일시정지. '다음 단계' 또는 '계속' 으로 진행">?</span></label>
+  <div class="row" style="margin-top:10px"><button onclick="prepare()" title="실행하지 않고 계획만 세워 PLAN 상태(0 s)에서 멈춘다">준비 (0 s)</button><button class="pri" onclick="start()" title="위 설정으로 새 실험을 시작한다 (진행 중이면 처음부터)">시작 / 재시작</button><button onclick="pause()" id="pbtn" title="시뮬레이션 시간을 멈추거나 다시 흐르게 한다">일시정지</button></div>
+  <span class="cap">준비 = 계획만 · 시작 = 처음부터 운전 · 일시정지/계속 = 시간 멈춤</span>
+  <div class="row" style="margin-top:6px"><button onclick="nextStage()" title="다음 단계 전이에서 자동으로 멈춘다 (단계마다 멈춤 켜짐)">▶ 다음 단계</button><button onclick="stepSec(1)" title="멈춘 채 1 초만 진행">+1 s</button><button onclick="stepSec(10)" title="멈춘 채 10 초만 진행">+10 s</button><button onclick="stepSec(60)" title="멈춘 채 60 초만 진행">+60 s</button></div>
+  <span class="cap">다음 단계 = PLAN→PRIME→DOSE… 한 칸씩 · +N s = 멈춘 채 그만큼만 진행</span>
+  <label>속도 <span id="spv">10</span>×<span class="q" title="시뮬레이션 시간 배속. 10× 면 실제 1 초에 시뮬레이션 10 초. 실제 장비에서는 항상 1×">?</span></label><input type="range" id="speed" min="1" max="60" value="10" oninput="setSpeed(this.value)">
  </div>
  <div class="card"><h2>실시간 제어 (운전 중)</h2>
   <div id="pumpctl"></div>
-  <label>교반 rpm <span id="rpmv">300</span></label><input type="range" id="rpmlive" min="0" max="1000" step="10" value="300" onchange="liveRpm(this.value)" oninput="$('rpmv').textContent=this.value">
-  <label>목표색 변경 (다음 측정부터)</label>
+  <span class="cap">배율·보류는 남은 스트로크(투입량)는 그대로 두고 속도만 바꾼다 → 최종 색은 같고 걸리는 시간만 달라진다. '정지' 는 남은 투입을 취소한다.</span>
+  <label>교반 rpm <span id="rpmv">300</span><span class="q" title="교반기 속도를 운전 중 바꾼다. 낮추면 섞이는 시간이 길어져 카메라가 보는 색이 늦게 따라온다">?</span></label><input type="range" id="rpmlive" min="0" max="1000" step="10" value="300" onchange="liveRpm(this.value)" oninput="$('rpmv').textContent=this.value">
+  <label>목표색 변경<span class="q" title="즉시 반영. 투입 전이면 새 계획으로, 정착·측정·완료면 바로 측정→트림, 투입 중이면 다음 측정부터. 이미 들어간 염료는 뺄 수 없어 더 연한 색으로는 못 돌아간다">?</span></label>
   <div class="row"><input type="color" id="pick2" value="#5A8F7B" style="width:46px;flex:none;height:34px;padding:0;border:1px solid var(--line);border-radius:7px"><input type="text" id="target2" value="#5A8F7B"><button onclick="liveTarget()" style="flex:none">적용</button></div>
-  <div class="row" style="margin-top:8px"><button onclick="trimNow()">지금 트림</button><button class="warn" onclick="live({op:'safe'})">전체 정지 (SAFE)</button></div>
+  <div class="row" style="margin-top:8px"><button onclick="trimNow()" title="지금 카메라로 재고(MEASURE) 모자란 염료를 추가 투입(TRIM) 한 사이클">지금 트림</button><button class="warn" onclick="live({op:'safe'})" title="I/O 노드 SAFE: 운전 허가 OFF → 펌프 0 → 밸브 닫힘. 실제 비상정지와 같은 순서">전체 정지 (SAFE)</button></div>
  </div>
- <div class="card"><h2>고장 주입</h2>
+ <div class="card"><h2>고장 주입<span class="q" title="시뮬레이션 전용. 실제 장비에서 생길 수 있는 문제를 넣어 I/O 노드 알람과 제어기 반응을 본다">?</span></h2>
+  <span class="cap">탱크 고갈 → 펌프 수위 정지·NO_STROKE · 밸브 고착 → 릴리프 순환·RELIEF · 카메라 −10 % → 추정 ĉ 가 전부 커 보임 · 스톡 −15 % → 덜 진해져 트림이 채움 · 교반 60 rpm → 정착 지연 · AI 노드 사망 → 1 s 뒤 워치독 SAFE</span>
   <div class="row"><button onclick="fault('tank_empty','P-101')">C 탱크 고갈</button><button onclick="fault('valve_stuck','XV-102')">XV-102 고착</button></div>
   <div class="row" style="margin-top:6px"><button onclick="fault('camera_drift','0.9')">카메라 −10 %</button><button onclick="fault('stock_conc','P-103=850')">Y 스톡 −15 %</button></div>
   <div class="row" style="margin-top:6px"><button onclick="fault('rpm','60')">교반 60 rpm</button><button onclick="fault('ai_crash','')">AI 노드 사망</button></div>
@@ -323,7 +337,8 @@ svg text{font-family:inherit}
   <div class="row" style="margin-top:6px"><button onclick="mvalve(true)">밸브 열기</button><button onclick="mvalve(false)">밸브 닫기</button><button class="pri" onclick="mdose()">투입</button><button onclick="mstop()">정지</button></div>
   <small>인터록: 밸브를 먼저 열어야 투입이 됩니다. 닫힌 채 투입하면 I/O 노드가 거부합니다.</small>
  </div>
- <div class="card"><h2>투입 계획</h2><table id="plan"></table></div>
+ <div class="card"><h2>투입 계획<span class="q" title="목표 농도 c* 에서 계산한 펌프별 투입량. mL = 부피, 스트로크 = mL ÷ 0.19, mL/min = 속도, mA = 아날로그 모드일 때의 전류 지령(펄스 모드는 spm 으로 환산)">?</span></h2><table id="plan"></table>
+  <span class="cap">V_j = c_j × V_f ÷ c_stock (스톡 1 g/L), 스트로크 = V_j ÷ 0.19 mL, 여기에 피드포워드 배율을 곱한 값</span></div>
 </section>
 <section>
  <div class="card">
@@ -333,15 +348,15 @@ svg text{font-family:inherit}
  <div class="card"><h2>장비 모식도 (P&amp;ID, 실제 패널 배치)</h2><svg id="mimic" viewBox="0 0 900 430" width="100%" height="430"></svg>
   <small>라인마다: 스톡병 → gamma/X 펌프(다기능 밸브) → 튜브 → 패널 수직관 → 티(볼밸브 분기, 수동) → 압력계/트랜스미터 PT → 맥동 댐퍼 PD → DHV-U 배압 밸브(2 bar) → 솔레노이드 XV(신설) → 체크밸브 → 반응기</small></div>
  <div class="card">
-  <div class="sw"><div><div class="box" id="swT"></div>목표 <span id="hexT"></span></div><div><div class="box" id="swC"></div>카메라 <span id="hexC"></span></div><div><div class="box" id="swR"></div>실제 <span id="hexR"></span></div></div>
+  <div class="sw"><div><div class="box" id="swT"></div>목표 <span id="hexT"></span></div><div><div class="box" id="swC"></div>카메라 <span id="hexC"></span><span class="q" title="카메라 ROI 평균 RGB (잡음·글레어 포함). 매칭 판정은 이 값과 목표의 ΔE2000 으로 한다">?</span></div><div><div class="box" id="swR"></div>실제 <span id="hexR"></span><span class="q" title="진짜 농도에서 계산한 색 (시뮬레이터만 앎). 카메라 견본과 다르면 그만큼이 카메라 오차">?</span></div></div>
   <div class="kv"><b>상태</b><span><span class="badge" id="iomode">—</span> <span id="ctl"></span></span>
-   <b>ΔE2000</b><span id="de"></span><b>목표 농도 C/M/Y</b><span id="ct"></span><b>추정 ĉ</b><span id="ch"></span><b>실제 c</b><span id="cr"></span>
+   <b><abbr title="CIEDE2000 색차. 사람 눈이 느끼는 두 색의 거리. 1 이하 거의 구분 못 함, 1~2 전문가가 나란히 보면 구분, 2~4 일반인이 구분, 5 이상 다른 색. 여기서는 1.5 아래를 매칭으로 본다">ΔE2000</abbr></b><span id="de"></span><b><abbr title="목표색을 카메라 모델로 역산한 염료 농도 c* (mg/L). 이 농도가 되도록 투입량을 계산한다">목표 농도 C/M/Y</abbr></b><span id="ct"></span><b><abbr title="ĉ (c-hat): 카메라 RGB → 흡광도 → 3×3 행렬 역산으로 '추정한' 농도. 실제 장비에서 알 수 있는 값은 이것뿐">추정 ĉ</abbr></b><span id="ch"></span><b><abbr title="시뮬레이터만 아는 진짜 농도 (물질수지). 실제 장비에서는 모른다. ĉ 와의 차이가 카메라 오차">실제 c</abbr></b><span id="cr"></span>
    <b>반응기</b><span id="rx"></span><b>밸브</b><span id="valves"></span></div>
  </div>
  <div class="card"><h2>농도 [mg/L] — 실선 실제, 점선 카메라 추정, 가는 점선 목표</h2><canvas id="c1"></canvas></div>
  <div class="card"><h2>ΔE2000 — 검정 실제, 회색 카메라 (초록 점선 = 매칭 기준 1.5)</h2><canvas id="c2"></canvas></div>
- <div class="card"><h2>펌프 spm (C 파랑 · M 자홍 · Y 노랑)</h2><canvas id="c3"></canvas></div>
- <div class="card"><h2>이벤트 · 알람</h2><div class="log" id="log"></div></div>
+ <div class="card"><h2>펌프 spm — 분당 스트로크 (C 파랑 · M 자홍 · Y 노랑). 1 스트로크 = 0.19 mL, 최대 200 spm = 38 mL/min</h2><canvas id="c3"></canvas></div>
+ <div class="card"><h2>이벤트 · 알람<span class="q" title="AI = 제어기 상태 전이, IO = I/O 노드 알람(INTERLOCK 거부, NO_STROKE 스트로크 없음, RELIEF 릴리프, SAFE 전이), UI = 사용자 조작">?</span></h2><div class="log" id="log"></div></div>
 </section>
 </main>
 <script>
@@ -375,9 +390,9 @@ async function mvalve(open){const p=$('mpump').value;await post('/api/manual',{c
 async function mdose(){await post('/api/manual',{cmd:'dose',id:$('mpump').value,mA:+$('mma').value,strokes:+$('mstrokes').value})}
 async function mstop(){await post('/api/manual',{cmd:'stop',id:$('mpump').value})}
 // 펌프별 실시간 제어 카드 (한 번 만들고 값만 갱신)
-function buildPumpCtl(){$('pumpctl').innerHTML=PUMPS.map((p,j)=>`<div class="pump" id="pc${j}"><div class="hd">${p} <span style="color:${COL[j]}">●</span> ${DYE[j]} <span id="pcs${j}">—</span></div>
- <label>속도 배율 <span id="pcv${j}">100</span> %</label><input type="range" min="0" max="150" value="100" id="pcr${j}" oninput="$('pcv${j}').textContent=this.value" onchange="live({op:'rate',id:'${p}',factor:this.value/100})">
- <div class="row" style="margin-top:6px"><button id="pch${j}" onclick="toggleHold(${j})">보류</button><button id="pcvl${j}" onclick="toggleValve(${j})">밸브</button><button onclick="live({op:'stop_pump',id:'${p}'})">정지</button></div></div>`).join('')}
+function buildPumpCtl(){$('pumpctl').innerHTML=PUMPS.map((p,j)=>`<div class="pump" id="pc${j}"><div class="hd">${p} <span style="color:${COL[j]}">●</span> ${DYE[j]} <span id="pcs${j}" title="spm = 분당 스트로크(펌프 속도), str = 지금까지 센 스트로크 수(1 스트로크 = 0.19 mL), 남은 = 이번 투입에서 남은 스트로크">—</span></div>
+ <label>속도 배율 <span id="pcv${j}">100</span> %<span class="q" title="펌프 속도에 곱하는 값. 50 % 면 절반 속도로 같은 양을 넣는다 (최종 색 동일, 시간 2배). 150 % 는 상한 200 spm 까지">?</span></label><input type="range" min="0" max="150" value="100" id="pcr${j}" oninput="$('pcv${j}').textContent=this.value" onchange="live({op:'rate',id:'${p}',factor:this.value/100})">
+ <div class="row" style="margin-top:6px"><button id="pch${j}" onclick="toggleHold(${j})" title="펌프를 잠시 멈춘다. 남은 스트로크는 유지되어 재개하면 이어서 넣는다">보류</button><button id="pcvl${j}" onclick="toggleValve(${j})" title="이 라인의 솔레노이드 밸브 XV. 닫힌 채 펌프 명령이 오면 I/O 노드가 거부(INTERLOCK)">밸브</button><button onclick="live({op:'stop_pump',id:'${p}'})" title="이번 투입을 취소하고 펌프를 멈춘다 (남은 스트로크 폐기)">정지</button></div></div>`).join('')}
 buildPumpCtl();
 function toggleHold(j){const on=!(S&&S.pumps_live[PUMPS[j]]&&S.pumps_live[PUMPS[j]].hold);live({op:'hold',id:PUMPS[j],on})}
 function toggleValve(j){const v='XV-'+PUMPS[j].slice(2);const open=!(S&&S.io.valves[v]);live({op:'valve',id:v,open})}
