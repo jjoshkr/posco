@@ -410,28 +410,29 @@ svg text{font-family:inherit}
 const $=id=>document.getElementById(id);
 let H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]},n=0,ct=[0,0,0],paused=false,S=null;
 const COL=["#00AEEF","#EC008C","#E6B800"],PUMPS=["P-101","P-102","P-103"],DYE=["C","M","Y"];
-$('pick').oninput=e=>{$('target').value=e.target.value.toUpperCase();reach();markDirty()};$('target').oninput=()=>{markDirty()};$('target').onchange=reach;
-function markDirty(){if(S&&S.running&&$('target').value.toUpperCase()!==(S.requested_target||'').toUpperCase())$('targetNote').textContent='⚠ 바뀐 목표색이 아직 적용되지 않았습니다 — 적용 을 누르세요';}
-async function applyTarget(){if(S&&S.running){await live({op:'target',target:$('target').value});$('targetNote').textContent='적용됨: 운전 중 목표를 '+$('target').value.toUpperCase()+' 로 바꿈'}else{$('targetNote').textContent='시작하면 이 색을 목표로 씁니다'}}
+let dirtyTarget=false;   // 사용자가 목표색 칸을 편집한 뒤 아직 적용/시작하지 않음 → 서버 값으로 덮어쓰지 않는다
+$('pick').oninput=e=>{$('target').value=e.target.value.toUpperCase();dirtyTarget=true;reach();markDirty()};$('target').oninput=()=>{dirtyTarget=true;markDirty()};$('target').onchange=reach;
+function markDirty(){if(S&&S.running)$('targetNote').textContent='⚠ 바뀐 목표색이 아직 적용되지 않았습니다 — 적용 을 누르세요';else $('targetNote').textContent='시작하면 이 색을 목표로 씁니다'}
+async function applyTarget(){if(S&&S.running){const r=await live({op:'target',target:$('target').value});dirtyTarget=false;$('targetNote').textContent='적용됨: 운전 중 목표를 '+$('target').value.toUpperCase()+' 로 바꿈'}else{dirtyTarget=false;$('targetNote').textContent='시작하면 이 색을 목표로 씁니다'}}
 async function reach(){try{const r=await (await fetch('/api/reach?target='+encodeURIComponent($('target').value))).json();$('swReach').style.background=r.hex;
  $('reachNote').textContent=r.resid>1.5?`⚠ 이 염료로는 정확히 못 만듦 (잔차 ΔE ${r.resid}). 가장 가까운 색 ${r.hex}, c*=${r.c.join('/')}`:`도달 가능 (ΔE ${r.resid}), c*=${r.c.join('/')} mg/L`}catch(e){}}
 $('manual').onchange=e=>{$('manualcard').style.display=e.target.checked?'block':'none'};
 function toggleHelp(){const h=$('helpcard');h.style.display=h.style.display==='none'?'block':'none'}
 async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});return r.json()}
-async function start(){H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;
+async function start(){dirtyTarget=false;H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;
  await post('/api/start',cfgBody());await post('/api/stepmode',{on:$('stepmode').checked});
  $('rpmlive').value=$('rpm').value;$('rpmv').textContent=$('rpm').value;$('targetNote').textContent='운전 중: 목표색을 바꾸고 적용 을 누르면 즉시 반영';}
 async function pause(){const s=await post('/api/pause');paused=s.paused;$('pbtn').textContent=paused?'계속':'일시정지'}
 function cfgBody(){return {target:$('target').value,heel_mL:+$('heel').value,rpm:+$('rpm').value,mode:$('mode').value,pump_mode:$('pump_mode').value,
   dose_min:+$('dose_min').value,flow_factor:+$('ff').value,pixel_noise:+$('noise').value,seed:+$('seed').value,manual:$('manual').checked,speed:+$('speed').value}}
-async function prepare(){H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;await post('/api/reset',cfgBody());$('rpmlive').value=$('rpm').value;$('rpmv').textContent=$('rpm').value}
+async function prepare(){dirtyTarget=false;H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;await post('/api/reset',cfgBody());$('rpmlive').value=$('rpm').value;$('rpmv').textContent=$('rpm').value}
 async function nextStage(){$('stepmode').checked=true;await post('/api/next')}
 async function stepSec(sec){await post('/api/step',{seconds:sec})}
 async function stepMode(on){await post('/api/stepmode',{on})}
 async function runUntil(stage){await post('/api/run_until',{stage})}
 async function setSpeed(v){$('spv').textContent=v;await post('/api/speed',{speed:+v})}
 async function fault(k,a){await post('/api/fault',{kind:k,arg:a})}
-async function live(b){await post('/api/live',b)}
+async function live(b){return await post('/api/live',b)}
 async function liveRpm(v){await live({op:'rpm',rpm:+v})}
 async function uploadCal(){const f=$('calFile').files[0];if(!f){alert('calibration.json 파일을 고르세요');return}const txt=await f.text();let data;try{data=JSON.parse(txt)}catch(e){alert('JSON 이 아닙니다');return}
  const r=await post('/api/calib',{data,name:f.name});if(r.error)alert('오류: '+r.error);H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;reach()}
@@ -535,7 +536,7 @@ async function poll(){try{const s=await (await fetch('/api/state?since='+n)).jso
   const hb=$('pch'+j);hb.textContent=pm.hold?'재개':'보류';hb.className=pm.hold?'on':'';const vb=$('pcvl'+j);vb.textContent=v?'밸브 닫기':'밸브 열기';vb.className=v?'on':'';
   if(document.activeElement!==$('pcr'+j)&&pm.scale!=null){$('pcr'+j).value=Math.round(pm.scale*100);$('pcv'+j).textContent=Math.round(pm.scale*100)}});
  if(s.calib)showCal(s.calib);
- if(document.activeElement!==$('target')&&s.requested_target&&String(s.requested_target).startsWith('#')&&$('target').value.toUpperCase()!==s.requested_target.toUpperCase()&&!$('targetNote').textContent.startsWith('⚠')){$('target').value=s.requested_target.toUpperCase();$('pick').value=s.requested_target}
+ if(S&&S.running&&!dirtyTarget&&String(s.requested_target||'').startsWith('#')&&$('target').value.toUpperCase()!==s.requested_target.toUpperCase()){$('target').value=s.requested_target.toUpperCase();$('pick').value=s.requested_target}
  matchGauge(s);
  $('log').innerHTML=s.events.slice().reverse().map(e=>`<div><span style="color:#888">${e[0]}s</span> <b>${e[1]}</b> ${e[2]}</div>`).join('');
  stages(s);mimic(s);draw();}catch(e){console.log(e)}setTimeout(poll,500)}
