@@ -336,7 +336,8 @@ svg text{font-family:inherit}
   <b>실제 장비에서의 대응</b>: 왼쪽 설정·실시간 제어 = AI 노드(ai_node_main)가 보내는 명령, 오른쪽 상태 = I/O 노드 텔레메트리. 버튼 하나가 명령 JSON 하나다(docs/PROTOCOL.md).</div></div>
  <div class="card"><h2>실험 설정</h2>
   <label>목표색 (hex 또는 C,M,Y mg/L)<span class="q" title="만들고 싶은 색. #RRGGBB 또는 염료 농도 C,M,Y (mg/L). 카메라 모델로 역산해 목표 농도 c* 를 만든다">?</span></label>
-  <div class="row"><input type="color" id="pick" value="#5A8F7B" style="width:46px;flex:none;height:34px;padding:0;border:1px solid var(--line);border-radius:7px"><input type="text" id="target" value="#5A8F7B"></div>
+  <div class="row"><input type="color" id="pick" value="#5A8F7B" style="width:46px;flex:none;height:34px;padding:0;border:1px solid var(--line);border-radius:7px"><input type="text" id="target" value="#5A8F7B"><button onclick="applyTarget()" style="flex:none" title="운전 중이면 즉시 새 목표로 바꾼다 (투입 전: 새 계획 / 투입 후: 바로 측정→트림 / 투입 중: 다음 측정부터). 시작 전이면 시작할 때 쓰인다">적용</button></div>
+  <span class="cap" id="targetNote">시작 전: 시작할 때 이 색을 목표로 씀 · 운전 중: '적용' 을 누르면 즉시 새 목표</span>
   <div class="row"><div><label>초기 물 [mL]<span class="q" title="반응기에 미리 넣어 둔 물(heel). 같은 염료량이라도 물이 많으면 농도가 낮아진다">?</span></label><input type="number" id="heel" value="2000"></div><div><label>교반 rpm<span class="q" title="교반기 회전수. 혼합시간 ≈ 3000/rpm 초. 낮으면 색이 고르게 섞이는 데 오래 걸려 정착(SETTLE)이 길어진다">?</span></label><input type="number" id="rpm" value="300"></div></div>
   <div class="row"><div><label>제어<span class="q" title="closed: 투입 뒤 카메라로 재서 모자란 염료를 추가(트림). open: 계산한 양만 넣고 끝(피드포워드만)">?</span></label><select id="mode"><option value="closed">closed (카메라 트림)</option><option value="open">open (피드포워드만)</option></select></div>
    <div><label>펌프 구동<span class="q" title="pulse: MCC 152 DIO 접점 펄스 1회 = 펌프 스트로크 1회 (XTR111 보드 없음). analog: 4–20 mA 전류로 속도 지령">?</span></label><select id="pump_mode"><option value="pulse">pulse (접점)</option><option value="analog">analog (4–20 mA)</option></select></div></div>
@@ -355,8 +356,7 @@ svg text{font-family:inherit}
   <div id="pumpctl"></div>
   <span class="cap">배율·보류는 남은 스트로크(투입량)는 그대로 두고 속도만 바꾼다 → 최종 색은 같고 걸리는 시간만 달라진다. '정지' 는 남은 투입을 취소한다.</span>
   <label>교반 rpm <span id="rpmv">300</span><span class="q" title="교반기 속도를 운전 중 바꾼다. 낮추면 섞이는 시간이 길어져 카메라가 보는 색이 늦게 따라온다">?</span></label><input type="range" id="rpmlive" min="0" max="1000" step="10" value="300" onchange="liveRpm(this.value)" oninput="$('rpmv').textContent=this.value">
-  <label>목표색 변경<span class="q" title="즉시 반영. 투입 전이면 새 계획으로, 정착·측정·완료면 바로 측정→트림, 투입 중이면 다음 측정부터. 이미 들어간 염료는 뺄 수 없어 더 연한 색으로는 못 돌아간다">?</span></label>
-  <div class="row"><input type="color" id="pick2" value="#5A8F7B" style="width:46px;flex:none;height:34px;padding:0;border:1px solid var(--line);border-radius:7px"><input type="text" id="target2" value="#5A8F7B"><button onclick="liveTarget()" style="flex:none">적용</button></div>
+  <span class="cap">목표색은 위 '실험 설정' 의 목표색 칸에서 바꾸고 '적용' 을 누르면 운전 중에도 즉시 반영됩니다.</span>
   <div class="row" style="margin-top:8px"><button onclick="trimNow()" title="지금 카메라로 재고(MEASURE) 모자란 염료를 추가 투입(TRIM) 한 사이클">지금 트림</button><button class="warn" onclick="live({op:'safe'})" title="I/O 노드 SAFE: 운전 허가 OFF → 펌프 0 → 밸브 닫힘. 실제 비상정지와 같은 순서">전체 정지 (SAFE)</button></div>
  </div>
  <div class="card"><h2>카메라 보정<span class="q" title="camera_tools fit 이 만든 calibration.json (실측 E 행렬·기준 I0). 올리면 시뮬레이터의 색↔농도 변환과 제어기 역산이 실제 카메라 기준으로 바뀐다. 다음 준비/시작부터 적용">?</span></h2>
@@ -389,6 +389,13 @@ svg text{font-family:inherit}
   <small>라인마다: 스톡병 → gamma/X 펌프(다기능 밸브) → 튜브 → 패널 수직관 → 티(볼밸브 분기, 수동) → 압력계/트랜스미터 PT → 맥동 댐퍼 PD → DHV-U 배압 밸브(2 bar) → 솔레노이드 XV(신설) → 체크밸브 → 반응기</small></div>
  <div class="card">
   <div class="sw"><div><div class="box" id="swT"></div>목표 <span id="hexT"></span></div><div><div class="box" id="swC"></div>카메라 <span id="hexC"></span><span class="q" title="카메라 ROI 평균 RGB (잡음·글레어 포함). 매칭 판정은 이 값과 목표의 ΔE2000 으로 한다">?</span></div><div><div class="box" id="swR"></div>실제 <span id="hexR"></span><span class="q" title="진짜 농도에서 계산한 색 (시뮬레이터만 앎). 카메라 견본과 다르면 그만큼이 카메라 오차">?</span></div></div>
+  <div id="gauge" style="margin:4px 0 10px">
+   <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mut)"><span>매칭 정도 (ΔE2000, 카메라 기준)</span><span id="gaugeTxt">—</span></div>
+   <div style="position:relative;height:14px;border-radius:7px;overflow:hidden;background:linear-gradient(90deg,#2e7d32 0 15%,#8bc34a 15% 20%,#ffc107 20% 40%,#ff7043 40% 60%,#c62828 60% 100%)">
+    <div id="gaugeMk" style="position:absolute;top:-2px;width:3px;height:18px;background:#111;left:0"></div></div>
+   <div style="display:flex;justify-content:space-between;font-size:10px;color:#888"><span>0</span><span>1.5 매칭</span><span>2</span><span>4 구분</span><span>6</span><span>10+</span></div>
+   <div id="dyeErr" style="display:grid;grid-template-columns:auto 1fr auto;gap:2px 8px;font-size:11px;margin-top:6px;align-items:center"></div>
+  </div>
   <div class="kv"><b>상태</b><span><span class="badge" id="iomode">—</span> <span id="ctl"></span></span>
    <b><abbr title="CIEDE2000 색차. 사람 눈이 느끼는 두 색의 거리. 1 이하 거의 구분 못 함, 1~2 전문가가 나란히 보면 구분, 2~4 일반인이 구분, 5 이상 다른 색. 여기서는 1.5 아래를 매칭으로 본다">ΔE2000</abbr></b><span id="de"></span><b><abbr title="목표색을 카메라 모델로 역산한 염료 농도 c* (mg/L). 이 농도가 되도록 투입량을 계산한다">목표 농도 C/M/Y</abbr></b><span id="ct"></span><b><abbr title="ĉ (c-hat): 카메라 RGB → 흡광도 → 3×3 행렬 역산으로 '추정한' 농도. 실제 장비에서 알 수 있는 값은 이것뿐">추정 ĉ</abbr></b><span id="ch"></span><b><abbr title="시뮬레이터만 아는 진짜 농도 (물질수지). 실제 장비에서는 모른다. ĉ 와의 차이가 카메라 오차">실제 c</abbr></b><span id="cr"></span>
    <b>반응기</b><span id="rx"></span><b>밸브</b><span id="valves"></span></div>
@@ -403,7 +410,9 @@ svg text{font-family:inherit}
 const $=id=>document.getElementById(id);
 let H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]},n=0,ct=[0,0,0],paused=false,S=null;
 const COL=["#00AEEF","#EC008C","#E6B800"],PUMPS=["P-101","P-102","P-103"],DYE=["C","M","Y"];
-$('pick').oninput=e=>{$('target').value=e.target.value.toUpperCase();reach()};$('target').onchange=reach;$('pick2').oninput=e=>{$('target2').value=e.target.value.toUpperCase()};
+$('pick').oninput=e=>{$('target').value=e.target.value.toUpperCase();reach();markDirty()};$('target').oninput=()=>{markDirty()};$('target').onchange=reach;
+function markDirty(){if(S&&S.running&&$('target').value.toUpperCase()!==(S.requested_target||'').toUpperCase())$('targetNote').textContent='⚠ 바뀐 목표색이 아직 적용되지 않았습니다 — 적용 을 누르세요';}
+async function applyTarget(){if(S&&S.running){await live({op:'target',target:$('target').value});$('targetNote').textContent='적용됨: 운전 중 목표를 '+$('target').value.toUpperCase()+' 로 바꿈'}else{$('targetNote').textContent='시작하면 이 색을 목표로 씁니다'}}
 async function reach(){try{const r=await (await fetch('/api/reach?target='+encodeURIComponent($('target').value))).json();$('swReach').style.background=r.hex;
  $('reachNote').textContent=r.resid>1.5?`⚠ 이 염료로는 정확히 못 만듦 (잔차 ΔE ${r.resid}). 가장 가까운 색 ${r.hex}, c*=${r.c.join('/')}`:`도달 가능 (ΔE ${r.resid}), c*=${r.c.join('/')} mg/L`}catch(e){}}
 $('manual').onchange=e=>{$('manualcard').style.display=e.target.checked?'block':'none'};
@@ -411,11 +420,11 @@ function toggleHelp(){const h=$('helpcard');h.style.display=h.style.display==='n
 async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});return r.json()}
 async function start(){H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;
  await post('/api/start',cfgBody());await post('/api/stepmode',{on:$('stepmode').checked});
- $('rpmlive').value=$('rpm').value;$('rpmv').textContent=$('rpm').value;$('target2').value=$('target').value;}
+ $('rpmlive').value=$('rpm').value;$('rpmv').textContent=$('rpm').value;$('targetNote').textContent='운전 중: 목표색을 바꾸고 적용 을 누르면 즉시 반영';}
 async function pause(){const s=await post('/api/pause');paused=s.paused;$('pbtn').textContent=paused?'계속':'일시정지'}
 function cfgBody(){return {target:$('target').value,heel_mL:+$('heel').value,rpm:+$('rpm').value,mode:$('mode').value,pump_mode:$('pump_mode').value,
   dose_min:+$('dose_min').value,flow_factor:+$('ff').value,pixel_noise:+$('noise').value,seed:+$('seed').value,manual:$('manual').checked,speed:+$('speed').value}}
-async function prepare(){H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;await post('/api/reset',cfgBody());$('rpmlive').value=$('rpm').value;$('rpmv').textContent=$('rpm').value;$('target2').value=$('target').value}
+async function prepare(){H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;await post('/api/reset',cfgBody());$('rpmlive').value=$('rpm').value;$('rpmv').textContent=$('rpm').value}
 async function nextStage(){$('stepmode').checked=true;await post('/api/next')}
 async function stepSec(sec){await post('/api/step',{seconds:sec})}
 async function stepMode(on){await post('/api/stepmode',{on})}
@@ -430,7 +439,6 @@ async function loadCalPath(){const r=await post('/api/calib',{path:$('calPath').
 async function resetCal(){await post('/api/calib',{reset:true});H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;reach()}
 function showCal(c){$('calName').textContent=c.name+(c.custom?' (실측)':'');$('calCond').textContent=c.cond+(c.cond>3?' ⚠ 역산 불안정':'');$('calI0').textContent=c.I0.join(' / ');
  $('calE').textContent=c.E.map(r=>r.map(v=>v.toFixed(4)).join('  ')).join('\n');$('calNote').textContent=(c.samples?`보정 시료 ${c.samples}개 · `:'')+(c.note||'')}
-async function liveTarget(){await live({op:'target',target:$('target2').value})}
 async function trimNow(){await live({op:'trim_now'})}
 async function mvalve(open){const p=$('mpump').value;await post('/api/manual',{cmd:'valve',id:'XV-'+p.slice(2),open})}
 async function mdose(){await post('/api/manual',{cmd:'dose',id:$('mpump').value,mA:+$('mma').value,strokes:+$('mstrokes').value})}
@@ -496,6 +504,15 @@ function mimic(s){blink=(blink+1)%2;const g=$('mimic');const tanks=s.reactor.tan
  g.innerHTML=out;}
 const STAGE_DESC={PLAN:'목표색을 농도 c*(C,M,Y)로 역산하고 펌프별 투입 부피·스트로크·속도를 정한다',PRIME:'I/O 노드 무장(arm), 교반기 지령, 운전 허가, 밸브 열기',DOSE:'세 펌프가 스트로크를 세며 동시에 색소를 넣는다. 끝나면 밸브를 닫는다',SETTLE:'혼합시간 × 3 만큼 기다린다 (교반 rpm 이 낮으면 길어짐)',MEASURE:'카메라 2 s 평균 → ĉ 와 ΔE2000',TRIM:'ĉ 가 목표보다 모자란 염료만 추가 투입 (과투입은 되돌릴 수 없음)',DONE:'운전 허가 OFF, SAFE. 지금 트림으로 한 사이클 더 할 수 있음'};
 let pickedStage=null;
+function matchGauge(s){const de=s.dE;const txt=$('gaugeTxt'),mk=$('gaugeMk');
+ if(de==null||isNaN(de)){txt.textContent='—';mk.style.left='0';return}
+ const pos=Math.min(100,de/10*100);mk.style.left=`calc(${pos}% - 1px)`;
+ const grade=de<1?'거의 동일':de<1.5?'매칭 ✓':de<2?'근접 (전문가가 구분)':de<4?'차이 있음 (눈으로 구분)':de<6?'뚜렷한 차이':'다른 색';
+ txt.textContent=`ΔE ${de.toFixed(2)} · ${grade}`;txt.style.color=de<1.5?'#2e7d32':de<4?'#b26a00':'#c62828';
+ const ch=H.c_hat.length?H.c_hat[H.c_hat.length-1]:[0,0,0];const ct=s.c_target;let html='';
+ ['C','M','Y'].forEach((d,j)=>{const err=ch[j]-ct[j];const pct=ct[j]>0?err/ct[j]*100:0;const w=Math.min(50,Math.abs(pct));
+  html+=`<span style="color:${COL[j]};font-weight:600">${d}</span><div style="position:relative;height:8px;background:#f0f1f3;border-radius:4px"><div style="position:absolute;left:50%;top:0;width:1px;height:8px;background:#999"></div><div style="position:absolute;top:1px;height:6px;border-radius:3px;background:${COL[j]};${err<0?`right:50%;width:${w}%`:`left:50%;width:${w}%`}"></div></div><span style="color:${Math.abs(pct)<3?'#2e7d32':Math.abs(pct)<8?'#b26a00':'#c62828'}">${err>=0?'+':''}${err.toFixed(1)} mg/L (${pct>=0?'+':''}${pct.toFixed(0)} %) ${err<-0.4?'부족→트림':(err>0.4?'과잉(못 뺌)':'OK')}</span>`});
+ $('dyeErr').innerHTML=html;}
 function stages(s){const st=s.stage;$('stages').innerHTML=st.names.map((nm,i)=>`<div class="${i===st.index?'cur':(i<st.index?'past':'')}${s.run_until===st.keys[i]?' until':''}" onclick="pickStage('${st.keys[i]}')" title="클릭: 설명 보기 / 이 단계에서 멈춤">${st.keys[i]}<br>${nm}</div>`).join('');
  const base=(st.index>=0?`${st.keys[st.index]} · ${st.desc} · 경과 ${st.elapsed} s`:st.desc);
  $('stagedesc').innerHTML=base+(s.paused?' · <b>일시정지</b>':'')+(s.step_mode?' · 단계마다 멈춤':'')+(s.run_until?` · ${s.run_until} 에서 멈춤 예정`:'')+(pickedStage&&pickedStage!==st.key?`<br><span style="color:#2a6fdb">${pickedStage}: ${STAGE_DESC[pickedStage]}</span>`:'')}
@@ -518,6 +535,8 @@ async function poll(){try{const s=await (await fetch('/api/state?since='+n)).jso
   const hb=$('pch'+j);hb.textContent=pm.hold?'재개':'보류';hb.className=pm.hold?'on':'';const vb=$('pcvl'+j);vb.textContent=v?'밸브 닫기':'밸브 열기';vb.className=v?'on':'';
   if(document.activeElement!==$('pcr'+j)&&pm.scale!=null){$('pcr'+j).value=Math.round(pm.scale*100);$('pcv'+j).textContent=Math.round(pm.scale*100)}});
  if(s.calib)showCal(s.calib);
+ if(document.activeElement!==$('target')&&s.requested_target&&String(s.requested_target).startsWith('#')&&$('target').value.toUpperCase()!==s.requested_target.toUpperCase()&&!$('targetNote').textContent.startsWith('⚠')){$('target').value=s.requested_target.toUpperCase();$('pick').value=s.requested_target}
+ matchGauge(s);
  $('log').innerHTML=s.events.slice().reverse().map(e=>`<div><span style="color:#888">${e[0]}s</span> <b>${e[1]}</b> ${e[2]}</div>`).join('');
  stages(s);mimic(s);draw();}catch(e){console.log(e)}setTimeout(poll,500)}
 poll();reach();window.addEventListener('resize',draw);
