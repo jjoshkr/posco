@@ -15,6 +15,8 @@ from .config import SystemConfig, PUMP_IDS, VALVE_IDS, rig_prominent_feeder
 from .nodes import Bus, SimPlant, SimHAL, IONode, AINode
 from .control import Controller, plan_doses
 from .experiment import make_recipe, apply_fault
+from .camera import Calibration
+import pathlib
 from . import optics
 
 
@@ -29,6 +31,8 @@ class SimSession:
         self.speed = 10.0
         self.params = {}
         self.step_mode = False            # 단계가 바뀔 때마다 자동 일시정지
+        self.calib: Calibration | None = None   # 실제 카메라 보정 (camera_tools fit → calibration.json)
+        self.calib_name = "기본(설명용 행렬)"
         self.run_until = None             # 이 단계에 도달하면 일시정지
         self._last_stage = None
         self.reset()
@@ -43,6 +47,8 @@ class SimSession:
         cfg.seed = int(p["seed"]); cfg.dac.calibrated = True
         cfg.reactor.heel_mL = float(p["heel_mL"]); cfg.reactor.rpm = float(p["rpm"])
         cfg.camera.pixel_noise = float(p["pixel_noise"])
+        if self.calib is not None:
+            self.calib.apply_to(cfg)          # 실측 E, I0, gamma, glare → 시뮬레이터 카메라 모델과 제어기 역산이 같은 보정을 쓴다
         self.cfg = cfg
         if str(p["target"]).startswith("#"):
             rec, resid = make_recipe(cfg, p["target"], None, mode=p["mode"], dose_minutes=float(p["dose_min"]),
@@ -168,6 +174,7 @@ class SimSession:
                              c_true=[round(float(v), 2) for v in self.plant.reactor.c_true],
                              tanks=[round(tk.volume_mL, 1) for tk in self.plant.tanks[:3]]),
                 pumps_live={p: (tele.get("pumps", {}).get(p, {}) or {}) for p in PUMP_IDS},
+                calib=self.calib_info(),
                 stage=self._stage_info(),
                 plan=[dict(id=d["id"], volume_mL=round(d["volume_mL"], 2), strokes=round(d["strokes"]), rate=round(d["rate_mL_min"], 2),
                            mA=round(d["mA"], 2)) for d in self.plan],
@@ -201,6 +208,31 @@ class SimSession:
     def manual(self, cmd: dict):
         with self.lock:
             self.bus.send_cmd(cmd)
+
+    def load_calibration(self, data: dict | None = None, path: str | None = None, name: str = ""):
+        """calibration.json 내용(dict) 또는 서버 경로를 읽어 다음 준비/시작부터 적용. None 이면 기본으로 되돌림."""
+        with self.lock:
+            if data is None and path is None:
+                self.calib, self.calib_name = None, "기본(설명용 행렬)"
+            else:
+                if data is None:
+                    data = json.loads(pathlib.Path(path).read_text())
+                cal = Calibration(**{k: data[k] for k in ("E", "I0", "gamma", "glare", "cond", "samples", "note") if k in data})
+                E = np.array(cal.E, float)
+                if E.shape != (3, 3) or len(cal.I0) != 3:
+                    raise ValueError("E 는 3×3, I0 는 3개여야 합니다")
+                self.calib, self.calib_name = cal, (name or path or "업로드")
+        p = dict(self.params); self.reset(p); self.running = False
+        return self.calib_info()
+
+    def calib_info(self):
+        c = self.calib
+        return dict(name=self.calib_name, custom=c is not None,
+                    E=(np.round(np.array(c.E), 5).tolist() if c else np.round(self.cfg.camera.E, 5).tolist()),
+                    I0=(np.round(np.array(c.I0), 4).tolist() if c else np.round(self.cfg.camera.I0, 4).tolist()),
+                    cond=round(float(np.linalg.cond(np.array(c.E if c else self.cfg.camera.E))), 3),
+                    gamma=(c.gamma if c else self.cfg.camera.gamma), glare=(c.glare if c else self.cfg.camera.glare),
+                    samples=(len(c.samples) if c else 0), note=(c.note if c else "config.py 의 설명용 값. camera_tools fit 결과를 올리면 실제 카메라 기준이 된다"))
 
     def set_rpm(self, rpm: float):
         with self.lock:
@@ -327,6 +359,13 @@ svg text{font-family:inherit}
   <div class="row"><input type="color" id="pick2" value="#5A8F7B" style="width:46px;flex:none;height:34px;padding:0;border:1px solid var(--line);border-radius:7px"><input type="text" id="target2" value="#5A8F7B"><button onclick="liveTarget()" style="flex:none">적용</button></div>
   <div class="row" style="margin-top:8px"><button onclick="trimNow()" title="지금 카메라로 재고(MEASURE) 모자란 염료를 추가 투입(TRIM) 한 사이클">지금 트림</button><button class="warn" onclick="live({op:'safe'})" title="I/O 노드 SAFE: 운전 허가 OFF → 펌프 0 → 밸브 닫힘. 실제 비상정지와 같은 순서">전체 정지 (SAFE)</button></div>
  </div>
+ <div class="card"><h2>카메라 보정<span class="q" title="camera_tools fit 이 만든 calibration.json (실측 E 행렬·기준 I0). 올리면 시뮬레이터의 색↔농도 변환과 제어기 역산이 실제 카메라 기준으로 바뀐다. 다음 준비/시작부터 적용">?</span></h2>
+  <div class="kv"><b>현재</b><span id="calName">—</span><b>조건수 κ</b><span id="calCond">—</span><b>I0</b><span id="calI0">—</span><b>E</b><span id="calE" style="font-family:ui-monospace,Menlo,monospace;font-size:11px;white-space:pre"></span></div>
+  <small id="calNote"></small>
+  <div class="row" style="margin-top:8px"><input type="file" id="calFile" accept=".json" style="flex:1;min-width:0;font-size:12px"><button onclick="uploadCal()" style="flex:none">불러오기</button></div>
+  <div class="row" style="margin-top:6px"><input type="text" id="calPath" placeholder="또는 서버 경로: /home/user/calibration.json" style="flex:1;min-width:0"><button onclick="loadCalPath()" style="flex:none">경로로</button><button onclick="resetCal()" style="flex:none">기본으로</button></div>
+  <span class="cap">워크스테이션에서 UI 를 돌리면 파일 선택이 가장 쉽습니다. 라즈베리파이 AI 노드에서 만든 calibration.json 을 복사해 올리세요.</span>
+ </div>
  <div class="card"><h2>고장 주입<span class="q" title="시뮬레이션 전용. 실제 장비에서 생길 수 있는 문제를 넣어 I/O 노드 알람과 제어기 반응을 본다">?</span></h2>
   <span class="cap">탱크 고갈 → 펌프 수위 정지·NO_STROKE · 밸브 고착 → 릴리프 순환·RELIEF · 카메라 −10 % → 추정 ĉ 가 전부 커 보임 · 스톡 −15 % → 덜 진해져 트림이 채움 · 교반 60 rpm → 정착 지연 · AI 노드 사망 → 1 s 뒤 워치독 SAFE</span>
   <div class="row"><button onclick="fault('tank_empty','P-101')">C 탱크 고갈</button><button onclick="fault('valve_stuck','XV-102')">XV-102 고착</button></div>
@@ -385,6 +424,12 @@ async function setSpeed(v){$('spv').textContent=v;await post('/api/speed',{speed
 async function fault(k,a){await post('/api/fault',{kind:k,arg:a})}
 async function live(b){await post('/api/live',b)}
 async function liveRpm(v){await live({op:'rpm',rpm:+v})}
+async function uploadCal(){const f=$('calFile').files[0];if(!f){alert('calibration.json 파일을 고르세요');return}const txt=await f.text();let data;try{data=JSON.parse(txt)}catch(e){alert('JSON 이 아닙니다');return}
+ const r=await post('/api/calib',{data,name:f.name});if(r.error)alert('오류: '+r.error);H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;reach()}
+async function loadCalPath(){const r=await post('/api/calib',{path:$('calPath').value});if(r.error)alert('오류: '+r.error);H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;reach()}
+async function resetCal(){await post('/api/calib',{reset:true});H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;reach()}
+function showCal(c){$('calName').textContent=c.name+(c.custom?' (실측)':'');$('calCond').textContent=c.cond+(c.cond>3?' ⚠ 역산 불안정':'');$('calI0').textContent=c.I0.join(' / ');
+ $('calE').textContent=c.E.map(r=>r.map(v=>v.toFixed(4)).join('  ')).join('\n');$('calNote').textContent=(c.samples?`보정 시료 ${c.samples}개 · `:'')+(c.note||'')}
 async function liveTarget(){await live({op:'target',target:$('target2').value})}
 async function trimNow(){await live({op:'trim_now'})}
 async function mvalve(open){const p=$('mpump').value;await post('/api/manual',{cmd:'valve',id:'XV-'+p.slice(2),open})}
@@ -472,6 +517,7 @@ async function poll(){try{const s=await (await fetch('/api/state?since='+n)).jso
  PUMPS.forEach((p,j)=>{const pm=s.pumps_live[p]||{};const v=s.io.valves['XV-'+p.slice(2)];$('pcs'+j).textContent=`${pm.spm||0} spm · ${pm.strokes||0} str${pm.remaining!=null?' · 남은 '+pm.remaining:''}`;
   const hb=$('pch'+j);hb.textContent=pm.hold?'재개':'보류';hb.className=pm.hold?'on':'';const vb=$('pcvl'+j);vb.textContent=v?'밸브 닫기':'밸브 열기';vb.className=v?'on':'';
   if(document.activeElement!==$('pcr'+j)&&pm.scale!=null){$('pcr'+j).value=Math.round(pm.scale*100);$('pcv'+j).textContent=Math.round(pm.scale*100)}});
+ if(s.calib)showCal(s.calib);
  $('log').innerHTML=s.events.slice().reverse().map(e=>`<div><span style="color:#888">${e[0]}s</span> <b>${e[1]}</b> ${e[2]}</div>`).join('');
  stages(s);mimic(s);draw();}catch(e){console.log(e)}setTimeout(poll,500)}
 poll();reach();window.addEventListener('resize',draw);
@@ -552,6 +598,15 @@ class Handler(BaseHTTPRequestHandler):
             s.inject(body["kind"], str(body.get("arg", ""))); return self._json(dict(ok=True))
         if self.path == "/api/manual":
             s.manual(body); return self._json(dict(ok=True))
+        if self.path == "/api/calib":                      # 실제 카메라 보정 불러오기 / 되돌리기
+            try:
+                if body.get("reset"):
+                    return self._json(s.load_calibration(None))
+                if "data" in body:
+                    return self._json(s.load_calibration(data=body["data"], name=body.get("name", "업로드")))
+                return self._json(s.load_calibration(path=body["path"], name=body["path"]))
+            except Exception as e:
+                return self._json(dict(error=str(e)), 400)
         if self.path == "/api/live":                       # 운전 중 실시간 제어
             op = body.get("op")
             if op == "rate":

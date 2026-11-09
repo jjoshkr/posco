@@ -682,3 +682,20 @@ def test_ui_step_mode_and_immediate_target_change():
         s2.step()
         if s2.paused: break
     assert s2.paused and s2.ctl.state == "SETTLE" and s2.run_until is None
+
+
+def test_ui_loads_real_camera_calibration(tmp_path):
+    import json as _json
+    from cmysim.ui import SimSession
+    cal = dict(E=[[0.025, 0.003, 0.0], [0.004, 0.022, 0.002], [0.0, 0.003, 0.030]], I0=[0.88, 0.87, 0.85], gamma=2.2, glare=0.01,
+               cond=1.5, samples=[dict(dye="C", conc=5, A=[0.12, 0.02, 0])], note="test rig")
+    (tmp_path / "calibration.json").write_text(_json.dumps(cal))
+    s = SimSession(); s.reset(dict(target="#5A8F7B"))
+    info = s.load_calibration(path=str(tmp_path / "calibration.json"))
+    assert info["custom"] and info["samples"] == 1 and abs(info["I0"][2] - 0.85) < 1e-9
+    assert np.allclose(s.cfg.camera.E, cal["E"]) and np.allclose(s.ctl.E, cal["E"]) and np.allclose(s.plant.camera.spec.E, cal["E"])
+    c_before = s.recipe.c_target.copy()
+    for _ in range(2500): s.step()                                        # 실측 E 로도 매칭이 된다
+    assert s.ctl.done and s.state(0)["dE"] < 1.5
+    s.load_calibration(None)
+    assert not s.calib_info()["custom"] and not np.allclose(s.recipe.c_target, c_before)   # 기본 행렬로 되돌리면 c* 가 달라진다
