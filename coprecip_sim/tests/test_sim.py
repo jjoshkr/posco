@@ -699,3 +699,39 @@ def test_ui_loads_real_camera_calibration(tmp_path):
     assert s.ctl.done and s.state(0)["dE"] < 1.5
     s.load_calibration(None)
     assert not s.calib_info()["custom"] and not np.allclose(s.recipe.c_target, c_before)   # 기본 행렬로 되돌리면 c* 가 달라진다
+
+
+def test_ui_safe_stop_aborts_controller_and_blocks_valves():
+    """전체 정지(SAFE): I/O 노드 즉시 SAFE, 제어기 DONE(중단), SAFE 중 밸브 열기 거부, 지금 트림으로 재무장."""
+    from cmysim.ui import SimSession
+    s = SimSession(); s.reset(dict(s.params))
+    for _ in range(int(20 / s.cfg.dt)):
+        s.step()
+    assert s.ctl.state == "DOSE" and s.io.mode == "RUN"
+    s.safe_stop()                                             # 틱 없이도 즉시 반영 (일시정지 중 누른 경우)
+    assert s.io.mode == "SAFE" and not s.io.run_en
+    assert not any(s.io.valve_on[v] for v in ("XV-101", "XV-102", "XV-103"))
+    assert s.ctl.state == "DONE" and "SAFE" in s.ctl.aborted
+    c_after = s.plant.reactor.c_true.copy()
+    for _ in range(int(60 / s.cfg.dt)):
+        s.step()
+    assert s.ctl.state == "DONE" and s.io.mode == "SAFE"      # 제어기가 SETTLE/TRIM 으로 이어가지 않는다
+    assert max(abs(s.plant.reactor.c_true - c_after)) < 1e-6 # 더 이상 투입 없음
+    s.manual(dict(cmd="valve", id="XV-101", open=True)); s.step()
+    assert not s.io.valve_on["XV-101"] and any("REJECT valve" in a[1] for a in s.io.alarms)
+    s.trim_now()                                              # 재무장 → MEASURE 부터 다시
+    for _ in range(int(1 / s.cfg.dt)):
+        s.step()
+    assert s.io.mode == "RUN" and s.ctl.state == "MEASURE" and s.ctl.aborted == ""
+
+
+def test_controller_aborts_when_io_goes_safe():
+    """I/O 노드가 운전 중 스스로 SAFE 가 되면(워치독 등) 제어기는 투입을 멈추고 DONE 으로 중단한다."""
+    from cmysim.ui import SimSession
+    s = SimSession(); s.reset(dict(s.params))
+    for _ in range(int(20 / s.cfg.dt)):
+        s.step()
+    s.io.safe("test")
+    for _ in range(int(3 / s.cfg.dt)):
+        s.step()
+    assert s.ctl.state == "DONE" and "SAFE" in s.ctl.aborted

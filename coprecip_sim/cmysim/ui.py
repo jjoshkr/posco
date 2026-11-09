@@ -179,7 +179,7 @@ class SimSession:
                 plan=[dict(id=d["id"], volume_mL=round(d["volume_mL"], 2), strokes=round(d["strokes"]), rate=round(d["rate_mL_min"], 2),
                            mA=round(d["mA"], 2)) for d in self.plan],
                 events=self.events[-60:], n=n,
-                hist={k: h[k][sl] for k in ("t", "c_true", "c_hat", "dE", "dE_true", "spm", "strokes", "V", "tank", "valves", "rgb", "rgb_true")},
+                hist={k: h[k][sl] for k in ("t", "c_true", "c_hat", "dE", "dE_true", "spm", "strokes", "V", "tank", "valves", "rgb", "rgb_true", "state", "mode")},
             )
 
     STAGES = [("PLAN", "계획", "목표색을 농도 c*(C,M,Y)로 역산하고 펌프별 투입 부피·스트로크·속도를 정한다"),
@@ -208,6 +208,20 @@ class SimSession:
     def manual(self, cmd: dict):
         with self.lock:
             self.bus.send_cmd(cmd)
+
+    def safe_stop(self):
+        """전체 정지: I/O 노드를 즉시 SAFE(운전 허가 OFF → 펌프 0 → 밸브 닫힘)로 보내고 제어기도 중단(DONE)시킨다.
+        일시정지 중이어도 바로 적용된다. '지금 트림' 을 누르면 다시 무장하고 한 사이클 더 할 수 있다."""
+        with self.lock:
+            self.io.safe("commanded by operator")
+            self._n_alarm = len(self.io.alarms) - 1 if self.io.alarms and self.io.alarms[-1][1].startswith("SAFE") else self._n_alarm
+            self.events.append((round(self.t, 1), "UI", "전체 정지(SAFE) 요청"))
+            self.run_until = None
+            if not self.params["manual"] and self.ctl.state != "DONE":
+                self.ctl.aborted = "operator SAFE (전체 정지)"
+                self.ctl.events.append((round(self.t, 2), self.ctl.aborted))
+                self.ctl._go(self.t, "DONE")
+                self._last_stage = "DONE"
 
     def load_calibration(self, data: dict | None = None, path: str | None = None, name: str = ""):
         """calibration.json 내용(dict) 또는 서버 경로를 읽어 다음 준비/시작부터 적용. None 이면 기본으로 되돌림."""
@@ -357,7 +371,8 @@ svg text{font-family:inherit}
   <span class="cap">배율·보류는 남은 스트로크(투입량)는 그대로 두고 속도만 바꾼다 → 최종 색은 같고 걸리는 시간만 달라진다. '정지' 는 남은 투입을 취소한다.</span>
   <label>교반 rpm <span id="rpmv">300</span><span class="q" title="교반기 속도를 운전 중 바꾼다. 낮추면 섞이는 시간이 길어져 카메라가 보는 색이 늦게 따라온다">?</span></label><input type="range" id="rpmlive" min="0" max="1000" step="10" value="300" onchange="liveRpm(this.value)" oninput="$('rpmv').textContent=this.value">
   <span class="cap">목표색은 위 '실험 설정' 의 목표색 칸에서 바꾸고 '적용' 을 누르면 운전 중에도 즉시 반영됩니다.</span>
-  <div class="row" style="margin-top:8px"><button onclick="trimNow()" title="지금 카메라로 재고(MEASURE) 모자란 염료를 추가 투입(TRIM) 한 사이클">지금 트림</button><button class="warn" onclick="live({op:'safe'})" title="I/O 노드 SAFE: 운전 허가 OFF → 펌프 0 → 밸브 닫힘. 실제 비상정지와 같은 순서">전체 정지 (SAFE)</button></div>
+  <div class="row" style="margin-top:8px"><button onclick="trimNow()" title="지금 카메라로 재고(MEASURE) 모자란 염료를 추가 투입(TRIM) 한 사이클">지금 트림</button><button class="warn" onclick="safeStop()" title="I/O 노드 SAFE: 운전 허가 OFF → 펌프 0 → 밸브 닫힘, 제어기 중단. 실제 비상정지와 같은 순서. 일시정지 중에도 바로 적용. 다시 하려면 '지금 트림'(재무장) 또는 시작/재시작">전체 정지 (SAFE)</button></div>
+  <div class="cap" id="safeNote"></div>
  </div>
  <div class="card"><h2>카메라 보정<span class="q" title="camera_tools fit 이 만든 calibration.json (실측 E 행렬·기준 I0). 올리면 시뮬레이터의 색↔농도 변환과 제어기 역산이 실제 카메라 기준으로 바뀐다. 다음 준비/시작부터 적용">?</span></h2>
   <div class="kv"><b>현재</b><span id="calName">—</span><b>조건수 κ</b><span id="calCond">—</span><b>I0</b><span id="calI0">—</span><b>E</b><span id="calE" style="font-family:ui-monospace,Menlo,monospace;font-size:11px;white-space:pre"></span></div>
@@ -408,7 +423,7 @@ svg text{font-family:inherit}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-let H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]},n=0,ct=[0,0,0],paused=false,S=null;
+let H=newH(),n=0,ct=[0,0,0],paused=false,S=null;
 const COL=["#00AEEF","#EC008C","#E6B800"],PUMPS=["P-101","P-102","P-103"],DYE=["C","M","Y"];
 let dirtyTarget=false;   // 사용자가 목표색 칸을 편집한 뒤 아직 적용/시작하지 않음 → 서버 값으로 덮어쓰지 않는다
 $('pick').oninput=e=>{$('target').value=e.target.value.toUpperCase();dirtyTarget=true;reach();markDirty()};$('target').oninput=()=>{dirtyTarget=true;markDirty()};$('target').onchange=reach;
@@ -419,13 +434,13 @@ async function reach(){try{const r=await (await fetch('/api/reach?target='+encod
 $('manual').onchange=e=>{$('manualcard').style.display=e.target.checked?'block':'none'};
 function toggleHelp(){const h=$('helpcard');h.style.display=h.style.display==='none'?'block':'none'}
 async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});return r.json()}
-async function start(){dirtyTarget=false;H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;
+async function start(){dirtyTarget=false;H=newH();n=0;
  await post('/api/start',cfgBody());await post('/api/stepmode',{on:$('stepmode').checked});
  $('rpmlive').value=$('rpm').value;$('rpmv').textContent=$('rpm').value;$('targetNote').textContent='운전 중: 목표색을 바꾸고 적용 을 누르면 즉시 반영';}
 async function pause(){const s=await post('/api/pause');paused=s.paused;$('pbtn').textContent=paused?'계속':'일시정지'}
 function cfgBody(){return {target:$('target').value,heel_mL:+$('heel').value,rpm:+$('rpm').value,mode:$('mode').value,pump_mode:$('pump_mode').value,
   dose_min:+$('dose_min').value,flow_factor:+$('ff').value,pixel_noise:+$('noise').value,seed:+$('seed').value,manual:$('manual').checked,speed:+$('speed').value}}
-async function prepare(){dirtyTarget=false;H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;await post('/api/reset',cfgBody());$('rpmlive').value=$('rpm').value;$('rpmv').textContent=$('rpm').value}
+async function prepare(){dirtyTarget=false;H=newH();n=0;await post('/api/reset',cfgBody());$('rpmlive').value=$('rpm').value;$('rpmv').textContent=$('rpm').value}
 async function nextStage(){$('stepmode').checked=true;await post('/api/next')}
 async function stepSec(sec){await post('/api/step',{seconds:sec})}
 async function stepMode(on){await post('/api/stepmode',{on})}
@@ -435,12 +450,13 @@ async function fault(k,a){await post('/api/fault',{kind:k,arg:a})}
 async function live(b){return await post('/api/live',b)}
 async function liveRpm(v){await live({op:'rpm',rpm:+v})}
 async function uploadCal(){const f=$('calFile').files[0];if(!f){alert('calibration.json 파일을 고르세요');return}const txt=await f.text();let data;try{data=JSON.parse(txt)}catch(e){alert('JSON 이 아닙니다');return}
- const r=await post('/api/calib',{data,name:f.name});if(r.error)alert('오류: '+r.error);H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;reach()}
-async function loadCalPath(){const r=await post('/api/calib',{path:$('calPath').value});if(r.error)alert('오류: '+r.error);H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;reach()}
-async function resetCal(){await post('/api/calib',{reset:true});H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;reach()}
+ const r=await post('/api/calib',{data,name:f.name});if(r.error)alert('오류: '+r.error);H=newH();n=0;reach()}
+async function loadCalPath(){const r=await post('/api/calib',{path:$('calPath').value});if(r.error)alert('오류: '+r.error);H=newH();n=0;reach()}
+async function resetCal(){await post('/api/calib',{reset:true});H=newH();n=0;reach()}
 function showCal(c){$('calName').textContent=c.name+(c.custom?' (실측)':'');$('calCond').textContent=c.cond+(c.cond>3?' ⚠ 역산 불안정':'');$('calI0').textContent=c.I0.join(' / ');
  $('calE').textContent=c.E.map(r=>r.map(v=>v.toFixed(4)).join('  ')).join('\n');$('calNote').textContent=(c.samples?`보정 시료 ${c.samples}개 · `:'')+(c.note||'')}
-async function trimNow(){await live({op:'trim_now'})}
+async function trimNow(){await live({op:'trim_now'});$('safeNote').textContent=''}
+async function safeStop(){await live({op:'safe'});$('safeNote').textContent='SAFE: 운전 허가 OFF → 펌프 0 → 밸브 닫힘 → 제어기 중단(DONE). 재개하려면 지금 트림(재무장) 또는 시작/재시작'}
 async function mvalve(open){const p=$('mpump').value;await post('/api/manual',{cmd:'valve',id:'XV-'+p.slice(2),open})}
 async function mdose(){await post('/api/manual',{cmd:'dose',id:$('mpump').value,mA:+$('mma').value,strokes:+$('mstrokes').value})}
 async function mstop(){await post('/api/manual',{cmd:'stop',id:$('mpump').value})}
@@ -449,21 +465,36 @@ function buildPumpCtl(){$('pumpctl').innerHTML=PUMPS.map((p,j)=>`<div class="pum
  <label>속도 배율 <span id="pcv${j}">100</span> %<span class="q" title="펌프 속도에 곱하는 값. 50 % 면 절반 속도로 같은 양을 넣는다 (최종 색 동일, 시간 2배). 150 % 는 상한 200 spm 까지">?</span></label><input type="range" min="0" max="150" value="100" id="pcr${j}" oninput="$('pcv${j}').textContent=this.value" onchange="live({op:'rate',id:'${p}',factor:this.value/100})">
  <div class="row" style="margin-top:6px"><button id="pch${j}" onclick="toggleHold(${j})" title="펌프를 잠시 멈춘다. 남은 스트로크는 유지되어 재개하면 이어서 넣는다">보류</button><button id="pcvl${j}" onclick="toggleValve(${j})" title="이 라인의 솔레노이드 밸브 XV. 닫힌 채 펌프 명령이 오면 I/O 노드가 거부(INTERLOCK)">밸브</button><button onclick="live({op:'stop_pump',id:'${p}'})" title="이번 투입을 취소하고 펌프를 멈춘다 (남은 스트로크 폐기)">정지</button></div></div>`).join('')}
 buildPumpCtl();
+function newH(){return {t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[],state:[],mode:[]}}
 function toggleHold(j){const on=!(S&&S.pumps_live[PUMPS[j]]&&S.pumps_live[PUMPS[j]].hold);live({op:'hold',id:PUMPS[j],on})}
 function toggleValve(j){const v='XV-'+PUMPS[j].slice(2);const open=!(S&&S.io.valves[v]);live({op:'valve',id:v,open})}
-function line(cv,series,opts){const c=cv.getContext('2d');const W=cv.width=cv.clientWidth*devicePixelRatio,Hh=cv.height=cv.clientHeight*devicePixelRatio;c.clearRect(0,0,W,Hh);
- const t=H.t;if(t.length<2)return;const pad=36*devicePixelRatio,x0=pad,x1=W-8,y0=8,y1=Hh-20*devicePixelRatio;let ymax=opts.ymax||0;
+const HOV={};   // canvas id → 마우스 x (CSS px). 호버 중이면 그 시각의 값을 툴팁으로 보여준다
+function hoverable(cv){cv.style.cursor='crosshair';cv.onmousemove=e=>{HOV[cv.id]=e.offsetX;draw()};cv.onmouseleave=()=>{delete HOV[cv.id];draw()};
+ cv.ontouchstart=cv.ontouchmove=e=>{const r=cv.getBoundingClientRect();HOV[cv.id]=e.touches[0].clientX-r.left;draw();e.preventDefault()};cv.ontouchend=()=>{delete HOV[cv.id];draw()}}
+function line(cv,series,opts){const c=cv.getContext('2d');const dpr=devicePixelRatio;const W=cv.width=cv.clientWidth*dpr,Hh=cv.height=cv.clientHeight*dpr;c.clearRect(0,0,W,Hh);
+ const t=H.t;if(t.length<2)return;const pad=36*dpr,x0=pad,x1=W-8,y0=8,y1=Hh-20*dpr;let ymax=opts.ymax||0;
  series.forEach(s=>s.y.forEach(v=>{if(v!=null&&v>ymax)ymax=v}));(opts.hlines||[]).forEach(v=>{if(v>ymax)ymax=v});ymax=Math.max(ymax*1.1,opts.ymin||1);const tmin=t[0],tmax=t[t.length-1];
  const X=v=>x0+(v-tmin)/(tmax-tmin||1)*(x1-x0),Y=v=>y1-(v/ymax)*(y1-y0);
- c.strokeStyle='#eee';c.lineWidth=1;c.fillStyle='#888';c.font=`${11*devicePixelRatio}px Pretendard, sans-serif`;
+ c.strokeStyle='#eee';c.lineWidth=1;c.fillStyle='#888';c.font=`${11*dpr}px Pretendard, sans-serif`;
  for(let i=0;i<=4;i++){const y=y0+(y1-y0)*i/4;c.beginPath();c.moveTo(x0,y);c.lineTo(x1,y);c.stroke();c.fillText((ymax*(1-i/4)).toFixed(opts.dec==null?1:opts.dec),4,y+4)}
- c.fillText(tmin.toFixed(0)+' s',x0,Hh-4);c.fillText(tmax.toFixed(0)+' s',x1-40*devicePixelRatio,Hh-4);
+ c.fillText(tmin.toFixed(0)+' s',x0,Hh-4);c.fillText(tmax.toFixed(0)+' s',x1-40*dpr,Hh-4);
  (opts.hlines||[]).forEach((v,i)=>{c.setLineDash([2,3]);c.strokeStyle=opts.hcolors?opts.hcolors[i]:COL[i];c.lineWidth=1;c.beginPath();c.moveTo(x0,Y(v));c.lineTo(x1,Y(v));c.stroke();c.setLineDash([])});
- series.forEach(s=>{c.strokeStyle=s.color;c.lineWidth=(s.width||1.5)*devicePixelRatio;c.setLineDash(s.dash||[]);c.beginPath();let st=false;
-  s.y.forEach((v,i)=>{if(v==null){st=false;return}const x=X(t[i]),y=Y(v);if(!st){c.moveTo(x,y);st=true}else c.lineTo(x,y)});c.stroke();c.setLineDash([])});}
-function draw(){line($('c1'),[0,1,2].flatMap(j=>[{y:H.c_true.map(v=>v[j]),color:COL[j]},{y:H.c_hat.map(v=>v[j]),color:COL[j],dash:[4,3],width:1}]),{hlines:ct,dec:1});
- line($('c2'),[{y:H.dE_true,color:'#000'},{y:H.dE,color:'#888',dash:[4,3],width:1}],{ymin:5,hlines:[1.5],hcolors:['#2e7d32'],dec:1});
- line($('c3'),[0,1,2].map(j=>({y:H.spm.map(v=>v[j]),color:COL[j]})),{ymin:50,dec:0});}
+ series.forEach(s=>{c.strokeStyle=s.color;c.lineWidth=(s.width||1.5)*dpr;c.setLineDash(s.dash||[]);c.beginPath();let st=false;
+  s.y.forEach((v,i)=>{if(v==null){st=false;return}const x=X(t[i]),y=Y(v);if(!st){c.moveTo(x,y);st=true}else c.lineTo(x,y)});c.stroke();c.setLineDash([])});
+ // ---- 호버: 커서 위치의 시각에서 가장 가까운 기록을 찾아 십자선·점·값 상자
+ const hx=HOV[cv.id];if(hx==null)return;const px=hx*dpr;if(px<x0||px>x1)return;
+ const tt=tmin+(px-x0)/(x1-x0)*(tmax-tmin);let lo=0,hi=t.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(t[m]<tt)lo=m;else hi=m}const i=(tt-t[lo]<t[hi]-tt)?lo:hi;
+ const xi=X(t[i]);c.strokeStyle='#555';c.lineWidth=1;c.setLineDash([3,3]);c.beginPath();c.moveTo(xi,y0);c.lineTo(xi,y1);c.stroke();c.setLineDash([]);
+ const rows=[`t = ${t[i].toFixed(1)} s`+(H.state[i]?` · ${H.state[i]}`:'')+(H.mode[i]&&H.mode[i]!=='RUN'?` · I/O ${H.mode[i]}`:'')];
+ series.forEach(s=>{const v=s.y[i];if(v==null)return;c.fillStyle=s.color;c.beginPath();c.arc(xi,Y(v),3*dpr,0,Math.PI*2);c.fill();rows.push({color:s.color,text:`${s.label||''} ${v.toFixed(opts.tdec==null?(opts.dec==null?1:opts.dec):opts.tdec)}${opts.unit||''}`})});
+ (opts.hlines||[]).forEach((v,k)=>rows.push({color:opts.hcolors?opts.hcolors[k]:COL[k],text:`${opts.hlabels?opts.hlabels[k]:'기준'} ${v.toFixed(opts.dec==null?1:opts.dec)}${opts.unit||''}`}));
+ c.font=`${11*dpr}px Pretendard, sans-serif`;const lh=14*dpr,padb=6*dpr;let bw=0;rows.forEach(r=>{bw=Math.max(bw,c.measureText(typeof r==='string'?r:r.text).width)});bw+=padb*2+10*dpr;const bh=rows.length*lh+padb*2;
+ let bx=xi+10*dpr;if(bx+bw>W)bx=xi-10*dpr-bw;let by=y0;c.fillStyle='rgba(255,255,255,0.95)';c.strokeStyle='#bbb';c.lineWidth=1;c.beginPath();c.roundRect?c.roundRect(bx,by,bw,bh,4*dpr):c.rect(bx,by,bw,bh);c.fill();c.stroke();
+ rows.forEach((r,k)=>{const y=by+padb+lh*(k+1)-3*dpr;if(typeof r==='string'){c.fillStyle='#333';c.fillText(r,bx+padb,y)}else{c.fillStyle=r.color;c.fillRect(bx+padb,y-8*dpr,7*dpr,7*dpr);c.fillStyle='#333';c.fillText(r.text,bx+padb+10*dpr,y)}})}
+function draw(){line($('c1'),[0,1,2].flatMap(j=>[{y:H.c_true.map(v=>v[j]),color:COL[j],label:DYE[j]+' 실제 c'},{y:H.c_hat.map(v=>v[j]),color:COL[j],dash:[4,3],width:1,label:DYE[j]+' 추정 ĉ'}]),{hlines:ct,hlabels:['C 목표 c*','M 목표 c*','Y 목표 c*'],dec:1,tdec:2,unit:' mg/L'});
+ line($('c2'),[{y:H.dE_true,color:'#000',label:'ΔE 실제'},{y:H.dE,color:'#888',dash:[4,3],width:1,label:'ΔE 카메라'}],{ymin:5,hlines:[1.5],hcolors:['#2e7d32'],hlabels:['매칭 기준'],dec:1,tdec:2});
+ line($('c3'),[0,1,2].map(j=>({y:H.spm.map(v=>v[j]),color:COL[j],label:PUMPS[j]+' '+DYE[j]})),{ymin:50,dec:0,unit:' spm'});}
+['c1','c2','c3'].forEach(id=>hoverable($(id)));
 // 장비 모식도 — 실제 패널 P&ID (라인 3개 수직, 하단 펌프·스톡병, 우측 반응기)
 let blink=0;
 function mimic(s){blink=(blink+1)%2;const g=$('mimic');const tanks=s.reactor.tanks,V=s.reactor.V_mL;const rt=s.true_hex?'#'+s.true_hex.map(v=>v.toString(16).padStart(2,'0')).join(''):'#ffffff';
@@ -516,10 +547,10 @@ function matchGauge(s){const de=s.dE;const txt=$('gaugeTxt'),mk=$('gaugeMk');
  $('dyeErr').innerHTML=html;}
 function stages(s){const st=s.stage;$('stages').innerHTML=st.names.map((nm,i)=>`<div class="${i===st.index?'cur':(i<st.index?'past':'')}${s.run_until===st.keys[i]?' until':''}" onclick="pickStage('${st.keys[i]}')" title="클릭: 설명 보기 / 이 단계에서 멈춤">${st.keys[i]}<br>${nm}</div>`).join('');
  const base=(st.index>=0?`${st.keys[st.index]} · ${st.desc} · 경과 ${st.elapsed} s`:st.desc);
- $('stagedesc').innerHTML=base+(s.paused?' · <b>일시정지</b>':'')+(s.step_mode?' · 단계마다 멈춤':'')+(s.run_until?` · ${s.run_until} 에서 멈춤 예정`:'')+(pickedStage&&pickedStage!==st.key?`<br><span style="color:#2a6fdb">${pickedStage}: ${STAGE_DESC[pickedStage]}</span>`:'')}
+ $('stagedesc').innerHTML=base+(s.aborted?` · <b style="color:var(--bad)">중단: ${s.aborted}</b>`:'')+(s.paused?' · <b>일시정지</b>':'')+(s.step_mode?' · 단계마다 멈춤':'')+(s.run_until?` · ${s.run_until} 에서 멈춤 예정`:'')+(pickedStage&&pickedStage!==st.key?`<br><span style="color:#2a6fdb">${pickedStage}: ${STAGE_DESC[pickedStage]}</span>`:'')}
 function pickStage(k){pickedStage=k;if(S&&S.running&&S.stage.index<S.stage.keys.indexOf(k))runUntil(k)}
 async function poll(){try{const s=await (await fetch('/api/state?since='+n)).json();
- if(s.n<n){H={t:[],c_true:[],c_hat:[],dE:[],dE_true:[],spm:[],valves:[]};n=0;const s2=await (await fetch('/api/state?since=0')).json();Object.assign(s,s2)}
+ if(s.n<n){H=newH();n=0;const s2=await (await fetch('/api/state?since=0')).json();Object.assign(s,s2)}
  for(const k of Object.keys(H))H[k]=H[k].concat(s.hist[k]||[]);n=s.n;ct=s.c_target;S=s;
  $('hdr').textContent=`t = ${s.t} s · ${s.speed}× · ${s.params.pump_mode} 펌프 · ${s.params.mode}${s.paused?' · 일시정지':''}`;
  paused=s.paused;$('pbtn').textContent=s.paused?'계속':'일시정지';$('stepmode').checked=s.step_mode;
@@ -644,7 +675,7 @@ class Handler(BaseHTTPRequestHandler):
             elif op == "trim_now":
                 s.trim_now()
             elif op == "safe":
-                s.manual(dict(cmd="safe"))
+                s.safe_stop()
             else:
                 return self._json(dict(error="unknown op"), 400)
             return self._json(dict(ok=True))

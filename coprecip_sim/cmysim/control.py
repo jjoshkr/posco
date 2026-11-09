@@ -146,6 +146,12 @@ class Controller:
     def step(self, t, tele, rgb8, bus, A=None):
         self.estimate(rgb8, A)
         r = self.r
+        # I/O 노드가 운전 중 SAFE 로 넘어가면(전체 정지 버튼, 워치독, 인터록) 제어기도 즉시 중단 — 더 이상 투입 명령을 보내지 않는다
+        if (tele and tele.get("mode") == "SAFE" and not self.aborted and t - self.t_state > 0.5
+                and self.state in ("DOSE", "SETTLE", "MEASURE", "TRIM")):
+            self.aborted = "I/O node SAFE (안전 정지)"
+            self.events.append((round(t, 2), self.aborted))
+            self._go(t, "DONE")
         if self.state == "PLAN":
             self.plan = plan_doses(self.cfg, self.cfg.reactor.heel_mL, r.c_target, r.dose_minutes, r.flow_factor)
             bus.send_cmd(dict(cmd="arm"))

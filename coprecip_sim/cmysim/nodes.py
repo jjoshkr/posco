@@ -265,6 +265,8 @@ class IONode:
             self.run_en = bool(m["on"])
             self.hal.run_enable(self.run_en)
         elif c == "valve":
+            if bool(m["open"]) and self.mode != "RUN":     # SAFE 상태에서는 밸브도 열지 않는다 (재무장 후 가능)
+                self.alarm(f"REJECT valve {m['id']}: node not armed"); return
             self.valve_on[m["id"]] = bool(m["open"])
             self.hal.valve(m["id"], self.valve_on[m["id"]])
         elif c == "stirrer_rpm":
