@@ -611,3 +611,24 @@ def test_daqhats_pulse_mode_pins():
     assert b1.direction[1] == 1 and b1.direction[0] == 1                                 # OD/EF 는 건드리지 않음 (입력 그대로)
     hal.io.pulse_ms = 0.0; fdh.LOG.clear()
     assert hal.pulse("P-103") and fdh.LOG[:2] == [(1, "dio", 0, 1), (1, "dio", 0, 0)]
+
+
+# ---------------- 브라우저 UI 세션 엔진 (서버 없이)
+def test_ui_session_engine_runs_and_serializes():
+    import json as _json
+    from cmysim.ui import SimSession
+    s = SimSession(); s.reset(dict(target="#5A8F7B", dose_min=1.0, seed=2))
+    for _ in range(3000):                                               # 300 s: 펄스 200 spm 상한이면 도징 ≈110 s + 정착
+        s.step()
+    st = s.state(0); _json.dumps(st)
+    assert st["ctl_state"] == "DONE" and st["dE"] < 1.5 and st["n"] > 100 and st["io"]["pumps"]["P-101"]["strokes"] > 300
+    assert st["hist"]["t"][-1] <= st["t"] and len(st["hist"]["c_true"]) == len(st["hist"]["t"])
+    s.inject("tank_empty", "P-101")
+    assert any("FAULT_INJECTED" in e[2] for e in s.state(0)["events"])
+    m = SimSession(); m.reset(dict(manual=True))
+    m.manual(dict(cmd="dose", id="P-101", mA=12, strokes=10))        # 밸브 닫힘 → 인터록 거부
+    for _ in range(20): m.step()
+    assert any("INTERLOCK" in e[2] for e in m.state(0)["events"])
+    m.manual(dict(cmd="valve", id="XV-101", open=True)); m.manual(dict(cmd="dose", id="P-101", mA=12, strokes=10))
+    for _ in range(200): m.step()
+    assert m.state(0)["io"]["pumps"]["P-101"]["strokes"] == 10

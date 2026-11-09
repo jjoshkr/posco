@@ -203,6 +203,7 @@ class IONode:
         self.pulse_phase = {pid: 0.0 for pid in self.pulse_ids}
         self.pulse_strokes = {pid: 0 for pid in self.pulse_ids}
         self.pulse_dosed_mL = {pid: 0.0 for pid in self.pulse_ids}
+        self.pulse_last_t = {pid: -1e9 for pid in self.pulse_ids}
         self.has_pulse = hasattr(hal, "pulse")
         self.publish_sim_camera = False          # io_node_main run --sim 에서 켠다
         self.alarms: list = []
@@ -389,11 +390,13 @@ class IONode:
         # 펄스 펌프: 위상 누적 → 펄스 출력 (틱당 최대 2회)
         for pid in self.pulse_ids:
             if self.pulse_spm[pid] > 0 and self.mode == "RUN":
-                self.pulse_phase[pid] += self.pulse_spm[pid] / 60.0 * dt
-                n = min(int(self.pulse_phase[pid]), 2)
                 spec = self.cfg.pump if pid in PUMP_IDS else self.cfg.pulse_pump
+                self.pulse_phase[pid] = min(self.pulse_phase[pid] + self.pulse_spm[pid] / 60.0 * dt, 2.0)
+                min_gap = 60.0 / spec.max_spm * 0.95            # 펌프 최대 스트로크 속도보다 빠른 펄스는 내지 않는다 (펌프가 무시함)
+                n = 1 if (self.pulse_phase[pid] >= 1.0 and t - self.pulse_last_t[pid] >= min_gap) else 0
                 for _ in range(n):
                     self.pulse_phase[pid] -= 1.0
+                    self.pulse_last_t[pid] = t
                     if self.hal.pulse(pid):
                         self.pulse_strokes[pid] += 1
                         self.pulse_dosed_mL[pid] += spec.stroke_mL * spec.stroke_length

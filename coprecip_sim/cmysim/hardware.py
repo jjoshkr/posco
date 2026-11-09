@@ -198,6 +198,7 @@ class PulsePump:
         p = self.spec
         if self.paused or not self.level_ok or (t - self.last_pulse_t) < 60.0 / p.max_spm * 0.9:
             self.pulses_ignored += 1                    # 너무 빠른 펄스·정지 상태: 펌프가 무시
+            self.last_ignore_reason = "paused" if self.paused else ("level" if not self.level_ok else "too fast")
             return False
         self.last_pulse_t = t
         self.strokes_total += 1
