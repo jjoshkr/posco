@@ -63,6 +63,7 @@ class SimSession:
         self._n_alarm = 0
         self._last_stage = self.ctl.state
         self.run_until = None
+        self.ctl.estimate(self.plant.camera.roi_rgb8(self.plant.reactor.c_obs))   # 시작 전에도 카메라 견본이 물 색을 보이게
         cam = cfg.camera
         self.reachable_hex = optics.rgb8_to_hex(rec.target_rgb8)     # 모델이 낼 수 있는 가장 가까운 색
         if p["manual"]:                                    # 수동 모드: 노드 무장 + 운전 허가만 해 둔다
