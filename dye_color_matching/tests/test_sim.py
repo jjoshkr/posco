@@ -2,7 +2,7 @@
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import numpy as np
-from cmysim.config import SystemConfig, PUMP_IDS
+from cmysim.config import SystemConfig, PUMP_IDS, rig_prominent_feeder
 from cmysim import optics
 from cmysim.process import dose_volumes, Reactor
 from cmysim.hardware import GammaXPump, PumpChannel
@@ -735,3 +735,44 @@ def test_controller_aborts_when_io_goes_safe():
     for _ in range(int(3 / s.cfg.dt)):
         s.step()
     assert s.ctl.state == "DONE" and "SAFE" in s.ctl.aborted
+
+
+def test_gamut_sign_check_matches_pdf_example():
+    """PDF '목표색 #53F3B6 이 추출 안 되는 이유': M 이 음수 → 색역 밖, 최근접 #55C5BB, c*=35.9/0/10.6, ΔE≈16.6. 대각 E 면 색역 안."""
+    from cmysim import gamut
+    cfg = rig_prominent_feeder()
+    r = gamut.check_target(cfg, "#53F3B6")
+    assert not r["in_gamut"] and r["negative"] == ["M"] and r["nearest"] == "#55C5BB"
+    assert abs(r["c"][0] - 35.9) < 0.2 and r["c"][1] == 0.0 and abs(r["c"][2] - 10.6) < 0.2 and abs(r["resid_dE"] - 16.56) < 0.1
+    assert gamut.check_target(cfg, "#5A8F7B")["in_gamut"]
+    cfg.camera.E = gamut.ideal_matrix(cfg.camera.E)                        # 이상적 CMY: 흰색보다 어두운 모든 색이 색역 안
+    r2 = gamut.check_target(cfg, "#53F3B6")
+    assert r2["in_gamut"] and r2["resid_dE"] < 0.5
+    m = gamut.analyze_matrix(cfg.camera.E)
+    assert m["worst_cross"] == 0.0 and m["grade"] == "좋음"
+
+
+def test_gamut_brighter_than_water_and_cloud():
+    from cmysim import gamut
+    cfg = rig_prominent_feeder()
+    cam = cfg.camera
+    water = optics.rgb8_to_hex(optics.conc_to_rgb8(cam.E, cam.I0, np.zeros(3), cam.gamma, cam.glare))
+    assert gamut.check_target(cfg, water)["in_gamut"]                      # 물 자체 (I0 = 0.9 → 흰색보다 약간 어두움)
+    r = gamut.check_target(cfg, "#FFFFFF")
+    assert not r["in_gamut"] and len(r["brighter_than_water"]) == 3        # 흰색은 물보다 밝아 불가
+    cloud = gamut.gamut_cloud(cfg, n=5)
+    assert len(cloud["points"]) == 125 and cloud["ab_area"] > 1000
+    # 이상적 CMY 의 색역이 실제(교차 흡수) 보다 넓다
+    cfg2 = rig_prominent_feeder(); cfg2.camera.E = gamut.ideal_matrix(cfg2.camera.E)
+    assert gamut.gamut_cloud(cfg2, n=5)["ab_area"] > cloud["ab_area"]
+
+
+def test_ui_gamut_api_and_ideal_toggle():
+    from cmysim.ui import SimSession
+    s = SimSession(); s.reset(dict(s.params))
+    g = s.gamut_info("#53F3B6")
+    assert not g["check"]["in_gamut"] and len(g["cloud"]) == 729 and g["matrix"]["cond"] > 1
+    s.load_calibration(ideal=True)
+    assert s.calib_name.startswith("이상적") and s.gamut_info("#53F3B6")["check"]["in_gamut"]
+    s.load_calibration(None)
+    assert s.calib is None

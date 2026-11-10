@@ -10,6 +10,7 @@ ProMinent CHEMICAL FEEDER 패널(gamma/X 펌프 3대)에 **시안·마젠타·�
 |---|---|---|---|
 | 1 | **시뮬레이터 + 색 매칭 제어** — 펌프·탱크·반응기·카메라 모델, 목표색 → 투입량 계산 → 피드포워드 → 카메라 트림, 유량 스윕, 고장 주입, **브라우저 UI** | `config optics hardware process vision nodes control experiment ui` | ✅ 실행·테스트 완료 |
 | 2 | **RealSense 카메라** — 수동 노출 고정, ROI, 물 기준 영상, 염료별 보정 행렬 E 피팅, 목표 시료 촬영 | `camera camera_tools ai_node_main` | 코드 완료, 실물 미검증 |
+|   | **색역 분석** — E·κ(E)·교차 흡수, 목표색 부호 검사(색역 안/밖), 최근접 색, 보정 농도 범위, 색역 지도, 염료 후보 비교, 이상적 CMY 비교 | `gamut` | 실행·테스트 완료 |
 | 3 | **I/O 보드(Pi 5 + MCC 152/118/134)** — 펌프 펄스(접점) 또는 4–20 mA 구동, 솔레노이드 밸브, 압력 입력, 인터록·워치독, 빵판 벤치 명령 | `daqhats_hal io_node_main nodes` | 코드 완료, 가짜 보드로 검증 |
 | 4 | **YOLO 카메라 학습** — 프레임·라벨 자동 생성, 학습·추론·ONNX, Hailo 래퍼, 기포/액체 상태 | `yolo_train yolo_infer vision` | CPU 학습·추론 확인 |
 
@@ -31,6 +32,7 @@ python -m cmysim.ui                   # → 브라우저에서 http://localhost:
 | 영역 | 무엇을 하나 | 언제 쓰나 |
 |---|---|---|
 | 실험 설정 (왼쪽) | 목표색(도달 가능한 가장 가까운 색과 잔차 ΔE 표시, **적용** 버튼으로 운전 중에도 즉시 변경), 초기 물·rpm, 제어(closed/open), 펌프 구동(펄스/아날로그), 도징 시간, 피드포워드 배율, 카메라 잡음, 시드, 속도 | 시작 전 |
+| 색역(gamut) 분석 (왼쪽) | 목표색을 넣으면 c = E⁻¹A 의 부호로 **색역 안/밖**을 판정하고 이유를 보여줌(어느 염료가 음수여야 하는지, 물보다 밝은지), κ(E)·교차 흡수·보정 농도 범위 검사, 도달 가능 색 점구름(a*b*) 위에 목표 × 와 최근접 ○. "이상적 CMY(대각 E)로 보기" 로 교차 흡수가 없는 가상 염료와 비교 | 항상 |
 | 카메라 보정 (왼쪽) | `camera_tools fit` 이 만든 `calibration.json` 을 파일 선택이나 서버 경로로 불러오면, 시뮬레이터의 색↔농도 변환과 제어기 역산이 **실제 카메라 기준**으로 바뀜(E, I0, γ, 글레어, 조건수 표시). "기본으로" 되돌리기 가능 | 보정 후 |
 | 진행 버튼 | **준비(0 s)**: 계획만 세우고 멈춘 상태(PLAN 확인) · **시작/재시작** · **일시정지/계속** · **▶ 다음 단계**: 다음 단계 전이에서 자동 정지 · **+1 s / +10 s / +60 s**: 멈춘 채 그만큼만 진행 · "단계마다 멈춤" 체크 | 언제든 |
 | 단계 칩 클릭 | 그 단계 설명 표시. 운전 중이면 그 단계에 도달할 때 자동 정지 | 언제든 |
@@ -81,6 +83,13 @@ python -m pytest -q tests                                                   # �
 ## 3. Raspberry Pi 에서
 
 카메라 보정 파일을 만드는 자세한 순서는 [docs/CAMERA_CALIBRATION.md](docs/CAMERA_CALIBRATION.md) 에 있습니다.
+염료 고르기 → 색역 확인 → 목표색 정하기의 실험 절차는 [docs/DYE_EXPERIMENT.md](docs/DYE_EXPERIMENT.md) 에 있습니다.
+
+```bash
+python -m cmysim.gamut check --calib calibration.json --target "#53F3B6"   # 색역 안/밖 판정, 이유, 최근접 색, 보정 범위
+python -m cmysim.gamut map   --calib calibration.json --out gamut.png      # 도달 가능 색 지도 (a*b*, a*L*)
+python -m cmysim.gamut compare blue1.json blue2.json --ideal               # 염료 후보 세트 비교 (κ, 교차 흡수, 색역 면적)
+```
 
 ### AI 노드 (Pi 5 + AI HAT+ + RealSense)
 

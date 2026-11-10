@@ -458,6 +458,7 @@ python -m cmysim.ai_node_main --io-ip 192.168.10.2 --recipe recipes/target_match
 
 ```
 dye_color_matching/
+  cmysim/gamut.py            염료 색역 분석 (E·κ, 부호 검사, 최근접 색, 색역 지도, 후보 비교)  → docs/DYE_EXPERIMENT.md
 ├── cmysim/            시뮬레이션: config, optics, hardware, process, vision, nodes, control, experiment, __main__
 │                      실물(Pi): camera, camera_tools, ai_node_main (AI 노드) / daqhats_hal, io_node_main (I/O 노드) / zmq_bridge
 │                      학습: yolo_train (gen/prepare/train/export/infer/regress), yolo_infer (VisionEvents: .pt/.onnx/.hef)

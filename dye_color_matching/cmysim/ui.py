@@ -17,7 +17,7 @@ from .control import Controller, plan_doses
 from .experiment import make_recipe, apply_fault
 from .camera import Calibration
 import pathlib
-from . import optics
+from . import optics, gamut
 
 
 class SimSession:
@@ -223,10 +223,20 @@ class SimSession:
                 self.ctl._go(self.t, "DONE")
                 self._last_stage = "DONE"
 
-    def load_calibration(self, data: dict | None = None, path: str | None = None, name: str = ""):
-        """calibration.json 내용(dict) 또는 서버 경로를 읽어 다음 준비/시작부터 적용. None 이면 기본으로 되돌림."""
+    def load_calibration(self, data: dict | None = None, path: str | None = None, name: str = "", ideal: bool = False):
+        """calibration.json 내용(dict) 또는 서버 경로를 읽어 다음 준비/시작부터 적용. None 이면 기본으로 되돌림.
+        ideal=True: 지금 쓰는 E 의 대각 성분만 남긴 '이상적 CMY'(교차 흡수 0) 로 바꾼다 — 색역 PDF 의 비교용."""
         with self.lock:
-            if data is None and path is None:
+            if ideal:
+                base = self.calib
+                E0 = np.array(base.E if base else self.cfg.camera.E, float)
+                I0 = list(base.I0 if base else self.cfg.camera.I0)
+                self.calib = Calibration(E=gamut.ideal_matrix(E0).tolist(), I0=[float(v) for v in I0],
+                                         gamma=(base.gamma if base else self.cfg.camera.gamma), glare=(base.glare if base else self.cfg.camera.glare),
+                                         cond=float(np.linalg.cond(gamut.ideal_matrix(E0))), samples=(base.samples if base else []),
+                                         note="이상적 CMY: 교차 흡수를 0 으로 둔 가상 염료 (흰색보다 어두운 모든 색이 색역 안). 비교용이며 실제 염료가 아님")
+                self.calib_name = "이상적 CMY (대각 E)"
+            elif data is None and path is None:
                 self.calib, self.calib_name = None, "기본(설명용 행렬)"
             else:
                 if data is None:
@@ -238,6 +248,19 @@ class SimSession:
                 self.calib, self.calib_name = cal, (name or path or "업로드")
         p = dict(self.params); self.reset(p); self.running = False
         return self.calib_info()
+
+    def gamut_info(self, target_hex: str) -> dict:
+        """PDF 체크리스트: E·κ, 부호 검사(색역 안/밖과 이유), 보정 농도 범위, 도달 가능 색 구름(a*b*)."""
+        with self.lock:
+            key = (self.calib_name, json.dumps(np.round(self.cfg.camera.E, 6).tolist()))
+            if getattr(self, "_cloud_key", None) != key:
+                self._cloud, self._cloud_key = gamut.gamut_cloud(self.cfg, n=9), key
+            chk = gamut.check_target(self.cfg, target_hex, self.calib)
+            mat = gamut.analyze_matrix(self.cfg.camera.E)
+            lt = optics.srgb8_to_lab(optics.hex_to_rgb8(chk["target"])); ln = optics.srgb8_to_lab(optics.hex_to_rgb8(chk["nearest"]))
+            return dict(check=chk, matrix=mat, target_lab=np.round(lt, 1).tolist(), nearest_lab=np.round(ln, 1).tolist(),
+                        cloud=[dict(hex=q["hex"], lab=q["lab"]) for q in self._cloud["points"]], ab_area=self._cloud["ab_area"],
+                        c_max=self._cloud["c_max"], calib_name=self.calib_name)
 
     def calib_info(self):
         c = self.calib
@@ -380,6 +403,12 @@ svg text{font-family:inherit}
   <div class="row" style="margin-top:8px"><input type="file" id="calFile" accept=".json" style="flex:1;min-width:0;font-size:12px"><button onclick="uploadCal()" style="flex:none">불러오기</button></div>
   <div class="row" style="margin-top:6px"><input type="text" id="calPath" placeholder="또는 서버 경로: /home/user/calibration.json" style="flex:1;min-width:0"><button onclick="loadCalPath()" style="flex:none">경로로</button><button onclick="resetCal()" style="flex:none">기본으로</button></div>
   <span class="cap">워크스테이션에서 UI 를 돌리면 파일 선택이 가장 쉽습니다. 라즈베리파이 AI 노드에서 만든 calibration.json 을 복사해 올리세요.</span>
+  <div class="row" style="margin-top:6px"><button onclick="idealCal()" style="flex:none" title="지금 E 의 대각 성분만 남긴 가상 염료(교차 흡수 0). 흰색보다 어두운 모든 색이 색역 안이 되는 '이상적 CMY' 로 시뮬레이션해 실제 염료와 비교">이상적 CMY(대각 E)로 보기</button><span class="cap">실제 염료 ↔ 이상적 염료 비교. '기본으로' 로 되돌림</span></div>
+ </div>
+ <div class="card"><h2>색역(gamut) 분석<span class="q" title="염료 3종이 만들 수 있는 색의 범위. A = E c 에서 c = E⁻¹A 의 부호로 색역 안/밖을 판정하고(음수 농도는 불가), κ(E) 로 역산의 안정성을, 교차 흡수로 염료 품질을 본다. 점구름은 농도 격자를 카메라 모델로 보낸 도달 가능 색을 L*a*b* 의 a*b* 평면에 찍은 것">?</span></h2>
+  <div class="kv" style="font-size:12px"><b>판정</b><span id="gmVerdict">—</span><b>c = E⁻¹A</b><span id="gmRaw">—</span><b>κ(E) · 교차</b><span id="gmMat">—</span><b>보정 범위</b><span id="gmRange">—</span></div>
+  <canvas id="gm" style="height:240px;margin-top:6px"></canvas>
+  <span class="cap" id="gmCap">a* (녹←→적) 가로, b* (청←→황) 세로. 점 = 도달 가능 색, × = 목표, ○ = 가장 가까운 색. 점구름 밖의 × 는 이 염료로 못 만드는 색</span>
  </div>
  <div class="card"><h2>고장 주입<span class="q" title="시뮬레이션 전용. 실제 장비에서 생길 수 있는 문제를 넣어 I/O 노드 알람과 제어기 반응을 본다">?</span></h2>
   <span class="cap">탱크 고갈 → 펌프 수위 정지·NO_STROKE · 밸브 고착 → 릴리프 순환·RELIEF · 카메라 −10 % → 추정 ĉ 가 전부 커 보임 · 스톡 −15 % → 덜 진해져 트림이 채움 · 교반 60 rpm → 정착 지연 · AI 노드 사망 → 1 s 뒤 워치독 SAFE</span>
@@ -431,7 +460,7 @@ $('pick').oninput=e=>{$('target').value=e.target.value.toUpperCase();dirtyTarget
 function markDirty(){if(S&&S.running)$('targetNote').textContent='⚠ 바뀐 목표색이 아직 적용되지 않았습니다 — 적용 을 누르세요';else $('targetNote').textContent='시작하면 이 색을 목표로 씁니다'}
 async function applyTarget(){if(S&&S.running){const r=await live({op:'target',target:$('target').value});dirtyTarget=false;$('targetNote').textContent='적용됨: 운전 중 목표를 '+$('target').value.toUpperCase()+' 로 바꿈'}else{dirtyTarget=false;$('targetNote').textContent='시작하면 이 색을 목표로 씁니다'}}
 async function reach(){try{const r=await (await fetch('/api/reach?target='+encodeURIComponent($('target').value))).json();$('swReach').style.background=r.hex;
- $('reachNote').innerHTML=r.resid>1.5?`⚠ 이 염료로는 정확히 못 만듦 (잔차 ΔE ${r.resid}). 가장 가까운 색 ${r.hex}, c*=${r.c.join('/')} mg/L. <button onclick="useReach('${r.hex}')" style="padding:2px 8px;font-size:12px">이 색을 목표로</button><br><span class="q" title="CMY 염료는 물(흰색)에서 빛을 빼기만 한다. 그래서 물보다 밝은 색, 어느 한 채널이 255 에 가까운 색(#59FF00 의 G=255 처럼 그 파장을 전혀 흡수하지 않아야 하는 색), 세 염료의 흡수 스펙트럼 조합 밖의 선명한 색은 만들 수 없다. 운전은 가장 가까운 도달 가능 색을 목표로 삼아 진행되고, 최종 ΔE 는 그 색 기준으로 판정된다">왜 못 만드나 ?</span>`:`도달 가능 (ΔE ${r.resid}), c*=${r.c.join('/')} mg/L`}catch(e){}}
+ $('reachNote').innerHTML=r.resid>1.5?`⚠ 이 염료로는 정확히 못 만듦 (잔차 ΔE ${r.resid}). 가장 가까운 색 ${r.hex}, c*=${r.c.join('/')} mg/L. <button onclick="useReach('${r.hex}')" style="padding:2px 8px;font-size:12px">이 색을 목표로</button><br><span class="q" title="CMY 염료는 물(흰색)에서 빛을 빼기만 한다. 그래서 물보다 밝은 색, 어느 한 채널이 255 에 가까운 색(#59FF00 의 G=255 처럼 그 파장을 전혀 흡수하지 않아야 하는 색), 세 염료의 흡수 스펙트럼 조합 밖의 선명한 색은 만들 수 없다. 운전은 가장 가까운 도달 가능 색을 목표로 삼아 진행되고, 최종 ΔE 는 그 색 기준으로 판정된다">왜 못 만드나 ?</span>`:`도달 가능 (ΔE ${r.resid}), c*=${r.c.join('/')} mg/L`;gamutView()}catch(e){}}
 function useReach(hex){$('target').value=hex.toUpperCase();$('pick').value=hex;dirtyTarget=true;markDirty();reach()}
 $('manual').onchange=e=>{$('manualcard').style.display=e.target.checked?'block':'none'};
 function toggleHelp(){const h=$('helpcard');h.style.display=h.style.display==='none'?'block':'none'}
@@ -454,8 +483,26 @@ async function liveRpm(v){await live({op:'rpm',rpm:+v})}
 async function uploadCal(){const f=$('calFile').files[0];if(!f){alert('calibration.json 파일을 고르세요');return}const txt=await f.text();let data;try{data=JSON.parse(txt)}catch(e){alert('JSON 이 아닙니다');return}
  const r=await post('/api/calib',{data,name:f.name});if(r.error)alert('오류: '+r.error);H=newH();n=0;reach()}
 async function loadCalPath(){const r=await post('/api/calib',{path:$('calPath').value});if(r.error)alert('오류: '+r.error);H=newH();n=0;reach()}
+async function idealCal(){await post('/api/calib',{ideal:true});H=newH();n=0;reach()}
+let GM=null;
+async function gamutView(){try{GM=await (await fetch('/api/gamut?target='+encodeURIComponent($('target').value))).json();if(GM.error)return;const c=GM.check,m=GM.matrix;
+ $('gmVerdict').innerHTML=c.in_gamut?`<span style="color:var(--ok);font-weight:600">색역 안</span> · ${c.why}`:`<span style="color:var(--bad);font-weight:600">색역 밖</span> · ${c.why}. 최근접 ${c.nearest} (ΔE ${c.resid_dE})`;
+ $('gmRaw').textContent=`C ${c.c_raw[0]} / M ${c.c_raw[1]} / Y ${c.c_raw[2]} mg/L`+(c.negative.length?`  ← ${c.negative.join(',')} 음수 → 불가, NNLS c* = ${c.c.join('/')}`:'  (모두 ≥ 0)');
+ $('gmMat').textContent=`κ ${m.cond} (${m.grade}) · 최대 교차 흡수 ${(m.worst_cross*100).toFixed(0)} % · `+Object.entries(m.cross).map(([d,v])=>d+'→'+Object.entries(v).map(([ch,x])=>ch+' '+(x*100).toFixed(0)+'%').join(' ')).join(' · ');
+ const rg=c.calibrated_max;$('gmRange').textContent=(rg.C==null?'보정 시료 없음 (기본 행렬) · ':`상한 C ${rg.C} / M ${rg.M} / Y ${rg.Y} mg/L · `)+(c.over_calibrated.length?`⚠ ${c.over_calibrated.join(',')} 범위 초과`:'범위 안')+(c.over_stock.length?` · ⚠ ${c.over_stock.join(',')} 스톡 농도 초과`:'')+` · 스톡 ${c.stock.join('/')} mg/L`;
+ drawGamut()}catch(e){}}
+function drawGamut(){if(!GM)return;const cv=$('gm'),dpr=devicePixelRatio,c=cv.getContext('2d');const W=cv.width=cv.clientWidth*dpr,Hh=cv.height=cv.clientHeight*dpr;c.clearRect(0,0,W,Hh);
+ const pts=GM.cloud,tl=GM.target_lab,nl=GM.nearest_lab;let amin=-70,amax=70,bmin=-70,bmax=80;[tl,nl].forEach(l=>{amin=Math.min(amin,l[1]-5);amax=Math.max(amax,l[1]+5);bmin=Math.min(bmin,l[2]-5);bmax=Math.max(bmax,l[2]+5)});
+ const pad=28*dpr,X=a=>pad+(a-amin)/(amax-amin)*(W-pad-8),Y=b=>Hh-pad+ (b-bmin)/(bmax-bmin)*-(Hh-pad-8);
+ c.strokeStyle='#ddd';c.lineWidth=1;c.beginPath();c.moveTo(X(0),8);c.lineTo(X(0),Hh-pad);c.moveTo(pad,Y(0));c.lineTo(W-8,Y(0));c.stroke();
+ c.fillStyle='#888';c.font=`${10*dpr}px Pretendard,sans-serif`;c.fillText('a* −',pad,Hh-6*dpr);c.fillText('a* +',W-34*dpr,Hh-6*dpr);c.fillText('b* +',2,14*dpr);c.fillText('b* −',2,Hh-pad-4*dpr);
+ pts.forEach(p=>{c.fillStyle=p.hex;c.beginPath();c.arc(X(p.lab[1]),Y(p.lab[2]),2.2*dpr,0,Math.PI*2);c.fill()});
+ c.strokeStyle='#e53935';c.lineWidth=1.5*dpr;c.beginPath();c.moveTo(X(tl[1]),Y(tl[2]));c.lineTo(X(nl[1]),Y(nl[2]));c.stroke();
+ c.lineWidth=2.5*dpr;c.beginPath();const tx=X(tl[1]),ty=Y(tl[2]),r=6*dpr;c.moveTo(tx-r,ty-r);c.lineTo(tx+r,ty+r);c.moveTo(tx+r,ty-r);c.lineTo(tx-r,ty+r);c.stroke();
+ c.strokeStyle='#000';c.lineWidth=2*dpr;c.beginPath();c.arc(X(nl[1]),Y(nl[2]),6*dpr,0,Math.PI*2);c.stroke();
+ c.fillStyle='#333';c.font=`${11*dpr}px Pretendard,sans-serif`;c.fillText(`${GM.calib_name} · κ ${GM.matrix.cond} · a*b* 면적 ${GM.ab_area}`,pad+4*dpr,16*dpr)}
 async function resetCal(){await post('/api/calib',{reset:true});H=newH();n=0;reach()}
-function showCal(c){$('calName').textContent=c.name+(c.custom?' (실측)':'');$('calCond').textContent=c.cond+(c.cond>3?' ⚠ 역산 불안정':'');$('calI0').textContent=c.I0.join(' / ');
+function showCal(c){$('calName').textContent=c.name+(c.custom&&!c.name.startsWith('이상적')?' (실측)':'');$('calCond').textContent=c.cond+(c.cond>3?' ⚠ 역산 불안정':'');$('calI0').textContent=c.I0.join(' / ');
  $('calE').textContent=c.E.map(r=>r.map(v=>v.toFixed(4)).join('  ')).join('\n');$('calNote').textContent=(c.samples?`보정 시료 ${c.samples}개 · `:'')+(c.note||'')}
 async function trimNow(){await live({op:'trim_now'});$('safeNote').textContent=''}
 async function safeStop(){await live({op:'safe'});$('safeNote').textContent='SAFE: 운전 허가 OFF → 펌프 0 → 밸브 닫힘 → 제어기 중단(DONE). 재개하려면 지금 트림(재무장) 또는 시작/재시작'}
@@ -608,6 +655,13 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code); self.send_header("Content-Type", "application/json; charset=utf-8"); self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b)
 
     def do_GET(self):
+        if self.path.startswith("/api/gamut"):
+            from urllib.parse import unquote
+            tgt = unquote(self.path.split("target=")[1].split("&")[0]) if "target=" in self.path else "#5A8F7B"
+            try:
+                return self._json(self.session.gamut_info(tgt if tgt.startswith("#") else "#5A8F7B"))
+            except Exception as e:
+                return self._json(dict(error=str(e)), 400)
         if self.path.startswith("/api/reach"):
             from urllib.parse import unquote
             tgt = unquote(self.path.split("target=")[1].split("&")[0]) if "target=" in self.path else "#5A8F7B"
@@ -675,6 +729,8 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 if body.get("reset"):
                     return self._json(s.load_calibration(None))
+                if body.get("ideal"):
+                    return self._json(s.load_calibration(ideal=True))
                 if "data" in body:
                     return self._json(s.load_calibration(data=body["data"], name=body.get("name", "업로드")))
                 return self._json(s.load_calibration(path=body["path"], name=body["path"]))
