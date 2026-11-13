@@ -78,7 +78,7 @@ python -m pytest -q tests                                                   # �
 | 라인 출구 | 없음 | **내화학 솔레노이드 밸브 HTV 04L2-C DC24V × 3** (테프론 몸체·시트, 직동식 NC, 0~3 bar, PT 1/4", 12 W) + 체크밸브. 대안 HDC042(SUS316+PTFE 다이아프램, 0~2.5 bar) |
 
 핀 배정(펄스 모드): P-101 → MCC 152 #1 DIO6, P-102 → #1 DIO7, P-103 → #2 DIO0, XV-101/102 → #1 DIO4/5, XV-103 → #2 DIO4,
-운전 허가(펌프 Pause 공통) → #2 DIO5, 압력 → MCC 118 CH4. 배선 상세는 [docs/HARDWARE.md](docs/HARDWARE.md).
+운전 허가(펌프 Pause 공통) → #2 DIO5, 압력 → MCC 118 CH4. 배선 상세는 [docs/HARDWARE.md](docs/HARDWARE.md), 보드 스택·인터페이스 보드(KiCad)·납땜·점검 순서는 [docs/ASSEMBLY.md](docs/ASSEMBLY.md).
 
 ## 3. Raspberry Pi 에서
 
