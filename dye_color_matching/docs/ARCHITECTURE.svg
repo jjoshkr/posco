@@ -1,0 +1,154 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1500' height='820' viewBox='0 0 1500 820' font-family='Pretendard, Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, sans-serif' font-size='12'>
+<defs><marker id='a' markerWidth='8' markerHeight='8' refX='7' refY='4' orient='auto'><path d='M0,0 L8,4 L0,8 z' fill='#333'/></marker></defs>
+<rect width='1500' height='820' fill='#fff'/>
+<text x='20' y='30' font-size='20' font-weight='700'>시스템 아키텍처 — 워크스테이션 · AI 노드 · I/O 노드 · 인터페이스 보드 · 현장</text>
+<text x='20' y='50' fill='#555'>굵은 선 = 데이터/제어 흐름 · 회색 상자 = 소프트웨어 모듈(cmysim) · 노란 상자 = 파일 · 주황 = 전기 회로(24 V / 접점)</text>
+<rect x='20' y='80' width='420' height='330' rx='10' fill='#f5f7fb' stroke='#1565c0' stroke-width='2'/>
+<text x='32' y='104' font-weight='700' font-size='14' fill='#1565c0'>워크스테이션 (Windows/Linux, GPU)</text>
+<rect x='36' y='120' width='180' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='44' y='134' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>cmysim.ui</text>
+<text x='44' y='148' font-size='10' fill='#555'>시뮬레이터 + 브라우저 UI :8050</text>
+<rect x='226' y='120' width='200' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='234' y='134' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>cmysim.gamut</text>
+<text x='234' y='148' font-size='10' fill='#555'>색역 분석 · 염료 비교 · 지도</text>
+<rect x='36' y='164' width='180' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='44' y='178' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>cmysim.experiment</text>
+<text x='44' y='192' font-size='10' fill='#555'>배치 시뮬 · CSV · 그림</text>
+<rect x='226' y='164' width='200' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='234' y='178' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>cmysim.yolo_train</text>
+<text x='234' y='192' font-size='10' fill='#555'>gen/prepare/train/export/regress</text>
+<rect x='36' y='208' width='390' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='44' y='222' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>Hailo Dataflow Compiler (x86)</text>
+<text x='44' y='236' font-size='10' fill='#555'>ONNX → .hef (AI HAT+ 용) — 워크스테이션에서만 가능</text>
+<text x='36' y='270' font-size='11' fill='#333'>역할: 설계 검증(시뮬), 학습(GPU), 로그 분석, 두 Pi 에 SSH</text>
+<path d='M36,290 h110 l10,10 v24 h-120 z' fill='#fff8e1' stroke='#f9a825'/>
+<text x='44' y='312' font-size='10.5' font-family='ui-monospace, Menlo, monospace'>calibration.json</text>
+<path d='M166,290 h90 l10,10 v24 h-100 z' fill='#fff8e1' stroke='#f9a825'/>
+<text x='174' y='312' font-size='10.5' font-family='ui-monospace, Menlo, monospace'>target.json</text>
+<path d='M276,290 h140 l10,10 v24 h-150 z' fill='#fff8e1' stroke='#f9a825'/>
+<text x='284' y='312' font-size='10.5' font-family='ui-monospace, Menlo, monospace'>run_*.csv / ds_run*/</text>
+<path d='M36,340 h110 l10,10 v24 h-120 z' fill='#fff8e1' stroke='#f9a825'/>
+<text x='44' y='362' font-size='10.5' font-family='ui-monospace, Menlo, monospace'>best.pt → .onnx</text>
+<path d='M166,340 h90 l10,10 v24 h-100 z' fill='#fff8e1' stroke='#f9a825'/>
+<text x='174' y='362' font-size='10.5' font-family='ui-monospace, Menlo, monospace'>model.hef</text>
+<path d='M276,340 h140 l10,10 v24 h-150 z' fill='#fff8e1' stroke='#f9a825'/>
+<text x='284' y='362' font-size='10.5' font-family='ui-monospace, Menlo, monospace'>color_regressor.npy</text>
+<rect x='520' y='80' width='440' height='330' rx='10' fill='#f5f7fb' stroke='#1565c0' stroke-width='2'/>
+<text x='532' y='104' font-weight='700' font-size='14' fill='#1565c0'>AI 노드 — Raspberry Pi 5 + AI HAT+ (Hailo-8) + RealSense</text>
+<rect x='536' y='120' width='200' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='544' y='134' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>cmysim.camera</text>
+<text x='544' y='148' font-size='10' fill='#555'>RealSense/OpenCV, 수동 노출, ROI</text>
+<rect x='746' y='120' width='200' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='754' y='134' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>cmysim.camera_tools</text>
+<text x='754' y='148' font-size='10' fill='#555'>settings·roi·reference·sample·fit·target</text>
+<rect x='536' y='164' width='200' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='544' y='178' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>cmysim.control</text>
+<text x='544' y='192' font-size='10' fill='#555'>Controller: PLAN…DONE, ĉ, ΔE2000</text>
+<rect x='746' y='164' width='200' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='754' y='178' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>cmysim.optics</text>
+<text x='754' y='192' font-size='10' fill='#555'>Beer–Lambert, NNLS, CIEDE2000</text>
+<rect x='536' y='208' width='200' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='544' y='222' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>cmysim.ai_node_main</text>
+<text x='544' y='236' font-size='10' fill='#555'>10 Hz 루프, 하트비트, 로그·데이터셋</text>
+<rect x='746' y='208' width='200' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='754' y='222' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>cmysim.yolo_infer</text>
+<text x='754' y='236' font-size='10' fill='#555'>.hef/.onnx 기포·액체 상태</text>
+<rect x='536' y='252' width='410' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='544' y='266' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>cmysim.zmq_bridge</text>
+<text x='544' y='280' font-size='10' fill='#555'>PUSH cmd → 5555 · SUB tele ← 5556 (JSON)</text>
+<text x='536' y='310' font-size='11'>입력: ROI 평균 RGB (2 s 평균) → A = −log10(I/I0) → ĉ = NNLS(E, A) → ΔE2000(목표)</text>
+<text x='536' y='328' font-size='11'>출력: arm · stirrer_rpm · run_enable · valve · dose(id, mA, strokes) · stop · safe</text>
+<text x='536' y='346' font-size='11'>운전 중 조작: rate_scale · hold · 목표 변경 · trim_now (UI 와 같은 명령 집합)</text>
+<text x='536' y='364' font-size='11'>안전: I/O 가 SAFE 로 바뀌면 제어기 즉시 중단(DONE) · 과투입 방지 피드포워드 0.97</text>
+<rect x='1040' y='80' width='440' height='330' rx='10' fill='#f5f7fb' stroke='#1565c0' stroke-width='2'/>
+<text x='1052' y='104' font-weight='700' font-size='14' fill='#1565c0'>I/O 노드 — Raspberry Pi 5 + MCC 152 ×2 · MCC 118 · MCC 134</text>
+<rect x='1056' y='120' width='200' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='1064' y='134' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>cmysim.io_node_main</text>
+<text x='1064' y='148' font-size='10' fill='#555'>run · bench · list · init-config</text>
+<rect x='1266' y='120' width='200' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='1274' y='134' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>cmysim.nodes.IONode</text>
+<text x='1274' y='148' font-size='10' fill='#555'>인터록 · 워치독 1 s · 스트로크 계수</text>
+<rect x='1056' y='164' width='200' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='1064' y='178' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>cmysim.daqhats_hal</text>
+<text x='1064' y='192' font-size='10' fill='#555'>DIO 펄스 20 ms · 밸브 · AI 션트 환산</text>
+<rect x='1266' y='164' width='200' height='34' rx='6' fill='#fff' stroke='#777'/>
+<text x='1274' y='178' font-weight='700' font-size='11' font-family='ui-monospace, Menlo, monospace'>io_node.json</text>
+<text x='1274' y='192' font-size='10' fill='#555'>주소(0,1,2,3) · 핀맵 · pump_mode</text>
+<text x='1056' y='222' font-size='10.5'>MCC 152 #1 (주소 0): DIO6 P-101 · DIO7 P-102 펄스 · DIO4 XV-101 · DIO5 XV-102</text>
+<text x='1056' y='240' font-size='10.5'>MCC 152 #2 (주소 1): DIO0 P-103 펄스 · DIO4 XV-103 · DIO5 RUN_ENABLE</text>
+<text x='1056' y='258' font-size='10.5'>MCC 118 (주소 2): CH4 압력 1–5 V (4–20 mA) · MCC 134 (주소 3): CH0 K 열전대</text>
+<text x='1056' y='290' font-size='10.5'>SAFE 순서: RUN_ENABLE OFF → 펄스 0 → 밸브 OFF</text>
+<text x='1056' y='306' font-size='10.5'>부팅·종료·예외·하트비트 끊김(1 s) 모두 SAFE</text>
+<text x='1056' y='324' font-size='10.5'>텔레메트리 10 Hz: 펌프별 spm/strokes/remaining · 밸브 · 압력 · 알람</text>
+<text x='1056' y='352' font-size='10.5' fill='#555'>시험 모드: run --sim --sim-camera (보드 없이 AI 노드와 연동)</text>
+<path d='M440,200 L520,200' stroke='#555' stroke-width='1.5' fill='none' marker-end='url(#a)' stroke-dasharray="5,4"/>
+<text x='444' y='192' font-size='10' fill='#555'>SSH · 파일</text>
+<path d='M230,410 L230,425 L1260,425 L1260,410' stroke='#555' stroke-width='1.5' fill='none' stroke-dasharray='5,4'/>
+<text x='300' y='421' font-size='10' fill='#555'>SSH: 워크스테이션 → 두 Pi · scp</text>
+<path d='M960,180 L1040,180' stroke='#1565c0' stroke-width='3' fill='none' marker-end='url(#a)'/>
+<path d='M1040,210 L960,210' stroke='#1565c0' stroke-width='3' fill='none' marker-end='url(#a)'/>
+<text x='1000' y='172' text-anchor='middle' font-size='9.5' fill='#1565c0'>cmd :5555</text>
+<text x='1000' y='226' text-anchor='middle' font-size='9.5' fill='#1565c0'>tele :5556</text>
+<text x='1000' y='240' text-anchor='middle' font-size='9' fill='#1565c0'>ZeroMQ · LAN 직결</text>
+<text x='1000' y='252' text-anchor='middle' font-size='9' fill='#1565c0'>.10.3 ↔ .10.2</text>
+<rect x='1040' y='440' width='440' height='200' rx='10' fill='#fff8f0' stroke='#e65100' stroke-width='2'/>
+<text x='1052' y='464' font-weight='700' font-size='14' fill='#e65100'>인터페이스 보드 (KiCad: io_interface.kicad_sch)</text>
+<text x='1056' y='480' font-size='11'>PC817 ×3  : DIO 펄스 → 펌프 External contact (광절연, 1 펄스 = 1 스트로크)</text>
+<text x='1056' y='498' font-size='11'>2N7000 + PC817 ×3 : RUN_ENABLE → 펌프 Pause 3개 (닫힘 = 운전)</text>
+<text x='1056' y='516' font-size='11'>IRLZ44N ×3 + 1N4007 : DIO → 24 V 솔레노이드 코일 (플라이백 다이오드)</text>
+<text x='1056' y='534' font-size='11'>250 Ω 0.1 % 션트 + 100 nF + 5.1 V 제너 : PT 4–20 mA → MCC 118 CH4 1–5 V</text>
+<text x='1056' y='552' font-size='11'>상태 LED ×7 · 5.08 mm 단자대 · 접지 한 점(스타) · 24 V 퓨즈 2 A</text>
+<text x='1056' y='580' font-size='11' fill='#e65100'>24 V DIN 전원 2.5 A (밸브 3 × 0.5 A + 트랜스미터)</text>
+<text x='1056' y='598' font-size='10.5' fill='#e65100'>전원: Pi → 24 V (끌 때 역순). 비상: 24 V 차단 → 밸브 닫힘(NC) · Pause 열림 → 정지</text>
+<path d='M1260,410 L1260,440' stroke='#e65100' stroke-width='2.5' fill='none' marker-end='url(#a)'/>
+<text x='1264.0' y='419.0' font-size='10.5' fill='#e65100'>DIO 3.3 V · AI</text>
+<rect x='520' y='440' width='440' height='200' rx='10' fill='#f1f8f1' stroke='#2e7d32' stroke-width='2'/>
+<text x='532' y='464' font-weight='700' font-size='14' fill='#2e7d32'>현장 — ProMinent CHEMICAL FEEDER 패널 + 반응기</text>
+<text x='536' y='480' font-size='11'>P-101/102/103  gamma/X 격막펌프 (Contact 모드, 메모리 OFF, 0.19 mL/str, 200 spm)</text>
+<text x='536' y='498' font-size='11'>라인마다: MFV → HV → PT/PI 티 → PD 댐퍼 → PCV 배압 2 bar → XV 솔레노이드 → CV 체크 → R-101</text>
+<text x='536' y='516' font-size='11'>XV-101~103  HTV 04L2-C DC24V (테프론, NC, PT 1/4", 0~3 bar)</text>
+<text x='536' y='534' font-size='11'>PT-101~103  4–20 mA 압력 트랜스미터 (0–10 bar) — 압력계 자리 티</text>
+<text x='536' y='552' font-size='11'>R-101  반응기 2000 mL 힐 · M-101 교반 300 rpm · 흰 배경판 · 고정 조명</text>
+<text x='536' y='570' font-size='11'>AE-101  RealSense (AI 노드 USB 3) · TE-101 K 열전대 (선택)</text>
+<text x='536' y='598' font-size='11' fill='#2e7d32'>스톡: T-101 C · T-102 M · T-103 Y  각 1.00 g/L (가능하면 로드셀 없이 눈금으로 잔량 확인)</text>
+<path d='M1040,520 L960,520' stroke='#e65100' stroke-width='2.5' fill='none' marker-end='url(#a)'/>
+<text x='1000' y='512' text-anchor='middle' font-size='9.5' fill='#e65100'>접점·24 V·mA</text>
+<path d='M700,440 L700,410' stroke='#1565c0' stroke-width='2.5' fill='none' marker-end='url(#a)'/>
+<text x='704.0' y='419.0' font-size='10.5' fill='#1565c0'>USB 3  RGB 프레임 10 fps</text>
+<rect x='20' y='440' width='420' height='200' rx='10' fill='#f8f3fb' stroke='#6a1b9a' stroke-width='2'/>
+<text x='32' y='464' font-weight='700' font-size='14' fill='#6a1b9a'>학습 데이터 흐름</text>
+<text x='36' y='480' font-size='11'>A. 색→농도: 피펫 희석 시료 (camera_tools sample / check --cmy) → calibration.json</text>
+<text x='36' y='498' font-size='11'>   → gamut check (κ, 색역) → yolo_train regress → color_regressor.npy</text>
+<text x='36' y='516' font-size='11'>B. YOLO: yolo_train gen (시뮬) + ai_node_main --dataset (실제) → prepare → train(GPU)</text>
+<text x='36' y='534' font-size='11'>   → export ONNX → Hailo DFC → model.hef → ai_node_main --yolo model.hef</text>
+<text x='36' y='552' font-size='11'>C. 투입량: 폐루프 운전 로그 (계획 vs 실제 스트로크, ĉ, 트림, ΔE) → 피드포워드·첫 투입량 모델</text>
+<text x='36' y='580' font-size='11' fill='#6a1b9a'>원칙: 학습 데이터는 색역 안에서만 · 조명/노출 고정 · 시뮬(calibration.json 적용)과 실측 비교</text>
+<text x='36' y='598' font-size='11' fill='#6a1b9a'>sim-to-real: UI 에 calibration.json + 실측 stroke_mL 을 넣어 예상 ΔE 와 실제 ΔE 를 나란히</text>
+<path d='M440,470 L520,470' stroke='#6a1b9a' stroke-width='1.5' fill='none' marker-end='url(#a)' stroke-dasharray="5,4"/>
+<rect x='20' y='670' width='1460' height='130' rx='10' fill='#fafafa' stroke='#ccc'/>
+<text x='32' y='694' font-weight='700' font-size='13'>진행 순서 (하드웨어 도착 전후)</text>
+<rect x='32' y='706' width='275' height='80' rx='8' fill='#fff' stroke='#999'/>
+<text x='42' y='726' font-weight='700' font-size='12' fill='#1565c0'>1. 지금</text>
+<text x='42' y='746' font-size='11'>Pi 스택 · 고정 IP · daqhats · bench</text>
+<text x='42' y='761' font-size='11'>dio · 두 Pi 연동(--sim)</text>
+<path d='M309,746 L320,746' stroke='#999' stroke-width='2' marker-end='url(#a)'/>
+<rect x='322' y='706' width='275' height='80' rx='8' fill='#fff' stroke='#999'/>
+<text x='332' y='726' font-weight='700' font-size='12' fill='#1565c0'>2. 이번 주</text>
+<text x='332' y='746' font-size='11'>카메라 설정 · 보정(E, κ) · 색역 확인 · 희석</text>
+<text x='332' y='761' font-size='11'>격자 시료 → 회귀 A</text>
+<path d='M599,746 L610,746' stroke='#999' stroke-width='2' marker-end='url(#a)'/>
+<rect x='612' y='706' width='275' height='80' rx='8' fill='#fff' stroke='#999'/>
+<text x='622' y='726' font-weight='700' font-size='12' fill='#1565c0'>3. 이번 주</text>
+<text x='622' y='746' font-size='11'>만능기판 인터페이스 보드 · KiCad 회로도/PCB</text>
+<text x='622' y='761' font-size='11'>주문 · YOLO 시뮬 1차 · Hailo 툴체인</text>
+<path d='M889,746 L900,746' stroke='#999' stroke-width='2' marker-end='url(#a)'/>
+<rect x='902' y='706' width='275' height='80' rx='8' fill='#fff' stroke='#999'/>
+<text x='912' y='726' font-weight='700' font-size='12' fill='#1565c0'>4. 밸브·PT 도착</text>
+<text x='912' y='746' font-size='11'>24 V · 밸브 1개 → 펌프 1대 펄스 → 스트로크</text>
+<text x='912' y='761' font-size='11'>부피 실측 → open 운전</text>
+<path d='M1179,746 L1190,746' stroke='#999' stroke-width='2' marker-end='url(#a)'/>
+<rect x='1192' y='706' width='275' height='80' rx='8' fill='#fff' stroke='#999'/>
+<text x='1202' y='726' font-weight='700' font-size='12' fill='#1565c0'>5. 그 다음</text>
+<text x='1202' y='746' font-size='11'>closed 운전 10~20 목표색 · 데이터셋 ·</text>
+<text x='1202' y='761' font-size='11'>투입량 모델 C · YOLO 실제 프레임 재학습</text>
+</svg>

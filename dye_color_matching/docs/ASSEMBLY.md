@@ -110,6 +110,8 @@ Pi 5 (I/O 노드)                 인터페이스 보드                       �
 
 ## 4단계. KiCad 로 회로 그리기 (처음이면 2~3시간)
 
+> 완성된 회로도가 `hardware/kicad/io_interface.kicad_sch` 에 있습니다 (KiCad 7/8/9 에서 열림, BOM 과 미리보기 SVG 포함). 아래는 직접 그리거나 고칠 때의 순서입니다.
+
 ### 설치와 프로젝트
 1. kicad.org 에서 KiCad 9 설치 (Windows). 실행 → File → New Project → `io_interface`.
 2. 프로젝트 창에서 **Schematic Editor** 열기.

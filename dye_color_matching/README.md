@@ -79,6 +79,7 @@ python -m pytest -q tests                                                   # �
 
 핀 배정(펄스 모드): P-101 → MCC 152 #1 DIO6, P-102 → #1 DIO7, P-103 → #2 DIO0, XV-101/102 → #1 DIO4/5, XV-103 → #2 DIO4,
 운전 허가(펌프 Pause 공통) → #2 DIO5, 압력 → MCC 118 CH4. 배선 상세는 [docs/HARDWARE.md](docs/HARDWARE.md), 보드 스택·인터페이스 보드(KiCad)·납땜·점검 순서는 [docs/ASSEMBLY.md](docs/ASSEMBLY.md).
+도면: [P&ID](docs/P_AND_ID.svg) · [시스템 아키텍처](docs/ARCHITECTURE.svg) · [인터페이스 보드 KiCad 회로도](hardware/kicad/) (미리보기 `hardware/kicad/io_interface_preview.svg`, BOM 포함).
 
 ## 3. Raspberry Pi 에서
 
