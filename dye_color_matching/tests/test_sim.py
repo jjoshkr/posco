@@ -613,6 +613,18 @@ def test_daqhats_pulse_mode_pins():
     assert hal.pulse("P-103") and fdh.LOG[:2] == [(1, "dio", 0, 1), (1, "dio", 0, 0)]
 
 
+def test_daqhats_low_trigger_relay_polarity():
+    """로우 트리거 릴레이 모듈: 쉼 상태 High(릴레이 OFF), 펄스는 Low 로 떨어졌다 돌아온다. 부팅 직후 접점이 닫히면 안 된다."""
+    io = IOConfig(ai_average=1, pump_mode="pulse", pulse_active_high=False, valve_active_high=False, run_enable_active_high=False)
+    fdh.LOG.clear(); hal = DaqHatsHAL(io, daqhats_module=fdh)
+    b1, b2 = hal.b["mcc152#1"], hal.b["mcc152#2"]
+    assert b1.pin_level(6) == 1 and b1.pin_level(7) == 1 and b2.pin_level(0) == 1      # 펄스 핀 쉼 = High = 릴레이 OFF
+    assert b1.pin_level(4) == 1 and b2.pin_level(5) == 1                                # 밸브·운전허가도 OFF
+    hal.io.pulse_ms = 0.0; fdh.LOG.clear()
+    assert hal.pulse("P-101") and fdh.LOG[:2] == [(0, "dio", 6, 0), (0, "dio", 6, 1)]
+    hal.valve("XV-101", True); assert b1.pin_level(4) == 0                             # 열림 = Low
+
+
 # ---------------- 브라우저 UI 세션 엔진 (서버 없이)
 def test_ui_session_engine_runs_and_serializes():
     import json as _json

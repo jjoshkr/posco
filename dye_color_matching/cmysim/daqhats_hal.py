@@ -56,6 +56,7 @@ class IOConfig:
     od_disable_level: int = 1        # OD High = 출력 꺼짐
     valve_active_high: bool = True   # DIO High = 포토커플러 ON = 밸브 열림
     run_enable_active_high: bool = True
+    pulse_active_high: bool = True   # 펄스 핀: True = High 가 접점 닫힘(PC817/하이 트리거 릴레이). 로우 트리거 릴레이 모듈이면 False
     ai_average: int = 4              # 잡음 줄이려고 a_in_read 평균 횟수
     cal: dict = field(default_factory=dict)   # 2점 교정 {"P-101": {"gain": 1.0, "offset": 0.0}}
     loadcell: dict = field(default_factory=dict)  # {"config": "loadcell.json"} 이 있으면 HX711 리더를 붙인다 (serial/gpio)
@@ -114,7 +115,13 @@ class DaqHatsHAL(HAL):
         for key, (bname, ch) in self.io.dio.items():             # 밸브·운전허가·펄스: 출력, OFF
             if key in ("P-101", "P-102", "P-103") and not pulse_mode:
                 continue                                          # 아날로그 모드에서는 이 핀을 건드리지 않는다 (OD/EF 와 겹칠 수 있음)
-            self._dio_out(bname, ch, 0 if self.io.valve_active_high else 1)
+            if key.startswith("P-"):
+                idle = 0 if self.io.pulse_active_high else 1      # 펄스 핀 쉼 상태 = 접점 열림
+            elif key == "RUN_ENABLE":
+                idle = 0 if self.io.run_enable_active_high else 1
+            else:
+                idle = 0 if self.io.valve_active_high else 1
+            self._dio_out(bname, ch, idle)
         for key, spec in self.io.tc.items():                     # 열전대 타입
             tct = getattr(self.dh.TcTypes, "TYPE_" + spec.get("type", "K"))
             self.b["mcc134"].tc_type_write(spec["ch"], tct)
@@ -206,9 +213,10 @@ class DaqHatsHAL(HAL):
         if pid not in self.io.dio:
             return False
         bname, ch = self.io.dio[pid]
-        self.b[bname].dio_output_write_bit(ch, 1)
+        on, off = (1, 0) if self.io.pulse_active_high else (0, 1)
+        self.b[bname].dio_output_write_bit(ch, on)
         time.sleep(self.io.pulse_ms / 1000.0)
-        self.b[bname].dio_output_write_bit(ch, 0)
+        self.b[bname].dio_output_write_bit(ch, off)
         return True
 
     def read_ef_faults(self) -> dict:

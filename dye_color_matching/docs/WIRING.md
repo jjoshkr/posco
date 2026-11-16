@@ -2,6 +2,8 @@
 
 그림: [WIRING.svg](WIRING.svg) (선 번호 W1~W38 이 아래 표와 같음). 회로도: [../hardware/kicad/](../hardware/kicad/). 조립 순서: [ASSEMBLY.md](ASSEMBLY.md).
 
+릴레이 제어보드로 만들 경우의 채널 배정·극성·수명은 [RELAY_BOARD.md](RELAY_BOARD.md).
+
 ## 1. MCC 보드 단자 사용 현황 (I/O 노드)
 
 | 보드 (주소) | 단자 | 용도 | 코드 키 (`io_node.json`) |
