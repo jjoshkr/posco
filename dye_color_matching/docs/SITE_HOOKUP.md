@@ -21,6 +21,8 @@ P&ID([P_AND_ID.svg](P_AND_ID.svg))의 각 태그가 실물 어디에 붙는지, 
 ③ 헤더 분리 → ① 병·흡입 → ④⑤ 출구에 XV·CV·튜브 → ⑥ 뚜껑 → **물로 프라이밍**(각 라인 펌프 수동 운전, 튜브 끝에서 물이 나올 때까지; 이후 튜브는 늘 차 있어야 스트로크 계수 투입이 맞음) → ⑩ PT → ⑧ 배선([WIRING.md](WIRING.md)) → ⑦ 카메라 → 보정([CAMERA_CALIBRATION.md](CAMERA_CALIBRATION.md)).
 
 ## 부품 (⑤ 기준, 라인 3개)
+
+그림으로 보려면 [PARTS_LINE.svg](PARTS_LINE.svg) — 한 라인의 모든 부품과 이음새 규격, 제품 사진, 부품표.
 - PT1/4 수나사 × 1/4" 튜브 S-LOK 커넥터 ×6 (밸브 양쪽) — 반응기 쪽을 6 mm 튜브로 가려면 출구 쪽은 PT1/4 × 6 mm 커넥터
 - HTV04L2-C DC24V ×3, 체크밸브(1/4" 또는 6 mm, 크래킹 압력 낮은 것) ×3
 - PTFE 튜브 6×4 mm 10 m, GL45 3-port 캡 ×4, 24/40 → GL45 어댑터 ×1
