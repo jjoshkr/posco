@@ -1,0 +1,5 @@
+{
+  "meta": {"filename": "valve_board.kicad_pro", "version": 1},
+  "board": {"design_settings": {"rules": {"min_clearance": 0.2}}},
+  "sheets": [["bc2eb563-27d8-4433-90e4-2af7b3122999", "Root"]]
+}

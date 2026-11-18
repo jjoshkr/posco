@@ -60,6 +60,10 @@ class IOConfig:
     ai_average: int = 4              # 잡음 줄이려고 a_in_read 평균 횟수
     cal: dict = field(default_factory=dict)   # 2점 교정 {"P-101": {"gain": 1.0, "offset": 0.0}}
     loadcell: dict = field(default_factory=dict)  # {"config": "loadcell.json"} 이 있으면 HX711 리더를 붙인다 (serial/gpio)
+    # 릴레이 제어보드(Relay_module_v1: MCP23017 ×2 → ULN2803 ×4 → 32CH 릴레이 보드 S1~S32) 를 I2C 로 쓸 때.
+    # {"bus": 1, "addr_u1": 32, "addr_u2": 33, "active_high": true, "relays": {"XV-101": 1, "XV-102": 2, "XV-103": 3, "RUN_ENABLE": [4, 5, 6]}}
+    # 릴레이 번호 = 릴레이 보드 출력 단자 J1~J32 번호. S1~8 = U1 GPB0~7, S9~16 = U1 GPA0~7, S17~24 = U2 GPB0~7, S25~32 = U2 GPA0~7.
+    mcp23017: dict = field(default_factory=dict)
 
     @classmethod
     def load(cls, path="io_node.json"):
@@ -70,13 +74,75 @@ class IOConfig:
         pathlib.Path(path).write_text(json.dumps(asdict(self), indent=1, ensure_ascii=False))
 
 
+def _pairs(v):
+    """DIO 배정 값이 [board, ch] 하나이거나 [[board, ch], ...] 여러 개일 때 모두 (board, ch) 목록으로."""
+    if not v:
+        return []
+    return [tuple(v)] if isinstance(v[0], str) else [tuple(x) for x in v]
+
+
+class MCP23017Relays:
+    """Relay_module_v1 (MCP23017 ×2, BANK=0 레지스터) 로 32CH 릴레이 보드의 S1~S32 를 켜고 끈다.
+    smbus2 가 없거나 시험 중이면 write_byte_data(addr, reg, val) 를 가진 가짜 버스를 넣을 수 있다."""
+    IODIRA, IODIRB, OLATA, OLATB = 0x00, 0x01, 0x14, 0x15
+
+    def __init__(self, cfg: dict, bus=None):
+        self.cfg = cfg
+        self.addr = {"U1": int(cfg.get("addr_u1", 0x20)), "U2": int(cfg.get("addr_u2", 0x21))}
+        self.active_high = bool(cfg.get("active_high", True))
+        if bus is None:
+            import smbus2
+            bus = smbus2.SMBus(int(cfg.get("bus", 1)))
+        self.bus = bus
+        self.olat = {("U1", "A"): 0, ("U1", "B"): 0, ("U2", "A"): 0, ("U2", "B"): 0}
+        self.iodir = {("U1", "A"): 0xFF, ("U1", "B"): 0xFF, ("U2", "A"): 0xFF, ("U2", "B"): 0xFF}
+        used = set()
+        for v in cfg.get("relays", {}).values():
+            used.update(v if isinstance(v, list) else [v])
+        for n in used:                                  # 쓰는 핀만 출력으로, 먼저 OFF 래치
+            chip, port, bit = self.locate(int(n))
+            self.iodir[(chip, port)] &= ~(1 << bit)
+        for (chip, port) in self.olat:
+            off = 0x00 if self.active_high else self.iodir[(chip, port)] ^ 0xFF
+            self.olat[(chip, port)] = off
+            self._w(chip, self.OLATA if port == "A" else self.OLATB, off)
+            self._w(chip, self.IODIRA if port == "A" else self.IODIRB, self.iodir[(chip, port)])
+
+    @staticmethod
+    def locate(n: int):
+        """릴레이 번호 1~32 → (칩, 포트, 비트). Relay_module_v1 넷리스트: S1~8 U1 GPB, S9~16 U1 GPA, S17~24 U2 GPB, S25~32 U2 GPA."""
+        if not 1 <= n <= 32:
+            raise ValueError(f"relay {n}: 1~32")
+        chip = "U1" if n <= 16 else "U2"
+        k = n if n <= 16 else n - 16
+        return (chip, "B", k - 1) if k <= 8 else (chip, "A", k - 9)
+
+    def _w(self, chip, reg, val):
+        self.bus.write_byte_data(self.addr[chip], reg, val & 0xFF)
+
+    def set(self, n: int, on: bool):
+        chip, port, bit = self.locate(int(n))
+        lvl = bool(on) if self.active_high else not bool(on)
+        cur = self.olat[(chip, port)]
+        new = (cur | (1 << bit)) if lvl else (cur & ~(1 << bit))
+        if new != cur:
+            self.olat[(chip, port)] = new
+            self._w(chip, self.OLATA if port == "A" else self.OLATB, new)
+
+    def all_off(self):
+        for v in self.cfg.get("relays", {}).values():
+            for n in (v if isinstance(v, list) else [v]):
+                self.set(int(n), False)
+
+
 class DaqHatsHAL(HAL):
     """nodes.HAL 구현. daqhats 가 없는 PC 에서는 fake 모듈을 주입해 시험한다 (tests 참고)."""
 
-    def __init__(self, io: IOConfig | None = None, daqhats_module=None, open_boards=True):
+    def __init__(self, io: IOConfig | None = None, daqhats_module=None, open_boards=True, i2c_bus=None):
         self.io = io or IOConfig()
         self.dh = daqhats_module or __import__("daqhats")
         self.b: dict = {}
+        self.mcp = None; self._i2c_bus = i2c_bus
         self.ao_cache: dict = {}
         self.dio_cache: dict = {}
         self.last_ef: dict = {}
@@ -112,7 +178,7 @@ class DaqHatsHAL(HAL):
                 brd.dio_config_write_bit(ch, self.dh.DIOConfigItem.PULL_ENABLE, 1)
             for key, (bname, ch) in self.io.od_pin.items():      # OD: 출력, 먼저 High(꺼짐) 로 쓴 뒤 방향 전환
                 self._dio_out(bname, ch, self.io.od_disable_level)
-        for key, (bname, ch) in self.io.dio.items():             # 밸브·운전허가·펄스: 출력, OFF
+        for key, v in self.io.dio.items():                       # 밸브·운전허가·펄스: 출력, OFF
             if key in ("P-101", "P-102", "P-103") and not pulse_mode:
                 continue                                          # 아날로그 모드에서는 이 핀을 건드리지 않는다 (OD/EF 와 겹칠 수 있음)
             if key.startswith("P-"):
@@ -121,7 +187,10 @@ class DaqHatsHAL(HAL):
                 idle = 0 if self.io.run_enable_active_high else 1
             else:
                 idle = 0 if self.io.valve_active_high else 1
-            self._dio_out(bname, ch, idle)
+            for bname, ch in _pairs(v):                           # RUN_ENABLE 은 펌프마다 핀 하나씩(목록)일 수 있다
+                self._dio_out(bname, ch, idle)
+        if self.io.mcp23017:                                      # 릴레이 제어보드 (I2C): 쓰는 릴레이만 출력, 전부 OFF
+            self.mcp = MCP23017Relays(self.io.mcp23017, bus=self._i2c_bus)
         for key, spec in self.io.tc.items():                     # 열전대 타입
             tct = getattr(self.dh.TcTypes, "TYPE_" + spec.get("type", "K"))
             self.b["mcc134"].tc_type_write(spec["ch"], tct)
@@ -152,16 +221,30 @@ class DaqHatsHAL(HAL):
         self.dio_cache[(bname, ch)] = lvl
 
     def valve(self, vid, on):
-        bname, ch = self.io.dio[vid]
+        """밸브: 릴레이 제어보드(mcp23017.relays)에 있으면 릴레이로, 아니면 MCC 152 DIO 로. 둘 다 없으면 무시(False)."""
+        rel = self.io.mcp23017.get("relays", {}).get(vid) if self.io.mcp23017 else None
+        if rel is not None and self.mcp is not None:
+            for n in (rel if isinstance(rel, list) else [rel]):
+                self.mcp.set(n, on)
+            return True
+        if vid not in self.io.dio:
+            return False
         lvl = int(on) if self.io.valve_active_high else int(not on)
-        self.b[bname].dio_output_write_bit(ch, lvl)
-        self.dio_cache[(bname, ch)] = lvl
+        for bname, ch in _pairs(self.io.dio[vid]):
+            self.b[bname].dio_output_write_bit(ch, lvl)
+            self.dio_cache[(bname, ch)] = lvl
+        return True
 
     def run_enable(self, on):
-        bname, ch = self.io.dio["RUN_ENABLE"]
+        """운전 허가(펌프 Pause 접점): DIO 핀 하나/여러 개, 그리고/또는 릴레이 번호 하나/여러 개 — 설정된 것 모두에 적용."""
         lvl = int(on) if self.io.run_enable_active_high else int(not on)
-        self.b[bname].dio_output_write_bit(ch, lvl)
-        self.dio_cache[(bname, ch)] = lvl
+        for bname, ch in _pairs(self.io.dio.get("RUN_ENABLE")):
+            self.b[bname].dio_output_write_bit(ch, lvl)
+            self.dio_cache[(bname, ch)] = lvl
+        rel = self.io.mcp23017.get("relays", {}).get("RUN_ENABLE") if self.io.mcp23017 else None
+        if rel is not None and self.mcp is not None:
+            for n in (rel if isinstance(rel, list) else [rel]):
+                self.mcp.set(n, on)
 
     def stirrer_set_mA(self, mA):
         bname, ch = self.io.ao["STIRRER"]
@@ -212,7 +295,7 @@ class DaqHatsHAL(HAL):
         """접점 펄스: DIO High(포토커플러 ON = 접점 닫힘) pulse_ms 유지 후 Low. 펌프 최소 펄스폭(매뉴얼) 이상으로 둘 것."""
         if pid not in self.io.dio:
             return False
-        bname, ch = self.io.dio[pid]
+        bname, ch = _pairs(self.io.dio[pid])[0]
         on, off = (1, 0) if self.io.pulse_active_high else (0, 1)
         self.b[bname].dio_output_write_bit(ch, on)
         time.sleep(self.io.pulse_ms / 1000.0)
@@ -245,6 +328,8 @@ class DaqHatsHAL(HAL):
             for vid in self.io.dio:
                 if vid != "RUN_ENABLE":
                     self.valve(vid, False)
+            if self.mcp is not None:
+                self.mcp.all_off()
         except Exception:
             pass
 

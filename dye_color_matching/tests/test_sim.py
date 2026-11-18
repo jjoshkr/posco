@@ -788,3 +788,31 @@ def test_ui_gamut_api_and_ideal_toggle():
     assert s.calib_name.startswith("이상적") and s.gamut_info("#53F3B6")["check"]["in_gamut"]
     s.load_calibration(None)
     assert s.calib is None
+
+
+class _FakeI2C:
+    def __init__(self): self.log = []
+    def write_byte_data(self, addr, reg, val): self.log.append((addr, reg, val))
+
+
+def test_mcp23017_relay_mapping_and_hal_valves():
+    """릴레이 제어보드(Relay_module_v1) 넷리스트 기준: S1~8 = U1 GPB, S9~16 = U1 GPA, S17~24 = U2 GPB, S25~32 = U2 GPA.
+    HAL: 밸브가 relays 에 있으면 I2C 로, RUN_ENABLE 은 DIO 여러 핀에 동시에."""
+    from cmysim.daqhats_hal import MCP23017Relays
+    assert MCP23017Relays.locate(1) == ("U1", "B", 0) and MCP23017Relays.locate(8) == ("U1", "B", 7)
+    assert MCP23017Relays.locate(9) == ("U1", "A", 0) and MCP23017Relays.locate(17) == ("U2", "B", 0) and MCP23017Relays.locate(32) == ("U2", "A", 7)
+    bus = _FakeI2C()
+    io = IOConfig(ai_average=1, pump_mode="pulse",
+                  dio={"P-101": ["mcc152#1", 4], "P-102": ["mcc152#1", 5], "P-103": ["mcc152#1", 6], "RUN_ENABLE": [["mcc152#1", 7], ["mcc152#2", 4], ["mcc152#2", 5]]},
+                  mcp23017={"bus": 1, "addr_u1": 32, "addr_u2": 33, "relays": {"XV-101": 1, "XV-102": 2, "XV-103": 3}})
+    fdh.LOG.clear(); hal = DaqHatsHAL(io, daqhats_module=fdh, i2c_bus=bus)
+    # 초기화: U1 포트 B 의 비트 0~2 만 출력(IODIRB = 0xF8), OLATB 0 먼저
+    assert (32, 0x15, 0x00) in bus.log and (32, 0x01, 0xF8) in bus.log and (33, 0x01, 0xFF) in bus.log
+    bus.log.clear(); assert hal.valve("XV-102", True) and bus.log == [(32, 0x15, 0b010)]
+    hal.valve("XV-101", True); assert bus.log[-1] == (32, 0x15, 0b011)
+    hal.valve("XV-102", False); assert bus.log[-1] == (32, 0x15, 0b001)
+    assert hal.valve("XV-104", True) is False                      # 어디에도 없는 밸브는 무시
+    b1, b2 = hal.b["mcc152#1"], hal.b["mcc152#2"]
+    hal.run_enable(True); assert b1.pin_level(7) == 1 and b2.pin_level(4) == 1 and b2.pin_level(5) == 1
+    hal.io.pulse_ms = 0.0; fdh.LOG.clear(); assert hal.pulse("P-103") and fdh.LOG[:2] == [(0, "dio", 6, 1), (0, "dio", 6, 0)]   # 기본 주소: mcc152#1 = 0
+    hal.close(); assert bus.log[-1][2] == 0 and b1.pin_level(7) == 0   # 릴레이 전부 OFF, Pause 열림

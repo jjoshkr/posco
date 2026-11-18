@@ -1,3 +1,14 @@
+# KiCad 프로젝트 모음
+
+| 폴더 | 보드 |
+|---|---|
+| `io_interface.*` (이 폴더) | 초기 통합 인터페이스 보드 (PC817 + IRLZ44N + 션트 한 장) |
+| `mcc152_channel_board/` | MCC 152 채널보드 rev B = 올려 주신 XTR111 2ch + PC817 ×4 |
+| `mcc118_ai_board/` | MCC 118 앞단 4–20 mA 8채널 |
+| `valve_board/` | 24 V 솔레노이드 4채널 (릴레이 접점 또는 MOSFET) |
+
+전체 연결은 [../../docs/BOARDS.md](../../docs/BOARDS.md).
+
 # io_interface — 인터페이스 보드 KiCad 프로젝트
 
 I/O 노드(Pi 5 + MCC 152/118) 와 현장(펌프 접점, 24 V 솔레노이드, 압력 트랜스미터) 사이의 보드. 회로 설명과 조립 순서는 [../../docs/ASSEMBLY.md](../../docs/ASSEMBLY.md).
