@@ -86,10 +86,18 @@ class MCP23017Relays:
     smbus2 가 없거나 시험 중이면 write_byte_data(addr, reg, val) 를 가진 가짜 버스를 넣을 수 있다."""
     IODIRA, IODIRB, OLATA, OLATB = 0x00, 0x01, 0x14, 0x15
 
-    def __init__(self, cfg: dict, bus=None):
+    def __init__(self, cfg: dict, bus=None, reset_line=None):
         self.cfg = cfg
         self.addr = {"U1": int(cfg.get("addr_u1", 0x20)), "U2": int(cfg.get("addr_u2", 0x21))}
         self.active_high = bool(cfg.get("active_high", True))
+        # RST(GPIO27): HAT 에는 10 kΩ 풀업만 있어 Pi 핀이 입력(풀다운)이면 2.6 V 문턱에 걸릴 수 있다 → 출력 High 로 잡아 둔다
+        self.reset_line = reset_line
+        if self.reset_line is None and cfg.get("rst_gpio", 27) is not None:
+            try:
+                from gpiozero import DigitalOutputDevice
+                self.reset_line = DigitalOutputDevice(int(cfg.get("rst_gpio", 27)), initial_value=True)
+            except Exception:
+                self.reset_line = None            # gpiozero 없음(PC) → RST 는 풀업에 맡김
         if bus is None:
             import smbus2
             bus = smbus2.SMBus(int(cfg.get("bus", 1)))
