@@ -1,0 +1,15 @@
+# 이상탐지 학습용: 정상 도징 중 고장을 주입하고 라벨을 자동 기록 (시뮬레이션에서는 fault_hook, 실물에서는 사람이 수행)
+name: fault_run
+reactor: {heel_mL: 2000, rpm: 300}
+target: {hex: "#5A8F7B"}
+match: {de: 1.5}
+steps:
+  - {step: stir, rpm: 300}
+  - {step: dose, pump: P-101, volume_mL: 20, rate_mL_min: 20}
+  - {step: settle, seconds: 20}
+  - {step: measure, label: before_fault}
+  - {step: inject_fault, kind: tank_empty, arg: P-102, seconds: 2}
+  - {step: dose, pump: P-102, volume_mL: 15, rate_mL_min: 15, on_abort: continue}
+  - {step: measure, label: after_fault}
+  - {step: log, note: "P-102 는 탱크 고갈로 멈춰야 함 → NO_STROKE 알람 + DOSE timeout 라벨"}
+  - {step: stop}

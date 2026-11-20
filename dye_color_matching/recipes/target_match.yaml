@@ -1,0 +1,16 @@
+# 목표색 매칭: 피드포워드 → 카메라 트림 → 유지
+name: target_match
+description: 목표색을 피드포워드로 넣고 카메라 역산으로 부족분만 트림
+reactor: {heel_mL: 2000, rpm: 300}
+stocks: {C: 1000, M: 1000, Y: 1000}
+target: {hex: "#5A8F7B"}
+match: {de: 1.5, max_trims: 3, tol_mg_L: 0.4}
+steps:
+  - {step: stir, rpm: 300}
+  - {step: wait, seconds: 5}
+  - {step: dose_to_target, minutes: 2, flow_factor: [0.97, 0.97, 0.97]}
+  - {step: settle, factor: 3}
+  - {step: measure, seconds: 2, label: feedforward}
+  - {step: trim_to_target, max_trims: 3}
+  - {step: hold, seconds: 30, label: final}
+  - {step: stop}

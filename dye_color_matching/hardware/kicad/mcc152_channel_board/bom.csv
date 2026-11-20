@@ -1,0 +1,27 @@
+Qty,Reference,Value,Footprint,Note
+1,C1,10uF,Capacitor_SMD:C_1210_3225Metric,50V X7R
+3,C2 C103 C203,100nF,Capacitor_SMD:C_0603_1608Metric,
+4,C101 C105 C201 C205,10nF,Capacitor_SMD:C_0603_1608Metric,
+2,C102 C202,2.2nF,Capacitor_SMD:C_0603_1608Metric,
+1,D1,SS14,Diode_SMD:D_SMA,"쇼트키 40V 1A, 역접속 보호"
+3,D2 D102 D202,SMBJ28CA,Diode_SMD:D_SMB,TVS 양방향 28V standoff
+2,D101 D201,1N4148W,Diode_SMD:D_SOD-123,출력→+24V 클램프
+1,F1,PTC 0.1A,Fuse:Fuse_1206_3216Metric,"폴리퓨즈 hold 100mA, 30V 이상"
+1,J1,MCC152,"TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-8-5.08_1x08_P5.08mm_Horizontal",
+1,J2,24V_IN,"TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal",
+1,J3,PUMP_OUT,"TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-4-5.08_1x04_P5.08mm_Horizontal",
+2,Q101 Q201,BSP170P,Package_TO_SOT_SMD:SOT-223-3_TabPin2,Infineon P-MOSFET -60V SOT-223 (TI 예시 부품)
+2,Q102 Q202,MMBT2907A,Package_TO_SOT_SMD:SOT-23,"PNP, 전류 제한용 (TI 예시 부품)"
+2,R101 R201,2.49k,Resistor_SMD:R_0603_1608Metric,
+2,R102 R202,2.49k 0.1%,Resistor_SMD:R_0603_1608Metric,"RSET, 0.1% 25ppm 이하"
+2,R103 R203,5.1,Resistor_SMD:R_0603_1608Metric,
+4,R104 R105 R204 R205,15,Resistor_SMD:R_0603_1608Metric,
+2,R106 R206,1k,Resistor_SMD:R_0603_1608Metric,
+2,R107 R207,10k,Resistor_SMD:R_0603_1608Metric,
+2,U101 U201,XTR111AIDGQR,Package_SO:MSOP-10-1EP_3x3mm_P0.5mm_EP2.2x3.1mm_Mask1.83x1.89mm_ThermalVias,TI V-I 변환기 HVSSOP-10 (EP=GND)
+4,R301 R302 R303 R304,470,Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,"rev B: PC817 LED 직렬"
+4,R305 R306 R307 R308,1k,Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,"rev B: 상태 LED"
+4,U301 U302 U303 U304,PC817,Package_DIP:DIP-4_W7.62mm,"rev B: 절연 접점 출력 (소켓 권장)"
+4,D301 D302 D303 D304,LED,LED_THT:LED_D3.0mm,"rev B: 상태 LED"
+1,J4,MCC152 DIO4-7,"TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-6-5.08_1x06_P5.08mm_Horizontal","rev B: DIO4..7, GND"
+4,J5 J6 J7 J8,CONTACT (C E),"TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal","rev B: 펌프 접점 출력"

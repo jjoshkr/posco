@@ -1,0 +1,17 @@
+# Tier C 통합 시나리오의 고장 변형: 피드 도중 Na₂CO₃ 탱크 고갈 → 펌프 자체 정지 → NO_STROKE/TANK_LOW 알람 → DOSE 중단 → pH 유지는 계속
+name: tierC_coprecip_fault
+reactor: {heel_mL: 500, rpm: 400, dye_mg_L: [10, 0, 0]}
+ph: {initial: 7.0, buffers: [[0.002, 6.35]], naoh_pump: P-103, naoh_mol_L: 0.1, acid_pump: P-104, acid_mol_L: 0.1}
+stocks:
+  P-101: {role: cacl2, mol_L: 0.2, volume_mL: 1000}
+  P-102: {role: na2co3, mol_L: 0.2, volume_mL: 1000}
+steps:
+  - {step: stir, rpm: 400}
+  - {step: ph_hold_start, pump: P-103, acid_pump: P-104, setpoint: 10.0, Kp: 8.0, Ki: 0.05}
+  - {step: wait, seconds: 90}
+  - {step: measure, label: baseline}
+  - {step: inject_fault, kind: tank_empty, arg: P-102, seconds: 1}
+  - {step: dose, pumps: [P-101, P-102], volume_mL: 30, rate_mL_min: 3.0, on_abort: continue}
+  - {step: measure, label: after_fault}
+  - {step: ph_hold_stop}
+  - {step: stop}

@@ -1,0 +1,104 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1800' height='840' viewBox='0 0 1800 840' font-family='Pretendard, Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, sans-serif' font-size='12'>
+<rect width='1800' height='840' fill='#fff'/>
+<text x='20' y='30' font-size='20' font-weight='700'>5 L 자켓 유리 반응기 — 뚜껑 포트 배치(위에서 본 그림)와 염료 주입 구조(단면)</text>
+<text x='20' y='50' fill='#555'>색소 단계 기준. 공침 단계에서는 포트 ③ 에 pH 전극, ④ 에 환류 냉각기를 올리면 됨. 세 염료 라인은 반응기 밖에서 절대 합치지 않고 각각 체크밸브를 거쳐 따로 들어간다.</text>
+<circle cx='300' cy='330' r='208' fill='#f3f3f3' stroke='#999' stroke-width='2'/>
+<circle cx='300' cy='330' r='190' fill='#eef6fb' stroke='#555' stroke-width='2'/>
+<text x='300' y='112' text-anchor='middle' font-weight='700'>DN150 플랜지 뚜껑 (5-neck, 24/40)</text>
+<circle cx='300' cy='330' r='34' fill='#fff' stroke='#333' stroke-width='3'/>
+<circle cx='300' cy='330' r='22' fill='#fafafa' stroke='#333' stroke-width='1'/>
+<text x='300' y='336' text-anchor='middle' font-size='20' font-weight='700' fill='#333'>①</text>
+<circle cx='300' cy='210' r='34' fill='#fff' stroke='#e65100' stroke-width='3'/>
+<circle cx='300' cy='210' r='22' fill='#fafafa' stroke='#e65100' stroke-width='1'/>
+<text x='300' y='216' text-anchor='middle' font-size='20' font-weight='700' fill='#e65100'>②</text>
+<circle cx='420' cy='330' r='34' fill='#fff' stroke='#2e7d32' stroke-width='3'/>
+<circle cx='420' cy='330' r='22' fill='#fafafa' stroke='#2e7d32' stroke-width='1'/>
+<text x='420' y='336' text-anchor='middle' font-size='20' font-weight='700' fill='#2e7d32'>③</text>
+<circle cx='300' cy='450' r='34' fill='#fff' stroke='#1565c0' stroke-width='3'/>
+<circle cx='300' cy='450' r='22' fill='#fafafa' stroke='#1565c0' stroke-width='1'/>
+<text x='300' y='456' text-anchor='middle' font-size='20' font-weight='700' fill='#1565c0'>④</text>
+<circle cx='180' cy='330' r='34' fill='#fff' stroke='#6a1b9a' stroke-width='3'/>
+<circle cx='180' cy='330' r='22' fill='#fafafa' stroke='#6a1b9a' stroke-width='1'/>
+<text x='180' y='336' text-anchor='middle' font-size='20' font-weight='700' fill='#6a1b9a'>⑤</text>
+<circle cx='300' cy='221' r='6' fill='#00B4E6' stroke='#333'/>
+<circle cx='290' cy='204' r='6' fill='#E6007E' stroke='#333'/>
+<circle cx='310' cy='204' r='6' fill='#F2C200' stroke='#333'/>
+<rect x='550' y='310' width='60' height='40' rx='6' fill='#fff' stroke='#1565c0' stroke-width='2'/>
+<circle cx='580' cy='330' r='9' fill='#fff' stroke='#1565c0' stroke-width='2'/>
+<path d='M550,315 L498,280 M550,345 L498,380' stroke='#1565c0' stroke-dasharray='4,3'/>
+<text x='580' y='390' text-anchor='middle' fill='#1565c0' font-weight='700'>카메라</text>
+<text x='580' y='404' text-anchor='middle' fill='#1565c0' font-size='10'>(자켓 벽 통해 측면)</text>
+<rect x='70' y='260' width='10' height='140' fill='#ddd' stroke='#999'/>
+<text x='75' y='420' text-anchor='middle' font-size='10' fill='#555'>흰 배경판</text>
+<text x='640' y='110' font-weight='700' font-size='14'>포트 배정</text>
+<text x='640' y='136' font-weight='700' fill='#333' font-size='13'>① 중앙</text>
+<text x='720' y='136' font-weight='700'>오버헤드 교반기</text>
+<text x='720' y='152' font-size='11' fill='#444'>교반 가이드(PTFE 베어링) + PTFE 임펠러</text>
+<text x='640' y='182' font-weight='700' fill='#e65100' font-size='13'>② 12시</text>
+<text x='720' y='182' font-weight='700'>염료 주입 (C·M·Y)</text>
+<text x='720' y='198' font-size='11' fill='#444'>24/40 → GL45 어댑터 + DURAN 3-port GL45 캡 (GL14 ×3)</text>
+<text x='640' y='228' font-weight='700' fill='#2e7d32' font-size='13'>③ 3시</text>
+<text x='720' y='228' font-weight='700'>온도 / (공침: pH 전극)</text>
+<text x='720' y='244' font-size='11' fill='#444'>K 열전대 홀더. 공침 때 pH 전극 홀더로 교체</text>
+<text x='640' y='274' font-weight='700' fill='#1565c0' font-size='13'>④ 6시</text>
+<text x='720' y='274' font-weight='700'>통기 / (공침: 냉각기)</text>
+<text x='720' y='290' font-size='11' fill='#444'>GL14 통기 캡(0.2 µm 필터) — 밀폐하면 펌프가 압력을 받음</text>
+<text x='640' y='320' font-weight='700' fill='#6a1b9a' font-size='13'>⑤ 9시</text>
+<text x='720' y='320' font-weight='700'>시료 채취 · 예비</text>
+<text x='720' y='336' font-size='11' fill='#444'>마개. 피펫 시료, 세척수, 나중에 드롭핑 펀넬</text>
+<text x='640' y='380' font-weight='700' font-size='13'>왜 ② 하나로 세 라인을 넣나</text>
+<text x='640' y='400' font-size='11'>• 3-way 커넥터로 라인을 합치면 공통 부분에 남은 염료가 다음 투입 때 섞여 들어가고(교차 오염),</text>
+<text x='640' y='416' font-size='11'>   배압이 다른 라인으로 역류한다. 그래서 라인은 끝까지 분리한다.</text>
+<text x='640' y='432' font-size='11'>• 24/40 → GL45 어댑터 위에 DURAN 3-port 캡을 올려 GL14 포트 3개에 PTFE 튜브(외경 6 mm) 를</text>
+<text x='640' y='448' font-size='11'>   각각 꽂는다. 포트 하나로 세 라인이 들어가지만 서로 닿지 않는다.</text>
+<text x='640' y='464' font-size='11'>• 체크밸브(CV)는 뚜껑 위, 튜브가 반응기로 들어가기 직전에. 솔레노이드(XV)는 그 앞.</text>
+<text x='640' y='480' font-size='11'>   튜브 끝은 액면 아래 1~2 cm, 교반축 쪽(아래로 끌려 내려가는 흐름).</text>
+<text x='640' y='496' font-size='11'>• 세 튜브 끝을 같은 깊이에 두지 말고 1 cm 씩 다르게 자르면 끝에서 서로 맞닿아 섞이는 일이 없다.</text>
+<path d='M1360,230 v330 a120,40 0 0 0 240,0 v-330' fill='none' stroke='#555' stroke-width='6'/>
+<path d='M1380,240 v310 a100,34 0 0 0 200,0 v-310' fill='#e8f4fb' stroke='#555' stroke-width='2.5'/>
+<rect x='1380' y='240' width='200' height='70' fill='#fff'/>
+<line x1='1380' y1='310' x2='1580' y2='310' stroke='#1565c0' stroke-dasharray='4,3'/>
+<text x='1588' y='314' font-size='10' fill='#1565c0'>액면 (힐 2 L ≈ 3.5 L 까지)</text>
+<rect x='1330' y='200' width='300' height='30' rx='4' fill='#f3f3f3' stroke='#999' stroke-width='2'/>
+<text x='1480' y='220' text-anchor='middle' font-size='11'>뚜껑</text>
+<line x1='1480' y1='140' x2='1480' y2='530' stroke='#333' stroke-width='4'/>
+<rect x='1452' y='105' width='56' height='36' rx='4' fill='#fff' stroke='#333' stroke-width='2'/>
+<text x='1480' y='128' text-anchor='middle' font-size='11' font-weight='700'>① 교반기</text>
+<path d='M1435,530 l45,-12 l45,12 l-45,12 z' fill='#555'/>
+<text x='1535' y='534' font-size='10' fill='#555'>PTFE 임펠러</text>
+<rect x='1377' y='150' width='36' height='50' rx='3' fill='#fff' stroke='#e65100' stroke-width='2'/>
+<text x='1395' y='144' text-anchor='middle' font-size='10' fill='#e65100' font-weight='700'>② GL45 캡</text>
+<path d='M1385,80 L1385,330' stroke='#00B4E6' stroke-width='3' fill='none'/>
+<path d='M1380,110 l10,0 l-5,8 z' fill='#fff' stroke='#333'/>
+<path d='M1395,80 L1395,344' stroke='#E6007E' stroke-width='3' fill='none'/>
+<path d='M1390,110 l10,0 l-5,8 z' fill='#fff' stroke='#333'/>
+<path d='M1405,80 L1405,358' stroke='#F2C200' stroke-width='3' fill='none'/>
+<path d='M1400,110 l10,0 l-5,8 z' fill='#fff' stroke='#333'/>
+<rect x='1363' y='30' width='64' height='26' fill='#fff' stroke='#e65100' stroke-width='1.5'/>
+<text x='1395' y='47' text-anchor='middle' font-size='9' fill='#e65100'>XV ×3 (솔레노이드)</text>
+<text x='1355' y='102' font-size='9' text-anchor='end'>CV ×3</text>
+<text x='1355' y='114' font-size='9' text-anchor='end'>(체크밸브)</text>
+<text x='1355' y='290' font-size='10' text-anchor='end' fill='#444'>PTFE 6×4 튜브</text>
+<text x='1355' y='304' font-size='10' text-anchor='end' fill='#444'>끝: 액면 아래</text>
+<text x='1355' y='318' font-size='10' text-anchor='end' fill='#444'>1·2·3 cm 단차</text>
+<line x1='1565' y1='170' x2='1565' y2='430' stroke='#2e7d32' stroke-width='3'/>
+<text x='1565' y='162' text-anchor='middle' font-size='10' fill='#2e7d32' font-weight='700'>③ K 열전대</text>
+<text x='1573' y='430' font-size='9' fill='#2e7d32'>(공침: pH 전극, 임펠러 높이)</text>
+<rect x='1510' y='170' width='24' height='30' fill='#fff' stroke='#1565c0' stroke-width='1.5'/>
+<text x='1522' y='164' text-anchor='middle' font-size='10' fill='#1565c0' font-weight='700'>④ 통기</text>
+<rect x='1680' y='380' width='60' height='40' rx='6' fill='#fff' stroke='#1565c0' stroke-width='2'/>
+<circle cx='1710' cy='400' r='9' fill='#fff' stroke='#1565c0' stroke-width='2'/>
+<rect x='1620' y='350' width='40' height='100' fill='none' stroke='#1565c0' stroke-dasharray='3,3'/>
+<text x='1640' y='345' text-anchor='middle' font-size='10' fill='#1565c0'>ROI</text>
+<rect x='1300' y='330' width='8' height='150' fill='#ddd' stroke='#999'/>
+<text x='1304' y='495' text-anchor='middle' font-size='10' fill='#555'>흰 배경판</text>
+<text x='1710' y='440' text-anchor='middle' font-size='10' fill='#1565c0'>카메라: 자켓을 통해 ROI 를 봄</text>
+<text x='1710' y='454' text-anchor='middle' font-size='10' fill='#1565c0'>자켓은 비우거나 맑은 물로 채워 기포 없이</text>
+<path d='M1480,600 v30 h40' stroke='#555' stroke-width='3' fill='none'/>
+<text x='1526' y='634' font-size='10' fill='#555'>바닥 드레인 밸브 (있으면)</text>
+<rect x='20' y='690' width='1760' height='140' rx='8' fill='#fafafa' stroke='#ccc'/>
+<text x='32' y='712' font-weight='700' font-size='13'>스톡 탱크 (GL45 병) 구성 — DURAN 3-port GL45 캡(GL14 ×3, 튜브 외경 1.6~6.0 mm) 를 병마다 1개</text>
+<text x='32' y='734' font-size='11'>포트 1: 흡입 — PTFE/PE 6×4 튜브를 병 바닥 1 cm 위까지(풋밸브 있는 흡입 랜스가 있으면 그대로). 포트 2: 통기 — 0.2 µm 시린지 필터나 느슨한 캡 (밀폐하면 진공이 걸려 흡입 불량). 포트 3: 다기능 밸브(MFV) 릴리프 복귀선.</text>
+<text x='32' y='764' font-size='11'>용량: 색소 단계는 1 L 로 충분. 목표 35 mg/L × 액 4 L ÷ 스톡 1000 mg/L = 140 mL/배치/염료 → 1 L 병으로 6~7 배치. 공침 단계(5 L 반응기, 금속염 1~2 L/배치)는 2 L 또는 5 L GL45 로 바꿔야 함 — 캡은 그대로 재사용.</text>
+<text x='32' y='794' font-size='11'>주의: GL14 포트 최대 외경 6.0 mm → 1/4"(6.35 mm) 튜브는 안 들어감. 흡입측은 6×4 mm 튜브로, 패널 S-LOK 1/4" 는 토출측만. 병은 펌프 흡입구보다 낮게 두되 1 m 이상 아래로는 두지 않기(자흡 한계).</text>
+</svg>

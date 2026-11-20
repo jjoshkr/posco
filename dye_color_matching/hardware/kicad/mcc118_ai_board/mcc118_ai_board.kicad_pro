@@ -1,0 +1,5 @@
+{
+  "meta": {"filename": "mcc118_ai_board.kicad_pro", "version": 1},
+  "board": {"design_settings": {"rules": {"min_clearance": 0.2}}},
+  "sheets": [["3d08311d-93f9-40d5-af73-1d8701b9beba", "Root"]]
+}
