@@ -124,6 +124,17 @@ sudo hostnamectl set-hostname ai-node
 
 워크스테이션은 192.168.10.1/24 (Windows: 이더넷 어댑터 속성 → IPv4 수동). 게이트웨이는 비워 둔다 (인터넷은 Wi-Fi 로).
 
+### 3-2b. 접속 정보 (2026-11-20 이미저로 만든 OS)
+
+| 항목 | 값 |
+|---|---|
+| 호스트 이름 | `powerxlab` (→ `powerxlab.local`) |
+| 사용자 | `powerx` |
+| 비밀번호 | 이미저에서 설정한 값 (문서에 적지 않음) |
+| 역할 | 릴레이 HAT(Relay_module_v1)를 올린 Pi 5 = I/O 노드 |
+
+첫 접속은 `ssh powerx@powerxlab.local`. 고정 IP(192.168.10.2)는 접속 후 3-2 의 nmcli 로 넣는다.
+
 ### 3-3. 접속과 포트
 
 | 연결 | 방향 | 포트 | 비고 |
