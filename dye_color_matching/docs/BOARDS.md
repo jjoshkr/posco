@@ -48,6 +48,22 @@ relay_panel.py 의 [버스 스캔]은 0x20~0x27 에서 응답하는 주소가 �
 
 physical_ai_link 의 보드 주소(118=0, 172=1, 152a=2, 152b=3, 134=4)를 그대로 썼습니다. MCC 172 가 스택에 있어도 cmysim 은 건드리지 않습니다.
 
+## 2b. 스택 순서와 보드별 시험 연결
+
+릴레이 HAT(Relay_module_v1)는 40핀이 **관통(스태킹) 헤더가 아니라** 아래쪽 암 소켓만 있어 위에 아무것도 못 올린다. 따라서 **맨 위**에 둔다.
+MCC 보드는 모두 스태킹 헤더(긴 핀)라 아래부터 쌓고, 마지막에 릴레이 HAT 를 그 핀에 꽂는다. 높이가 안 맞거나 릴레이 보드 가까이 두고 싶으면 맨 위 핀에 40핀 리본(암–암)을 꽂아 릴레이 HAT 를 옆에 둔다.
+
+| 층 (아래→위) | 보드 | 주소 점퍼 | I2C 주소 | 시험할 때 무엇을 연결하나 | 확인 명령 |
+|---|---|---|---|---|---|
+| 1 | MCC 118 | 0 (없음) | — | CH4–GND 에 1.5 V 건전지 또는 mcc118_ai_board + PT | `python -m cmysim.io_node_main bench read` (아날로그·온도 연속 표시) |
+| 2 | MCC 152 a | 2 (A1) | 0x22 | DIO4~7 에 LED+1 kΩ(→GND) 또는 채널보드 rev B | `bench dio 4 1`, `bench blink 4` |
+| 3 | MCC 152 b | 3 (A0+A1) | 0x23 | 같음 (`--board mcc152#2`) | `bench dio 4 1 --board mcc152#2` |
+| 4 | MCC 134 | 4 (A2) | — | CH0 H/L 에 K 열전대. 없으면 H–L 을 짧은 선으로 묶으면 실온이 읽힘 | `bench read` |
+| 5 (맨 위) | 릴레이 HAT | JP4 (U2=0x24) | 0x20, 0x24 | 40핀 리본 → 32CH 릴레이 보드, J3 5 V | `python -m cmysim.relay_ctl scan`, `walk 1 1 9 17 25` |
+
+쌓은 뒤 한 번: `sudo daqhats_read_eeproms && daqhats_list_boards` (주소 0 외의 MCC 보드를 등록). `i2cdetect -y 1` 에 20, 22, 23, 24 가 보여야 한다.
+MCC 134 는 발열원에서 멀수록 좋다. 릴레이 HAT 의 ULN2803 은 릴레이 32개 전부 ON 일 때도 1 W 안이라 바로 위에 있어도 큰 영향은 없지만, 정밀 온도가 필요해지면 릴레이 HAT 를 리본으로 떼어 둔다.
+
 ## 3. 소프트웨어 (cmysim)
 - `io_node.json` 에 `mcp23017` 항목이 있으면 밸브·운전허가를 릴레이 제어보드로 보냅니다 (smbus2 필요: `pip install smbus2`, I2C 켜기 `raspi-config`).
 - `dio.RUN_ENABLE` 는 핀 하나 또는 `[[보드, 핀], ...]` 목록 — 펌프마다 PC817 하나씩.
