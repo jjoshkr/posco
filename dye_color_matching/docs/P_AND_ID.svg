@@ -1,0 +1,293 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1500' height='880' viewBox='0 0 1500 880' font-family='Pretendard, Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, sans-serif' font-size='12'>
+<defs><marker id='ar' markerWidth='8' markerHeight='8' refX='7' refY='4' orient='auto'><path d='M0,0 L8,4 L0,8 z' fill='#222'/></marker><marker id='sig' markerWidth='8' markerHeight='8' refX='7' refY='4' orient='auto'><path d='M0,0 L8,4 L0,8 z' fill='#1565c0'/></marker></defs>
+<rect width='1500' height='880' fill='#fff'/>
+<text x='20' y='30' font-size='20' font-weight='700'>P&amp;ID — 식용색소(CMY) 색 매칭 장치 · ProMinent CHEMICAL FEEDER 패널 · 펄스(접점) 모드</text>
+<text x='20' y='50' fill='#555'>실선 = 공정 배관 (S-LOK 1/4" 튜브) · 파란 점선 = 전기 신호 · 회색 = 기존 패널 · 주황 = 추가 설치 · 태그 xx-10n 의 n = 라인 번호(1 C, 2 M, 3 Y)</text>
+<path d='M40,150 v70 a30,10 0 0 0 60,0 v-70' fill='#00B4E6' fill-opacity='0.35' stroke='#222' stroke-width='2'/>
+<ellipse cx='70' cy='150' rx='30' ry='10' fill='#fff' stroke='#222' stroke-width='2'/>
+<text x='70' y='195' text-anchor='middle' font-weight='700'>T-101</text>
+<text x='70' y='210' text-anchor='middle' font-size='10'>시안 스톡</text>
+<text x='70' y='245' text-anchor='middle' font-size='10' fill='#555'>1.00 g/L</text>
+<path d='M100,220 L150,220 L150,190 L178,190' fill='none' stroke='#00B4E6' stroke-width='2.5'/>
+<circle cx='200' cy='190' r='22' fill='#fff' stroke='#222' stroke-width='2'/>
+<path d='M178,190 L222,190 M200,168 L210,182 L200,212' fill='none' stroke='#222' stroke-width='2'/>
+<text x='200' y='160' text-anchor='middle' font-weight='700'>P-101</text>
+<text x='200' y='230' text-anchor='middle' font-size='10'>gamma/X 격막펌프</text>
+<text x='200' y='242' text-anchor='middle' font-size='10' fill='#555'>0.19 mL/str · Contact</text>
+<path d='M222,190 L270,190' fill='none' stroke='#00B4E6' stroke-width='2.5'/>
+<path d='M278,182 L302,198 L302,182 L278,198 z' fill='#fff' stroke='#222' stroke-width='2'/>
+<line x1='290' y1='190' x2='290' y2='174' stroke='#222' stroke-width='2'/>
+<circle cx='290' cy='168' r='6' fill='#fff' stroke='#222' stroke-width='2'/>
+<text x='290' y='214' text-anchor='middle' font-weight='700' fill='#222' font-size='11'>MFV-101</text>
+<text x='290' y='226' text-anchor='middle' font-size='10' fill='#555'>다기능 밸브</text>
+<text x='290' y='238' text-anchor='middle' font-size='10' fill='#555'>릴리프→탱크</text>
+<path d='M290,162 L290,130 L70,130 L70,140' fill='none' stroke='#888' stroke-width='1.5'/>
+<path d='M302,190 L360,190' fill='none' stroke='#00B4E6' stroke-width='2.5'/>
+<path d='M368,182 L392,198 L392,182 L368,198 z' fill='#fff' stroke='#222' stroke-width='2'/>
+<line x1='380' y1='190' x2='380' y2='174' stroke='#222' stroke-width='2'/>
+<line x1='372' y1='174' x2='388' y2='174' stroke='#222' stroke-width='3'/>
+<text x='380' y='214' text-anchor='middle' font-weight='700' fill='#222' font-size='11'>HV-101</text>
+<text x='380' y='226' text-anchor='middle' font-size='10' fill='#555'>볼밸브(수동)</text>
+<text x='380' y='238' text-anchor='middle' font-size='10' fill='#555'>패널 분기</text>
+<path d='M392,190 L470,190' fill='none' stroke='#00B4E6' stroke-width='2.5'/>
+<circle cx='490' cy='150' r='16' fill='#fff' stroke='#e65100' stroke-width='2'/>
+<line x1='474' y1='150' x2='506' y2='150' stroke='#e65100' stroke-width='1.5'/>
+<text x='490' y='147' text-anchor='middle' font-size='10' font-weight='700' fill='#e65100'>PT</text>
+<text x='490' y='160' text-anchor='middle' font-size='9' fill='#e65100'>101</text>
+<line x1='490' y1='166' x2='490' y2='190' stroke='#e65100' stroke-width='2'/>
+<text x='490' y='212' text-anchor='middle' font-size='10' fill='#e65100'>4–20 mA 트랜스미터</text>
+<text x='490' y='224' text-anchor='middle' font-size='10' fill='#555'>(압력계 자리 티)</text>
+<circle cx='530' cy='150' r='16' fill='#fff' stroke='#222' stroke-width='2'/>
+<text x='530' y='147' text-anchor='middle' font-size='10' font-weight='700' fill='#222'>PI</text>
+<text x='530' y='160' text-anchor='middle' font-size='9' fill='#222'>101</text>
+<line x1='530' y1='166' x2='530' y2='190' stroke='#222' stroke-width='2'/>
+<text x='530' y='236' text-anchor='middle' font-size='10' fill='#555'>Autonics 0–1 MPa</text>
+<path d='M470,190 L590,190' fill='none' stroke='#00B4E6' stroke-width='2.5'/>
+<rect x='600' y='160' width='20' height='30' rx='6' fill='#fff' stroke='#222' stroke-width='2'/>
+<line x1='600' y1='175' x2='620' y2='175' stroke='#222' stroke-dasharray='2,2'/>
+<text x='610' y='154' text-anchor='middle' font-size='9'>N₂</text>
+<text x='610' y='212' text-anchor='middle' font-weight='700' font-size='11'>PD-101</text>
+<text x='610' y='224' text-anchor='middle' font-size='10' fill='#555'>HIDRACAR 0.09 L</text>
+<text x='610' y='236' text-anchor='middle' font-size='10' fill='#555'>예압 60~80 %</text>
+<path d='M610,190 L680,190' fill='none' stroke='#00B4E6' stroke-width='2.5'/>
+<path d='M688,182 L712,198 L712,182 L688,198 z' fill='#fff' stroke='#222' stroke-width='2'/>
+<line x1='700' y1='190' x2='700' y2='174' stroke='#222' stroke-width='2'/>
+<path d='M690,174 q10,-14 20,0' fill='none' stroke='#222' stroke-width='2'/>
+<line x1='700' y1='160' x2='700' y2='168' stroke='#222' stroke-width='1.5'/>
+<line x1='694' y1='166' x2='706' y2='166' stroke='#222' stroke-width='1.5'/>
+<text x='700' y='214' text-anchor='middle' font-weight='700' fill='#222' font-size='11'>PCV-101</text>
+<text x='700' y='226' text-anchor='middle' font-size='10' fill='#555'>DHV-U DN10 배압</text>
+<text x='700' y='238' text-anchor='middle' font-size='10' fill='#555'>설정 2 bar</text>
+<path d='M712,190 L800,190' fill='none' stroke='#00B4E6' stroke-width='2.5'/>
+<path d='M808,182 L832,198 L832,182 L808,198 z' fill='#fff' stroke='#e65100' stroke-width='2'/>
+<line x1='820' y1='190' x2='820' y2='176' stroke='#e65100' stroke-width='2'/>
+<rect x='811' y='162' width='18' height='14' fill='#fff' stroke='#e65100' stroke-width='2'/>
+<text x='820' y='173' text-anchor='middle' font-size='10' fill='#e65100'>S</text>
+<text x='820' y='214' text-anchor='middle' font-weight='700' fill='#e65100' font-size='11'>XV-101</text>
+<text x='820' y='226' text-anchor='middle' font-size='10' fill='#555'>HTV 04L2-C 24 V</text>
+<text x='820' y='238' text-anchor='middle' font-size='10' fill='#555'>NC 2-way 직동</text>
+<path d='M832,190 L900,190' fill='none' stroke='#00B4E6' stroke-width='2.5'/>
+<path d='M908,182 L932,198 L932,182 L908,198 z' fill='#fff' stroke='#e65100' stroke-width='2'/>
+<circle cx='929' cy='190' r='4' fill='#e65100'/>
+<text x='920' y='214' text-anchor='middle' font-weight='700' fill='#e65100' font-size='11'>CV-101</text>
+<text x='920' y='226' text-anchor='middle' font-size='10' fill='#555'>체크밸브(주입)</text>
+<path d='M932,190 L1040,190 L1040,380 L1135,380' fill='none' stroke='#00B4E6' stroke-width='2.5' marker-end="url(#ar)"/>
+<path d='M820,162 L820,115 L1000,115' fill='none' stroke='#1565c0' stroke-width='1.2' stroke-dasharray='5,4' marker-end='url(#sig)'/>
+<text x='1004' y='111' fill='#1565c0' font-size='10'>DO  XV-101</text>
+<path d='M200,168 L200,95 L1000,95' fill='none' stroke='#1565c0' stroke-width='1.2' stroke-dasharray='5,4' marker-end='url(#sig)'/>
+<text x='1004' y='91' fill='#1565c0' font-size='10'>DO  펄스 P-101  (+ Pause 공통)</text>
+<path d='M490,134 L490,75 L1000,75' fill='none' stroke='#1565c0' stroke-width='1.2' stroke-dasharray='5,4' marker-end='url(#sig)'/>
+<text x='1004' y='71' fill='#1565c0' font-size='10'>AI  PT-101</text>
+<path d='M40,350 v70 a30,10 0 0 0 60,0 v-70' fill='#E6007E' fill-opacity='0.35' stroke='#222' stroke-width='2'/>
+<ellipse cx='70' cy='350' rx='30' ry='10' fill='#fff' stroke='#222' stroke-width='2'/>
+<text x='70' y='395' text-anchor='middle' font-weight='700'>T-102</text>
+<text x='70' y='410' text-anchor='middle' font-size='10'>마젠타 스톡</text>
+<text x='70' y='445' text-anchor='middle' font-size='10' fill='#555'>1.00 g/L</text>
+<path d='M100,420 L150,420 L150,390 L178,390' fill='none' stroke='#E6007E' stroke-width='2.5'/>
+<circle cx='200' cy='390' r='22' fill='#fff' stroke='#222' stroke-width='2'/>
+<path d='M178,390 L222,390 M200,368 L210,382 L200,412' fill='none' stroke='#222' stroke-width='2'/>
+<text x='200' y='360' text-anchor='middle' font-weight='700'>P-102</text>
+<text x='200' y='430' text-anchor='middle' font-size='10'>gamma/X 격막펌프</text>
+<text x='200' y='442' text-anchor='middle' font-size='10' fill='#555'>0.19 mL/str · Contact</text>
+<path d='M222,390 L270,390' fill='none' stroke='#E6007E' stroke-width='2.5'/>
+<path d='M278,382 L302,398 L302,382 L278,398 z' fill='#fff' stroke='#222' stroke-width='2'/>
+<line x1='290' y1='390' x2='290' y2='374' stroke='#222' stroke-width='2'/>
+<circle cx='290' cy='368' r='6' fill='#fff' stroke='#222' stroke-width='2'/>
+<text x='290' y='414' text-anchor='middle' font-weight='700' fill='#222' font-size='11'>MFV-102</text>
+<text x='290' y='426' text-anchor='middle' font-size='10' fill='#555'>다기능 밸브</text>
+<text x='290' y='438' text-anchor='middle' font-size='10' fill='#555'>릴리프→탱크</text>
+<path d='M290,362 L290,330 L70,330 L70,340' fill='none' stroke='#888' stroke-width='1.5'/>
+<path d='M302,390 L360,390' fill='none' stroke='#E6007E' stroke-width='2.5'/>
+<path d='M368,382 L392,398 L392,382 L368,398 z' fill='#fff' stroke='#222' stroke-width='2'/>
+<line x1='380' y1='390' x2='380' y2='374' stroke='#222' stroke-width='2'/>
+<line x1='372' y1='374' x2='388' y2='374' stroke='#222' stroke-width='3'/>
+<text x='380' y='414' text-anchor='middle' font-weight='700' fill='#222' font-size='11'>HV-102</text>
+<text x='380' y='426' text-anchor='middle' font-size='10' fill='#555'>볼밸브(수동)</text>
+<text x='380' y='438' text-anchor='middle' font-size='10' fill='#555'>패널 분기</text>
+<path d='M392,390 L470,390' fill='none' stroke='#E6007E' stroke-width='2.5'/>
+<circle cx='490' cy='350' r='16' fill='#fff' stroke='#e65100' stroke-width='2'/>
+<line x1='474' y1='350' x2='506' y2='350' stroke='#e65100' stroke-width='1.5'/>
+<text x='490' y='347' text-anchor='middle' font-size='10' font-weight='700' fill='#e65100'>PT</text>
+<text x='490' y='360' text-anchor='middle' font-size='9' fill='#e65100'>102</text>
+<line x1='490' y1='366' x2='490' y2='390' stroke='#e65100' stroke-width='2'/>
+<text x='490' y='412' text-anchor='middle' font-size='10' fill='#e65100'>4–20 mA 트랜스미터</text>
+<text x='490' y='424' text-anchor='middle' font-size='10' fill='#555'>(압력계 자리 티)</text>
+<circle cx='530' cy='350' r='16' fill='#fff' stroke='#222' stroke-width='2'/>
+<text x='530' y='347' text-anchor='middle' font-size='10' font-weight='700' fill='#222'>PI</text>
+<text x='530' y='360' text-anchor='middle' font-size='9' fill='#222'>102</text>
+<line x1='530' y1='366' x2='530' y2='390' stroke='#222' stroke-width='2'/>
+<text x='530' y='436' text-anchor='middle' font-size='10' fill='#555'>Autonics 0–1 MPa</text>
+<path d='M470,390 L590,390' fill='none' stroke='#E6007E' stroke-width='2.5'/>
+<rect x='600' y='360' width='20' height='30' rx='6' fill='#fff' stroke='#222' stroke-width='2'/>
+<line x1='600' y1='375' x2='620' y2='375' stroke='#222' stroke-dasharray='2,2'/>
+<text x='610' y='354' text-anchor='middle' font-size='9'>N₂</text>
+<text x='610' y='412' text-anchor='middle' font-weight='700' font-size='11'>PD-102</text>
+<text x='610' y='424' text-anchor='middle' font-size='10' fill='#555'>HIDRACAR 0.09 L</text>
+<text x='610' y='436' text-anchor='middle' font-size='10' fill='#555'>예압 60~80 %</text>
+<path d='M610,390 L680,390' fill='none' stroke='#E6007E' stroke-width='2.5'/>
+<path d='M688,382 L712,398 L712,382 L688,398 z' fill='#fff' stroke='#222' stroke-width='2'/>
+<line x1='700' y1='390' x2='700' y2='374' stroke='#222' stroke-width='2'/>
+<path d='M690,374 q10,-14 20,0' fill='none' stroke='#222' stroke-width='2'/>
+<line x1='700' y1='360' x2='700' y2='368' stroke='#222' stroke-width='1.5'/>
+<line x1='694' y1='366' x2='706' y2='366' stroke='#222' stroke-width='1.5'/>
+<text x='700' y='414' text-anchor='middle' font-weight='700' fill='#222' font-size='11'>PCV-102</text>
+<text x='700' y='426' text-anchor='middle' font-size='10' fill='#555'>DHV-U DN10 배압</text>
+<text x='700' y='438' text-anchor='middle' font-size='10' fill='#555'>설정 2 bar</text>
+<path d='M712,390 L800,390' fill='none' stroke='#E6007E' stroke-width='2.5'/>
+<path d='M808,382 L832,398 L832,382 L808,398 z' fill='#fff' stroke='#e65100' stroke-width='2'/>
+<line x1='820' y1='390' x2='820' y2='376' stroke='#e65100' stroke-width='2'/>
+<rect x='811' y='362' width='18' height='14' fill='#fff' stroke='#e65100' stroke-width='2'/>
+<text x='820' y='373' text-anchor='middle' font-size='10' fill='#e65100'>S</text>
+<text x='820' y='414' text-anchor='middle' font-weight='700' fill='#e65100' font-size='11'>XV-102</text>
+<text x='820' y='426' text-anchor='middle' font-size='10' fill='#555'>HTV 04L2-C 24 V</text>
+<text x='820' y='438' text-anchor='middle' font-size='10' fill='#555'>NC 2-way 직동</text>
+<path d='M832,390 L900,390' fill='none' stroke='#E6007E' stroke-width='2.5'/>
+<path d='M908,382 L932,398 L932,382 L908,398 z' fill='#fff' stroke='#e65100' stroke-width='2'/>
+<circle cx='929' cy='390' r='4' fill='#e65100'/>
+<text x='920' y='414' text-anchor='middle' font-weight='700' fill='#e65100' font-size='11'>CV-102</text>
+<text x='920' y='426' text-anchor='middle' font-size='10' fill='#555'>체크밸브(주입)</text>
+<path d='M932,390 L1040,390 L1040,420 L1135,420' fill='none' stroke='#E6007E' stroke-width='2.5' marker-end="url(#ar)"/>
+<path d='M820,362 L820,315 L1000,315' fill='none' stroke='#1565c0' stroke-width='1.2' stroke-dasharray='5,4' marker-end='url(#sig)'/>
+<text x='1004' y='311' fill='#1565c0' font-size='10'>DO  XV-102</text>
+<path d='M200,368 L200,295 L1000,295' fill='none' stroke='#1565c0' stroke-width='1.2' stroke-dasharray='5,4' marker-end='url(#sig)'/>
+<text x='1004' y='291' fill='#1565c0' font-size='10'>DO  펄스 P-102  (+ Pause 공통)</text>
+<path d='M490,334 L490,275 L1000,275' fill='none' stroke='#1565c0' stroke-width='1.2' stroke-dasharray='5,4' marker-end='url(#sig)'/>
+<text x='1004' y='271' fill='#1565c0' font-size='10'>AI  PT-102</text>
+<path d='M40,550 v70 a30,10 0 0 0 60,0 v-70' fill='#F2C200' fill-opacity='0.35' stroke='#222' stroke-width='2'/>
+<ellipse cx='70' cy='550' rx='30' ry='10' fill='#fff' stroke='#222' stroke-width='2'/>
+<text x='70' y='595' text-anchor='middle' font-weight='700'>T-103</text>
+<text x='70' y='610' text-anchor='middle' font-size='10'>옐로 스톡</text>
+<text x='70' y='645' text-anchor='middle' font-size='10' fill='#555'>1.00 g/L</text>
+<path d='M100,620 L150,620 L150,590 L178,590' fill='none' stroke='#F2C200' stroke-width='2.5'/>
+<circle cx='200' cy='590' r='22' fill='#fff' stroke='#222' stroke-width='2'/>
+<path d='M178,590 L222,590 M200,568 L210,582 L200,612' fill='none' stroke='#222' stroke-width='2'/>
+<text x='200' y='560' text-anchor='middle' font-weight='700'>P-103</text>
+<text x='200' y='630' text-anchor='middle' font-size='10'>gamma/X 격막펌프</text>
+<text x='200' y='642' text-anchor='middle' font-size='10' fill='#555'>0.19 mL/str · Contact</text>
+<path d='M222,590 L270,590' fill='none' stroke='#F2C200' stroke-width='2.5'/>
+<path d='M278,582 L302,598 L302,582 L278,598 z' fill='#fff' stroke='#222' stroke-width='2'/>
+<line x1='290' y1='590' x2='290' y2='574' stroke='#222' stroke-width='2'/>
+<circle cx='290' cy='568' r='6' fill='#fff' stroke='#222' stroke-width='2'/>
+<text x='290' y='614' text-anchor='middle' font-weight='700' fill='#222' font-size='11'>MFV-103</text>
+<text x='290' y='626' text-anchor='middle' font-size='10' fill='#555'>다기능 밸브</text>
+<text x='290' y='638' text-anchor='middle' font-size='10' fill='#555'>릴리프→탱크</text>
+<path d='M290,562 L290,530 L70,530 L70,540' fill='none' stroke='#888' stroke-width='1.5'/>
+<path d='M302,590 L360,590' fill='none' stroke='#F2C200' stroke-width='2.5'/>
+<path d='M368,582 L392,598 L392,582 L368,598 z' fill='#fff' stroke='#222' stroke-width='2'/>
+<line x1='380' y1='590' x2='380' y2='574' stroke='#222' stroke-width='2'/>
+<line x1='372' y1='574' x2='388' y2='574' stroke='#222' stroke-width='3'/>
+<text x='380' y='614' text-anchor='middle' font-weight='700' fill='#222' font-size='11'>HV-103</text>
+<text x='380' y='626' text-anchor='middle' font-size='10' fill='#555'>볼밸브(수동)</text>
+<text x='380' y='638' text-anchor='middle' font-size='10' fill='#555'>패널 분기</text>
+<path d='M392,590 L470,590' fill='none' stroke='#F2C200' stroke-width='2.5'/>
+<circle cx='490' cy='550' r='16' fill='#fff' stroke='#e65100' stroke-width='2'/>
+<line x1='474' y1='550' x2='506' y2='550' stroke='#e65100' stroke-width='1.5'/>
+<text x='490' y='547' text-anchor='middle' font-size='10' font-weight='700' fill='#e65100'>PT</text>
+<text x='490' y='560' text-anchor='middle' font-size='9' fill='#e65100'>103</text>
+<line x1='490' y1='566' x2='490' y2='590' stroke='#e65100' stroke-width='2'/>
+<text x='490' y='612' text-anchor='middle' font-size='10' fill='#e65100'>4–20 mA 트랜스미터</text>
+<text x='490' y='624' text-anchor='middle' font-size='10' fill='#555'>(압력계 자리 티)</text>
+<circle cx='530' cy='550' r='16' fill='#fff' stroke='#222' stroke-width='2'/>
+<text x='530' y='547' text-anchor='middle' font-size='10' font-weight='700' fill='#222'>PI</text>
+<text x='530' y='560' text-anchor='middle' font-size='9' fill='#222'>103</text>
+<line x1='530' y1='566' x2='530' y2='590' stroke='#222' stroke-width='2'/>
+<text x='530' y='636' text-anchor='middle' font-size='10' fill='#555'>Autonics 0–1 MPa</text>
+<path d='M470,590 L590,590' fill='none' stroke='#F2C200' stroke-width='2.5'/>
+<rect x='600' y='560' width='20' height='30' rx='6' fill='#fff' stroke='#222' stroke-width='2'/>
+<line x1='600' y1='575' x2='620' y2='575' stroke='#222' stroke-dasharray='2,2'/>
+<text x='610' y='554' text-anchor='middle' font-size='9'>N₂</text>
+<text x='610' y='612' text-anchor='middle' font-weight='700' font-size='11'>PD-103</text>
+<text x='610' y='624' text-anchor='middle' font-size='10' fill='#555'>HIDRACAR 0.09 L</text>
+<text x='610' y='636' text-anchor='middle' font-size='10' fill='#555'>예압 60~80 %</text>
+<path d='M610,590 L680,590' fill='none' stroke='#F2C200' stroke-width='2.5'/>
+<path d='M688,582 L712,598 L712,582 L688,598 z' fill='#fff' stroke='#222' stroke-width='2'/>
+<line x1='700' y1='590' x2='700' y2='574' stroke='#222' stroke-width='2'/>
+<path d='M690,574 q10,-14 20,0' fill='none' stroke='#222' stroke-width='2'/>
+<line x1='700' y1='560' x2='700' y2='568' stroke='#222' stroke-width='1.5'/>
+<line x1='694' y1='566' x2='706' y2='566' stroke='#222' stroke-width='1.5'/>
+<text x='700' y='614' text-anchor='middle' font-weight='700' fill='#222' font-size='11'>PCV-103</text>
+<text x='700' y='626' text-anchor='middle' font-size='10' fill='#555'>DHV-U DN10 배압</text>
+<text x='700' y='638' text-anchor='middle' font-size='10' fill='#555'>설정 2 bar</text>
+<path d='M712,590 L800,590' fill='none' stroke='#F2C200' stroke-width='2.5'/>
+<path d='M808,582 L832,598 L832,582 L808,598 z' fill='#fff' stroke='#e65100' stroke-width='2'/>
+<line x1='820' y1='590' x2='820' y2='576' stroke='#e65100' stroke-width='2'/>
+<rect x='811' y='562' width='18' height='14' fill='#fff' stroke='#e65100' stroke-width='2'/>
+<text x='820' y='573' text-anchor='middle' font-size='10' fill='#e65100'>S</text>
+<text x='820' y='614' text-anchor='middle' font-weight='700' fill='#e65100' font-size='11'>XV-103</text>
+<text x='820' y='626' text-anchor='middle' font-size='10' fill='#555'>HTV 04L2-C 24 V</text>
+<text x='820' y='638' text-anchor='middle' font-size='10' fill='#555'>NC 2-way 직동</text>
+<path d='M832,590 L900,590' fill='none' stroke='#F2C200' stroke-width='2.5'/>
+<path d='M908,582 L932,598 L932,582 L908,598 z' fill='#fff' stroke='#e65100' stroke-width='2'/>
+<circle cx='929' cy='590' r='4' fill='#e65100'/>
+<text x='920' y='614' text-anchor='middle' font-weight='700' fill='#e65100' font-size='11'>CV-103</text>
+<text x='920' y='626' text-anchor='middle' font-size='10' fill='#555'>체크밸브(주입)</text>
+<path d='M932,590 L1040,590 L1040,460 L1135,460' fill='none' stroke='#F2C200' stroke-width='2.5' marker-end="url(#ar)"/>
+<path d='M820,562 L820,515 L1000,515' fill='none' stroke='#1565c0' stroke-width='1.2' stroke-dasharray='5,4' marker-end='url(#sig)'/>
+<text x='1004' y='511' fill='#1565c0' font-size='10'>DO  XV-103</text>
+<path d='M200,568 L200,495 L1000,495' fill='none' stroke='#1565c0' stroke-width='1.2' stroke-dasharray='5,4' marker-end='url(#sig)'/>
+<text x='1004' y='491' fill='#1565c0' font-size='10'>DO  펄스 P-103  (+ Pause 공통)</text>
+<path d='M490,534 L490,475 L1000,475' fill='none' stroke='#1565c0' stroke-width='1.2' stroke-dasharray='5,4' marker-end='url(#sig)'/>
+<text x='1004' y='471' fill='#1565c0' font-size='10'>AI  PT-103</text>
+<path d='M1140,330 v240 a90,30 0 0 0 180,0 v-240' fill='#e8f4fb' stroke='#222' stroke-width='2.5'/>
+<ellipse cx='1230' cy='330' rx='90' ry='30' fill='#fff' stroke='#222' stroke-width='2.5'/>
+<text x='1230' y='600' text-anchor='middle' font-weight='700'>R-101  반응기 (비커/자켓 용기)</text>
+<text x='1230' y='616' text-anchor='middle' font-size='10' fill='#555'>힐 2000 mL · 흰 배경판 · 조명 고정</text>
+<line x1='1230' y1='240' x2='1230' y2='540' stroke='#222' stroke-width='3'/>
+<rect x='1200' y='210' width='60' height='30' rx='4' fill='#fff' stroke='#222' stroke-width='2'/>
+<text x='1230' y='230' text-anchor='middle' font-weight='700' font-size='11'>M-101</text>
+<path d='M1200,540 l30,-10 l30,10 l-30,10 z' fill='#555'/>
+<text x='1270' y='228' font-size='10' fill='#555'>교반기 300 rpm</text>
+<text x='1270' y='240' font-size='10' fill='#555'>(수동 다이얼 / 추후 AO)</text>
+<rect x='1350' y='430' width='70' height='40' rx='6' fill='#fff' stroke='#1565c0' stroke-width='2'/>
+<circle cx='1365' cy='450' r='8' fill='#fff' stroke='#1565c0' stroke-width='2'/>
+<circle cx='1395' cy='450' r='8' fill='#fff' stroke='#1565c0' stroke-width='2'/>
+<text x='1385' y='488' text-anchor='middle' font-size='10' font-weight='700' fill='#1565c0'>AE-101  RealSense (RGB)</text>
+<text x='1385' y='500' text-anchor='middle' font-size='10' fill='#555'>수동 노출·WB 고정, ROI</text>
+<path d='M1350,440 L1270,400 M1350,460 L1270,500' stroke='#1565c0' stroke-width='1' stroke-dasharray='3,3'/>
+<rect x='1180' y='400' width='90' height='100' fill='none' stroke='#1565c0' stroke-dasharray='3,3'/>
+<text x='1225' y='395' font-size='10' fill='#1565c0'>ROI</text>
+<rect x='1090' y='380' width='8' height='140' fill='#ddd' stroke='#999'/>
+<text x='1094' y='535' font-size='9' fill='#555' text-anchor='middle'>흰 배경판</text>
+<path d='M1350,530 l20,0 l-10,15 z' fill='#fbc02d' stroke='#999'/>
+<text x='1380' y='545' font-size='10' fill='#555'>조명 (고정, 플리커 없음)</text>
+<circle cx='1290' cy='285' r='16' fill='#fff' stroke='#222' stroke-width='2'/>
+<line x1='1274' y1='285' x2='1306' y2='285' stroke='#222' stroke-width='1.5'/>
+<text x='1290' y='282' text-anchor='middle' font-size='10' font-weight='700' fill='#222'>TE</text>
+<text x='1290' y='295' text-anchor='middle' font-size='9' fill='#222'>101</text>
+<line x1='1290' y1='301' x2='1290' y2='335' stroke='#222' stroke-width='2'/>
+<text x='1312' y='289' font-size='10' fill='#555'>K 열전대 (선택)</text>
+<path d='M1230,600 L1230,640 L1290,640' fill='none' stroke='#222' stroke-width='2.5'/>
+<path d='M1298,632 L1322,648 L1322,632 L1298,648 z' fill='#fff' stroke='#222' stroke-width='2'/>
+<line x1='1310' y1='640' x2='1310' y2='624' stroke='#222' stroke-width='2'/>
+<line x1='1302' y1='624' x2='1318' y2='624' stroke='#222' stroke-width='3'/>
+<text x='1310' y='664' text-anchor='middle' font-weight='700' fill='#222' font-size='11'>HV-104</text>
+<text x='1310' y='676' text-anchor='middle' font-size='10' fill='#555'>드레인</text>
+<rect x='985' y='650' width='300' height='120' rx='8' fill='#f5f7fb' stroke='#1565c0' stroke-width='1.5'/>
+<text x='1135' y='672' text-anchor='middle' font-weight='700' fill='#1565c0' font-size='11'>I/O 노드  Pi 5 + MCC 152 ×2 · MCC 118 · MCC 134</text>
+<text x='995' y='692' font-size='9.5'>DO 펄스 P-101~103 → PC817 → 펌프 External contact</text>
+<text x='995' y='706' font-size='9.5'>DO RUN_ENABLE → PC817 ×3 → 펌프 Pause (닫힘 = 운전)</text>
+<text x='995' y='720' font-size='9.5'>DO XV-101~103 → IRLZ44N → 24 V 코일 (+플라이백)</text>
+<text x='995' y='734' font-size='9.5'>AI CH4 ← 250 Ω 션트 ← PT 4–20 mA · TC CH0 ← TE-101</text>
+<text x='995' y='748' font-size='9.5'>인터록: 밸브 닫힘 / 운전 허가 OFF 상태의 펌프 명령 거부</text>
+<text x='995' y='762' font-size='9.5'>워치독 1 s → SAFE (허가 OFF → 펌프 0 → 밸브 닫힘)</text>
+<path d='M1000,515 L1000,650' fill='none' stroke='#1565c0' stroke-width='1.2' stroke-dasharray='5,4' marker-end='url(#sig)'/>
+<rect x='1300' y='650' width='185' height='120' rx='8' fill='#f5f7fb' stroke='#1565c0' stroke-width='1.5'/>
+<text x='1392' y='672' text-anchor='middle' font-weight='700' fill='#1565c0' font-size='11'>AI 노드  Pi 5 + AI HAT+</text>
+<text x='1308' y='692' font-size='10'>RealSense → ROI 평균 RGB</text>
+<text x='1308' y='706' font-size='10'>→ ĉ (E⁻¹A, NNLS) · ΔE2000</text>
+<text x='1308' y='720' font-size='10'>PLAN→PRIME→DOSE→SETTLE</text>
+<text x='1308' y='734' font-size='10'>→MEASURE→TRIM→DONE</text>
+<text x='1308' y='748' font-size='10'>YOLO: 기포·액체 상태</text>
+<text x='1308' y='762' font-size='10'>ZeroMQ 5555/5556 ↔ I/O 노드</text>
+<path d='M1385,470 L1385,650' fill='none' stroke='#1565c0' stroke-width='1.2' stroke-dasharray='5,4' marker-end='url(#sig)'/>
+<path d='M1285,710 L1300,710' stroke='#1565c0' stroke-width='2'/>
+<text x='1292' y='704' text-anchor='middle' font-size='8' fill='#1565c0'>LAN</text>
+<rect x='20' y='700' width='560' height='160' rx='8' fill='#fafafa' stroke='#ccc'/>
+<text x='30' y='720' font-weight='700'>범례 / 태그</text>
+<text x='30' y='740' font-size='10.5' fill='#333'>T 탱크 · P 펌프 · MFV 다기능 밸브(흡입/배출/릴리프) · HV 수동 볼밸브 · PT 압력 트랜스미터(4–20 mA, 추가) · PI 압력계(현장)</text>
+<text x='30' y='758' font-size='10.5' fill='#333'>PD 펄세이션 댐퍼 · PCV 배압 밸브(DHV-U, 2 bar) · XV 솔레노이드 밸브(NC, 추가) · CV 체크밸브(추가) · R 반응기 · M 교반기</text>
+<text x='30' y='776' font-size='10.5' fill='#333'>AE 분석 센서(카메라) · TE 온도 · DO 디지털 출력(MCC 152) · AI 아날로그 입력(MCC 118) · TC 열전대 입력(MCC 134)</text>
+<text x='30' y='794' font-size='10.5' fill='#333'>동작: PLAN(목표→c*) → PRIME(무장·허가·XV 열림) → DOSE(펄스 계수) → XV 닫힘 → SETTLE(3 t_m) → MEASURE(2 s) → TRIM → DONE(SAFE)</text>
+<text x='30' y='812' font-size='10.5' fill='#333'>안전: XV 는 무전원 시 닫힘, Pause 는 접점 열림 시 정지, 밸브 닫힌 채 펌프 금지(인터록), 24 V 퓨즈 2 A, 접지 한 점</text>
+<text x='30' y='830' font-size='10.5' fill='#b26a00'>미확정(현장 확인): 교차 튜브 연결 토폴로지, 제어함↔펌프 배선, 펌프 외부제어 케이블 핀 배정, PT 범위(0–10 bar 가정)</text>
+</svg>

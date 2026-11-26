@@ -1,0 +1,11 @@
+# Tier C 준비: 금속염 피드(산 부하)가 있는 상태에서 릴레이 자동동조로 Kp, Ki 를 구한다.
+# 염기만 넣는 제어라 산 부하가 없으면 pH 가 내려오지 않아 릴레이 진동이 생기지 않는다.
+name: tierC_ph_autotune
+reactor: {heel_mL: 2000, rpm: 400}
+ph: {initial: 9.5, buffers: [[0.005, 6.35]], naoh_pump: P-103, naoh_mol_L: 0.1}
+steps:
+  - {step: stir, rpm: 400}
+  - {step: acid_load, mol_min: 0.0002}
+  - {step: ph_control, pump: P-103, setpoint: 10.0, seconds: 1200, mode: relay, relay_d: 4.0, label: autotune}
+  - {step: log, note: "autotune 결과(Kp, Ki)는 measurements[-1].autotune 에 기록됨. 다음 실행 레시피의 ph_control 에 넣을 것"}
+  - {step: stop}

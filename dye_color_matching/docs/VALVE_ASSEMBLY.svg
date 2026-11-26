@@ -1,0 +1,155 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1900' height='1260' viewBox='0 0 1900 1260' font-family='Pretendard, Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, sans-serif' font-size='12'>
+<defs><marker id='a' markerWidth='8' markerHeight='8' refX='7' refY='4' orient='auto'><path d='M0,0 L8,4 L0,8 z' fill='#333'/></marker><pattern id='thr' width='4' height='8' patternUnits='userSpaceOnUse'><path d='M0,0 L4,4 L0,8' fill='none' stroke='#555' stroke-width='1'/></pattern></defs>
+<rect width='1900' height='1260' fill='#fff'/>
+<text x='20' y='30' font-size='20' font-weight='700'>솔레노이드 밸브 1개를 패널 라인 출구에 붙이는 법 — 분해 조립도 (피팅 · 튜브 · 밸브가 맞물리는 모양)</text>
+<text x='20' y='50' fill='#555'>원리 두 가지만 알면 됩니다. ① 튜브는 '압착 피팅'(너트+페룰)으로 잡는다. ② 나사 구멍에는 '수나사 피팅'을 테프론 테이프 감아 돌려 넣는다. 밸브는 양쪽이 나사 구멍이므로, 양쪽에 '나사 ↔ 튜브' 변환 피팅이 하나씩 필요합니다.</text>
+<line x1='40' y1='250' x2='1860' y2='250' stroke='#aaa' stroke-dasharray='8,6'/>
+<text x='1865' y='254' font-size='10' fill='#888'>중심선</text>
+<text x='20' y='95' font-weight='700' font-size='14'>A. 분해 상태 (왼쪽 = 패널 쪽, 오른쪽 = 반응기 쪽). 모든 부품의 구멍 중심을 한 선에 맞추면 그대로 조립됩니다.</text>
+<rect x='40' y='243' width='150' height='14' fill='#c9c9c9' stroke='#333' stroke-width='1.5' />
+<text x='115' y='234' text-anchor='middle' font-size='10.5' fill='#555'>1/4" SUS 튜브 (패널 출구, 기존)</text>
+<rect x='215' y='234' width='34' height='32' fill='#9aa0a6' stroke='#333' stroke-width='1.5' />
+<text x='232' y='290' text-anchor='middle' font-size='10'>너트</text>
+<path d='M262,240 l12,0 l6,10 l-6,10 l-12,0 z' fill='#777' stroke='#333'/>
+<text x='268' y='290' text-anchor='middle' font-size='10'>뒤 페룰</text>
+<path d='M290,238 l16,0 l8,12 l-8,12 l-16,0 z' fill='#777' stroke='#333'/>
+<text x='300' y='290' text-anchor='middle' font-size='10'>앞 페룰</text>
+<rect x='330' y='236' width='40' height='28' fill='#b0b0b0' stroke='#333' stroke-width='1.5' />
+<rect x='370' y='230' width='36' height='40' fill='#9a9a9a' stroke='#333' stroke-width='1.5' />
+<rect x='406' y='239' width='46' height='22' fill='url(#thr)' stroke='#333' stroke-width='1.5' />
+<text x='390' y='308' text-anchor='middle' font-size='10.5' font-weight='600' fill='#e65100'>어댑터 A  1/4" 튜브 × PT1/4 수</text>
+<path d='M470,220 q15,30 0,60' fill='none' stroke='#fff' stroke-width='6'/><path d='M470,220 q15,30 0,60' fill='none' stroke='#2a5db0' stroke-width='2' stroke-dasharray='3,2'/>
+<text x='470' y='210' text-anchor='middle' font-size='10'>테프론 테이프</text>
+<rect x='520' y='220' width='200' height='60' fill='#f5f5f5' stroke='#333' stroke-width='1.5' />
+<rect x='520' y='239' width='46' height='22' fill='url(#thr)' stroke='#333' stroke-width='1.5' />
+<rect x='674' y='239' width='46' height='22' fill='url(#thr)' stroke='#333' stroke-width='1.5' />
+<text x='543' y='234' text-anchor='middle' font-size='9' fill='#555'>Rc1/4 암</text>
+<text x='697' y='234' text-anchor='middle' font-size='9' fill='#555'>Rc1/4 암</text>
+<path d='M580,272 l80,0' stroke='#e65100' stroke-width='3' marker-end='url(#a)'/>
+<text x='620' y='286' text-anchor='middle' font-size='9.5' fill='#e65100'>IN → OUT 화살표</text>
+<rect x='560' y='120' width='120' height='100' fill='#2b2b2b' stroke='#333' stroke-width='1.5' />
+<text x='620' y='170' text-anchor='middle' fill='#fff' font-size='11'>코일 DC24V</text>
+<text x='620' y='186' text-anchor='middle' fill='#ccc' font-size='9.5'>리드선 250 mm ×2</text>
+<path d='M680,140 q40,0 60,-20' fill='none' stroke='#c62828' stroke-width='2'/><path d='M680,150 q40,0 60,-10' fill='none' stroke='#333' stroke-width='2'/>
+<text x='620' y='324' text-anchor='middle' font-size='10.5' font-weight='600' fill='#e65100'>HTV04L2-C  몸체 PTFE · 바닥 2-M6 구멍(고정용)</text>
+<rect x='790' y='239' width='46' height='22' fill='url(#thr)' stroke='#333' stroke-width='1.5' />
+<rect x='836' y='230' width='36' height='40' fill='#9a9a9a' stroke='#333' stroke-width='1.5' />
+<rect x='872' y='236' width='40' height='28' fill='#b0b0b0' stroke='#333' stroke-width='1.5' />
+<text x='850' y='308' text-anchor='middle' font-size='10.5' font-weight='600' fill='#e65100'>어댑터 B  PT1/4 수 × 6 mm 튜브</text>
+<path d='M935,238 l-16,0 l-8,12 l8,12 l16,0 z' fill='#777' stroke='#333'/>
+<path d='M960,240 l-12,0 l-6,10 l6,10 l12,0 z' fill='#777' stroke='#333'/>
+<rect x='975' y='234' width='34' height='32' fill='#9aa0a6' stroke='#333' stroke-width='1.5' />
+<text x='965' y='290' text-anchor='middle' font-size='10'>페룰 2 + 너트 (6 mm)</text>
+<rect x='1035' y='244' width='170' height='12' fill='#eef6ff' stroke='#333' stroke-width='1.5'/>
+<text x='1120' y='236' text-anchor='middle' font-size='10.5' fill='#555'>PTFE 튜브 6×4 (새 것, 짧게 10 cm)</text>
+<rect x='1230' y='234' width='34' height='32' fill='#9aa0a6' stroke='#333' stroke-width='1.5' />
+<rect x='1264' y='228' width='110' height='44' fill='#c9c9c9' stroke='#333' stroke-width='1.5' />
+<rect x='1374' y='234' width='34' height='32' fill='#9aa0a6' stroke='#333' stroke-width='1.5' />
+<path d='M1300,240 l30,10 l-30,10 z' fill='#fff' stroke='#333' stroke-width='2'/><path d='M1332,240 v20' stroke='#333' stroke-width='3'/>
+<text x='1319' y='290' text-anchor='middle' font-size='10.5' font-weight='600' fill='#e65100'>체크밸브  6 mm 튜브 × 6 mm 튜브  (화살표 → 반응기)</text>
+<rect x='1435' y='244' width='300' height='12' fill='#eef6ff' stroke='#333' stroke-width='1.5'/>
+<text x='1585' y='236' text-anchor='middle' font-size='10.5' fill='#555'>PTFE 튜브 6×4, 1.5~2 m → 반응기 뚜껑 GL14 포트</text>
+<path d='M1740,250 l40,0' stroke='#333' stroke-width='2' marker-end='url(#a)'/>
+<path d='M190,346 L190,354 L215,354 L215,346' fill='none' stroke='#1565c0' stroke-width='1.2'/>
+<text x='202.5' y='368' text-anchor='middle' font-size='9.5' fill='#1565c0'>튜브 끝을 너트·페룰에 통과</text>
+<path d='M310,346 L310,354 L330,354 L330,346' fill='none' stroke='#1565c0' stroke-width='1.2'/>
+<text x='320.0' y='368' text-anchor='middle' font-size='9.5' fill='#1565c0'>튜브가 몸체 소켓에 끝까지</text>
+<path d='M452,346 L452,354 L520,354 L520,346' fill='none' stroke='#1565c0' stroke-width='1.2'/>
+<text x='486.0' y='368' text-anchor='middle' font-size='9.5' fill='#1565c0'>수나사 → 암나사 (IN)</text>
+<path d='M720,346 L720,354 L790,354 L790,346' fill='none' stroke='#1565c0' stroke-width='1.2'/>
+<text x='755.0' y='368' text-anchor='middle' font-size='9.5' fill='#1565c0'>암나사 (OUT) ← 수나사</text>
+<path d='M912,346 L912,354 L935,354 L935,346' fill='none' stroke='#1565c0' stroke-width='1.2'/>
+<path d='M1009,346 L1009,354 L1035,354 L1035,346' fill='none' stroke='#1565c0' stroke-width='1.2'/>
+<path d='M1205,346 L1205,354 L1230,354 L1230,346' fill='none' stroke='#1565c0' stroke-width='1.2'/>
+<path d='M1408,346 L1408,354 L1435,354 L1435,346' fill='none' stroke='#1565c0' stroke-width='1.2'/>
+<text x='20' y='420' font-weight='700' font-size='14'>B. 조립 상태 — 패널 아래에 이렇게 붙습니다 (실제 길이 약 25 cm). 밸브는 바닥 M6 구멍으로 'ㄱ'자 브라켓에 고정해 패널 프레임에 답니다.</text>
+<rect x='40' y='490' width='14' height='150' fill='#e8e8e8' stroke='#999'/>
+<text x='47' y='482' text-anchor='middle' font-size='10' fill='#555'>패널</text>
+<path d='M54,510 h30 v30 h40' fill='none' stroke='#888' stroke-width='6'/>
+<text x='90' y='504' font-size='9.5' fill='#555'>볼밸브 아래 1/4" 튜브</text>
+<rect x='124' y='530' width='22' height='20' fill='#9aa0a6' stroke='#333' stroke-width='1.5' />
+<rect x='146' y='528' width='50' height='24' fill='#9a9a9a' stroke='#333' stroke-width='1.5' />
+<rect x='196' y='524' width='120' height='32' fill='#f5f5f5' stroke='#333' stroke-width='1.5' />
+<rect x='216' y='454' width='80' height='70' fill='#2b2b2b' stroke='#333' stroke-width='1.5' />
+<text x='256' y='492' text-anchor='middle' fill='#fff' font-weight='700'>XV</text>
+<rect x='316' y='528' width='50' height='24' fill='#9a9a9a' stroke='#333' stroke-width='1.5' />
+<rect x='366' y='530' width='22' height='20' fill='#9aa0a6' stroke='#333' stroke-width='1.5' />
+<rect x='388' y='535' width='50' height='10' fill='#eef6ff' stroke='#333'/>
+<rect x='438' y='526' width='90' height='28' fill='#c9c9c9' stroke='#333' stroke-width='1.5' />
+<path d='M465,532 l22,8 l-22,8 z' fill='#fff' stroke='#333'/>
+<path d='M528,540 q120,0 200,-30 t250,-10' fill='none' stroke='#9ad' stroke-width='8'/>
+<path d='M528,540 q120,0 200,-30 t250,-10' fill='none' stroke='#eef6ff' stroke-width='4'/>
+<text x='985' y='504' font-size='10.5' fill='#555'>→ 반응기 뚜껑 (1.5~2 m)</text>
+<path d='M206,556 v30 h-20 v6 h40 v-6 h-20' fill='#bbb' stroke='#555'/>
+<text x='206' y='606' text-anchor='middle' font-size='9.5' fill='#555'>ㄱ자 브라켓 (M6 ×2) → 패널 프레임</text>
+<path d='M296,480 q60,-40 120,-20' fill='none' stroke='#c62828' stroke-width='2'/><path d='M296,488 q60,-40 120,-12' fill='none' stroke='#333' stroke-width='2'/>
+<text x='430' y='460' font-size='9.5' fill='#c62828'>24 V 2선 → 인터페이스 보드 J9</text>
+<text x='40' y='640' font-size='11' fill='#333'>같은 묶음을 세 라인에 하나씩. 밸브 세 개를 패널 하단에 나란히 두면 24 V 배선도 한 다발로 끝납니다.</text>
+<rect x='1080' y='420' width='800' height='170' rx='8' fill='#f5f7fb' stroke='#1565c0'/>
+<text x='1092' y='440' font-weight='700' fill='#1565c0' font-size='12'>원리 ① 압착 피팅(S-LOK/Swagelok 식): 너트를 조이면 페룰이 튜브를 물어 밀봉</text>
+<rect x='1100' y='509' width='140' height='12' fill='#eef6ff' stroke='#333'/>
+<path d='M1200,489 h60 l20,20 v12 l-20,20 h-60 z' fill='#9aa0a6' stroke='#333'/>
+<path d='M1240,501 l14,0 l8,8 l-8,0 z M1240,529 l14,0 l8,-8 l-8,0 z' fill='#777' stroke='#333'/>
+<path d='M1264,485 h70 v60 h-70 l-10,-10 v-40 z' fill='#b0b0b0' stroke='#333'/>
+<rect x='1264' y='509' width='70' height='12' fill='#fff' stroke='#333'/>
+<text x='1170' y='551' text-anchor='middle' font-size='10'>튜브</text>
+<text x='1230' y='481' text-anchor='middle' font-size='10'>너트</text>
+<text x='1250' y='555' text-anchor='middle' font-size='10'>페룰이 튜브에 파고듦</text>
+<text x='1300' y='561' text-anchor='middle' font-size='10'>몸체</text>
+<text x='1380' y='468' font-size='11'>• 튜브를 직각으로 자르고 끝까지(바닥에 닿게) 밀어 넣는다.</text>
+<text x='1380' y='486' font-size='11'>• 손으로 조인 뒤 스패너로 1¼ 바퀴 (1/4"·6 mm). 테이프 필요 없음.</text>
+<text x='1380' y='504' font-size='11'>• 한 번 조인 페룰은 그 튜브에 고정. 다시 풀고 조일 땐 손조임 + 1/8 바퀴.</text>
+<text x='1380' y='522' font-size='11'>• 패널이 S-LOK 이라 같은 계열로 맞추는 것이 가장 쉽다.</text>
+<rect x='1080' y='605' width='800' height='150' rx='8' fill='#fff8e1' stroke='#f9a825'/>
+<text x='1092' y='625' font-weight='700' fill='#b26a00' font-size='12'>원리 ② 테이퍼 나사(PT = R/Rc): 나사산끼리 꽉 끼어 밀봉, 테프론 테이프 보조</text>
+<path d='M1110,681 h90 l6,2 v24 l-6,2 h-90 z' fill='url(#thr)' stroke='#333'/>
+<path d='M1206,665 h100 v60 h-100 z' fill='#f5f5f5' stroke='#333'/><rect x='1206' y='683' width='60' height='24' fill='url(#thr)' stroke='#333'/>
+<text x='1155' y='731' text-anchor='middle' font-size='10'>수나사(어댑터)</text>
+<text x='1256' y='743' text-anchor='middle' font-size='10'>암나사(밸브 몸체)</text>
+<text x='1380' y='653' font-size='11'>• 수나사에 테프론 테이프를 조이는 방향(시계)으로 3~4 바퀴.</text>
+<text x='1380' y='671' font-size='11'>• 손으로 돌려 넣고 스패너로 1.5~2 바퀴. PTFE 몸체는 과조임 금지.</text>
+<text x='1380' y='689' font-size='11'>• 밸브 화살표 방향(IN→OUT)을 유체 방향에 맞춘다.</text>
+<text x='1380' y='707' font-size='11'>• PT1/4 = R1/4(수) / Rc1/4(암). G(평행) 나사와 혼용 금지.</text>
+<text x='20' y='700' font-weight='700' font-size='14'>C. 조립 순서 (라인 1개, 약 20분)</text>
+<circle cx='36' cy='726' r='13' fill='#1565c0'/>
+<text x='36' y='731' text-anchor='middle' fill='#fff' font-weight='700' font-size='14'>1</text>
+<text x='56' y='730' font-weight='700' font-size='12.5' fill='#1565c0'>패널 출구 분리</text>
+<text x='56' y='746' font-size='10.5' fill='#333'>볼밸브를 잠그고 그 아래 피팅의 너트를 풀어 지금 꽂힌 투명 튜브를 뺀다. 1/4" SUS 튜브 끝이 남는다(또는 피팅 구멍).</text>
+<circle cx='36' cy='766' r='13' fill='#e65100'/>
+<text x='36' y='771' text-anchor='middle' fill='#fff' font-weight='700' font-size='14'>2</text>
+<text x='56' y='770' font-weight='700' font-size='12.5' fill='#e65100'>어댑터 A 조립</text>
+<text x='56' y='786' font-size='10.5' fill='#333'>어댑터 A 의 수나사에 테이프를 감아 밸브 IN 쪽 암나사에 돌려 넣는다. 밸브 화살표 확인.</text>
+<circle cx='36' cy='806' r='13' fill='#e65100'/>
+<text x='36' y='811' text-anchor='middle' fill='#fff' font-weight='700' font-size='14'>3</text>
+<text x='56' y='810' font-weight='700' font-size='12.5' fill='#e65100'>어댑터 B 조립</text>
+<text x='56' y='826' font-size='10.5' fill='#333'>어댑터 B 도 같은 방법으로 밸브 OUT 쪽에. 여기까지가 '밸브 유닛' 하나.</text>
+<circle cx='36' cy='846' r='13' fill='#e65100'/>
+<text x='36' y='851' text-anchor='middle' fill='#fff' font-weight='700' font-size='14'>4</text>
+<text x='56' y='850' font-weight='700' font-size='12.5' fill='#e65100'>밸브 유닛을 패널 출구에</text>
+<text x='56' y='866' font-size='10.5' fill='#333'>패널의 1/4" 튜브 끝을 어댑터 A 의 튜브 소켓에 끝까지 넣고 너트를 손조임 + 1¼ 바퀴. 밸브를 브라켓으로 프레임에 고정.</text>
+<circle cx='36' cy='886' r='13' fill='#e65100'/>
+<text x='36' y='891' text-anchor='middle' fill='#fff' font-weight='700' font-size='14'>5</text>
+<text x='56' y='890' font-weight='700' font-size='12.5' fill='#e65100'>체크밸브·튜브</text>
+<text x='56' y='906' font-size='10.5' fill='#333'>어댑터 B 에 PTFE 6×4 튜브 10 cm → 체크밸브(화살표 반응기 쪽) → 긴 튜브 1.5~2 m. 모두 압착 피팅, 끝까지 넣고 1¼ 바퀴.</text>
+<circle cx='36' cy='926' r='13' fill='#e65100'/>
+<text x='36' y='931' text-anchor='middle' fill='#fff' font-weight='700' font-size='14'>6</text>
+<text x='56' y='930' font-weight='700' font-size='12.5' fill='#e65100'>반응기 쪽</text>
+<text x='56' y='946' font-size='10.5' fill='#333'>긴 튜브를 GL45 캡의 GL14 포트(⌀6.0 인서트)로 통과시켜 액면 아래까지. 캡 너트를 손으로 조인다.</text>
+<circle cx='36' cy='966' r='13' fill='#1565c0'/>
+<text x='36' y='971' text-anchor='middle' fill='#fff' font-weight='700' font-size='14'>7</text>
+<text x='56' y='970' font-weight='700' font-size='12.5' fill='#1565c0'>누수 시험</text>
+<text x='56' y='986' font-size='10.5' fill='#333'>볼밸브 열고 펌프 수동 운전(물). 밸브를 24 V 로 열어 튜브 끝에서 물이 나오면 OK. 피팅마다 휴지로 눌러 젖는지 확인.</text>
+<rect x='20' y='1000' width='1860' height='240' rx='8' fill='#fafafa' stroke='#ccc'/>
+<text x='32' y='1022' font-weight='700' font-size='14'>D. 두 가지 설계안 — 어느 쪽이든 '밸브 양쪽에 나사↔튜브 변환 피팅'이라는 구조는 같습니다</text>
+<text x='32' y='1044' font-weight='700' fill='#e65100' font-size='12.5'>설계안 1 (권장): S-LOK 압착 피팅으로 통일</text>
+<text x='32' y='1062' font-size='11'>어댑터 A: S-LOK 수 커넥터 1/4" 튜브 × R1/4 (SUS316)  ·  어댑터 B: S-LOK 수 커넥터 6 mm 튜브 × R1/4  ·  체크밸브: S-LOK 6 mm 양단</text>
+<text x='32' y='1078' font-size='11'>장점: 패널과 같은 규격, 2 bar 이상도 안전, 재사용 가능.  단점: 페룰 조임 요령 필요, 부품값 약 2~3만원/개.</text>
+<text x='32' y='1100' font-weight='700' fill='#2e7d32' font-size='12.5'>설계안 2 (가장 쉬움): 원터치(푸시인) 피팅</text>
+<text x='32' y='1118' font-size='11'>어댑터 A: 원터치 스트레이트 1/4" 튜브(6.35) × R1/4  ·  어댑터 B: 원터치 6 mm × R1/4  ·  체크밸브: 원터치 6 mm 양단.  재질은 PP/PVDF 내화학형(PISCO PP 시리즈, SMC KP 등).</text>
+<text x='32' y='1134' font-size='11'>장점: 튜브를 밀어 넣기만 하면 끝, 공구 불필요.  단점: 솔레노이드 뒤는 압력이 거의 없어 괜찮지만, 패널 쪽(배압 밸브 앞)에는 쓰지 말 것. PTFE 튜브는 딱딱해 원터치가 덜 물리므로 PE/PFA 연질 튜브로.</text>
+<text x='32' y='1160' font-weight='700' font-size='12.5'>공통 규칙</text>
+<text x='32' y='1178' font-size='11'>• 나사 이음(어댑터 ↔ 밸브)에만 테프론 테이프. 압착·원터치 이음에는 테이프 금지.</text>
+<text x='32' y='1194' font-size='11'>• 밸브 IN 은 패널 쪽, OUT 은 반응기 쪽. 체크밸브 화살표도 반응기 쪽.</text>
+<text x='32' y='1210' font-size='11'>• 밸브를 닫은 채 펌프를 돌리지 않는다(인터록이 막지만 수동 운전 때 주의). 배압 밸브 DHV-U 는 2 bar.</text>
+<text x='32' y='1226' font-size='11'>• 패널 출구가 튜브가 아니라 PT 나사 구멍이면 어댑터 A 대신 'R1/4 양수 니플' 하나로 밸브를 직접 붙인다. 사진으로 확인.</text>
+</svg>

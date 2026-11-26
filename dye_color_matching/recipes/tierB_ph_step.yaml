@@ -1,0 +1,11 @@
+# Tier B: 구연산 완충계에서 pH 를 10.5 로 올려 유지 (NaOH 0.1 M, P-103). 300 s 뒤 산 부하(금속염 피드 흉내) 투입.
+name: tierB_ph_step
+reactor: {heel_mL: 2000, rpm: 300}
+ph: {initial: 5.0, buffers: [[0.01, 4.8]], naoh_pump: P-103, naoh_mol_L: 0.1}
+steps:
+  - {step: stir, rpm: 300}
+  - {step: wait, seconds: 5}
+  - {step: ph_control, pump: P-103, setpoint: 10.5, seconds: 300, Kp: 10.0, Ki: 0.02, label: step_up}
+  - {step: acid_load, mol_min: 0.0002}
+  - {step: ph_control, pump: P-103, setpoint: 10.5, seconds: 400, Kp: 10.0, Ki: 0.02, label: hold_under_load}
+  - {step: stop}

@@ -1,0 +1,21 @@
+# Tier C 공침 통합 시나리오: CaCl₂ + Na₂CO₃ → CaCO₃ (+시안 염료 공동 담지), pH 10.0 유지, 탁도·입경 관찰
+# 펌프 역할: P-101 CaCl₂ 0.2 M, P-102 Na₂CO₃ 0.2 M (별도 투입구, 프리믹싱 금지), P-103 NaOH 0.1 M, P-104 HCl 0.1 M (펄스)
+name: tierC_coprecip
+description: 반투입 공침. heel 500 mL + 시안 10 mg/L. 피드 2줄 동시 3 mL/min × 20 min, pH 10.0 백그라운드 유지.
+reactor: {heel_mL: 500, rpm: 400, dye_mg_L: [10, 0, 0]}
+ph: {initial: 7.0, buffers: [[0.002, 6.35]], naoh_pump: P-103, naoh_mol_L: 0.1, acid_pump: P-104, acid_mol_L: 0.1}
+stocks:
+  P-101: {role: cacl2, mol_L: 0.2, volume_mL: 1000}
+  P-102: {role: na2co3, mol_L: 0.2, volume_mL: 1000}
+match: {de: 2.0}
+steps:
+  - {step: stir, rpm: 400}
+  - {step: ph_hold_start, pump: P-103, acid_pump: P-104, setpoint: 10.0, Kp: 8.0, Ki: 0.05}
+  - {step: wait, seconds: 120}
+  - {step: measure, label: baseline}
+  - {step: dose, pumps: [P-101, P-102], volume_mL: 60, rate_mL_min: 3.0, label: feed}     # 20 min 동시 피드
+  - {step: measure, label: end_of_feed}
+  - {step: hold, seconds: 180, label: ageing}
+  - {step: ph_hold_stop, label: ph_hold}
+  - {step: measure, label: final}
+  - {step: stop}

@@ -1,0 +1,1219 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1789' height='776' viewBox='0 0 1789 776'><rect width='100%' height='100%' fill='#fff'/><rect x='137.2' y='147.3' width='10.2' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<circle cx='142.2' cy='162.6' r='2.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.1,161.2 143.6,164.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.1,151.1 143.6,154.4' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.8,160.5 144.3,163.9' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.8,150.4 144.3,153.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='142.2' cy='152.4' r='2.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='121.9' y1='152.4' x2='137.2' y2='152.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='121.9' cy='152.4' r='2' fill='none' stroke='#840000'/>
+<text x='141.7' y='154.0' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 141.7 154.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_1</text>
+<line x1='121.9' y1='162.6' x2='137.2' y2='162.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='121.9' cy='162.6' r='2' fill='none' stroke='#840000'/>
+<text x='141.7' y='164.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 141.7 164.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_2</text>
+<text x='142.2' y='124.4' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 142.2 124.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>J2</text>
+<text x='142.2' y='186.4' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 142.2 186.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>24V_IN</text>
+<polyline points='111.8,162.6 111.8,167.6 116.8,167.6 111.8,172.7 106.7,167.6 111.8,167.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='111.8' y1='162.6' x2='111.8' y2='162.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='111.8' cy='162.6' r='2' fill='none' stroke='#840000'/>
+<text x='111.8' y='164.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 111.8 164.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='111.8' y='134.6' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 111.8 134.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR001</text>
+<text x='111.8' y='196.6' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 111.8 196.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<rect x='220.5' y='142.2' width='6.1' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<polyline points='223.5,142.2 223.5,162.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='217.4,142.2 217.4,146.3 229.6,158.5 229.6,162.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='223.5' y1='137.2' x2='223.5' y2='142.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='223.5' cy='137.2' r='2' fill='none' stroke='#840000'/>
+<line x1='223.5' y1='167.6' x2='223.5' y2='162.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='223.5' cy='167.6' r='2' fill='none' stroke='#840000'/>
+<text x='223.5' y='124.4' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 223.5 124.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>F1</text>
+<text x='223.5' y='186.4' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 223.5 186.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>PTC 0.1A</text>
+<polyline points='360.7,152.4 350.5,152.4' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='360.7,147.3 360.7,157.5 350.5,152.4 360.7,147.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='348.0,149.9 348.0,147.3 350.5,147.3 350.5,157.5 353.1,157.5 353.1,154.9' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='340.4' y1='152.4' x2='350.5' y2='152.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='340.4' cy='152.4' r='2' fill='none' stroke='#840000'/>
+<text x='353.6' y='154.0' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 353.6 154.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>K</text>
+<line x1='370.8' y1='152.4' x2='360.7' y2='152.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='370.8' cy='152.4' r='2' fill='none' stroke='#840000'/>
+<text x='357.6' y='154.0' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 357.6 154.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>A</text>
+<text x='355.6' y='124.4' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 355.6 124.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>D1</text>
+<text x='355.6' y='186.4' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 355.6 186.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>SS14</text>
+<polyline points='327.2,147.3 330.2,142.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='330.2,152.4 330.2,142.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='330.2,142.2 333.2,147.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='330.2' y1='152.4' x2='330.2' y2='152.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='330.2' cy='152.4' r='2' fill='none' stroke='#840000'/>
+<text x='330.2' y='154.0' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 330.2 154.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<text x='330.2' y='124.4' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 330.2 124.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR002</text>
+<text x='330.2' y='186.4' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 330.2 186.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<polyline points='502.9,152.4 492.8,152.4' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='499.9,147.3 497.8,147.3 497.8,157.5 495.8,157.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='487.7,147.3 487.7,157.5 508.0,147.3 508.0,157.5 487.7,147.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='482.6' y1='152.4' x2='492.8' y2='152.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='482.6' cy='152.4' r='2' fill='none' stroke='#840000'/>
+<text x='495.8' y='154.0' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 495.8 154.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>A1</text>
+<line x1='513.1' y1='152.4' x2='502.9' y2='152.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='513.1' cy='152.4' r='2' fill='none' stroke='#840000'/>
+<text x='499.9' y='154.0' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 499.9 154.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>A2</text>
+<text x='497.8' y='124.4' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 497.8 124.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>D2</text>
+<text x='497.8' y='186.4' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 497.8 186.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>SMBJ28CA</text>
+<polyline points='469.4,147.3 472.4,142.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='472.4,152.4 472.4,142.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='472.4,142.2 475.5,147.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='472.4' y1='152.4' x2='472.4' y2='152.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='472.4' cy='152.4' r='2' fill='none' stroke='#840000'/>
+<text x='472.4' y='154.0' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 472.4 154.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<text x='472.4' y='124.4' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 472.4 124.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR003</text>
+<text x='472.4' y='186.4' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 472.4 186.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<polyline points='523.2,152.4 523.2,157.5 528.3,157.5 523.2,162.6 518.2,157.5 523.2,157.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='523.2' y1='152.4' x2='523.2' y2='152.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='523.2' cy='152.4' r='2' fill='none' stroke='#840000'/>
+<text x='523.2' y='154.0' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 523.2 154.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='523.2' y='124.4' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 523.2 124.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR004</text>
+<text x='523.2' y='186.4' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 523.2 186.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<polyline points='591.3,155.4 607.6,155.4' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='591.3,149.4 607.6,149.4' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='599.4' y1='137.2' x2='599.4' y2='148.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='599.4' cy='137.2' r='2' fill='none' stroke='#840000'/>
+<line x1='599.4' y1='167.6' x2='599.4' y2='156.5' stroke='#840000' stroke-width='1.4'/>
+<circle cx='599.4' cy='167.6' r='2' fill='none' stroke='#840000'/>
+<text x='599.4' y='124.4' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 599.4 124.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>C1</text>
+<text x='599.4' y='186.4' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 599.4 186.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>10uF</text>
+<polyline points='596.4,121.9 599.4,116.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='599.4,127.0 599.4,116.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='599.4,116.8 602.5,121.9' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='599.4' y1='127.0' x2='599.4' y2='127.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='599.4' cy='127.0' r='2' fill='none' stroke='#840000'/>
+<text x='599.4' y='128.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 599.4 128.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<text x='599.4' y='99.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 599.4 99.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR005</text>
+<text x='599.4' y='161.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 599.4 161.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<polyline points='599.4,177.8 599.4,182.9 604.5,182.9 599.4,188.0 594.4,182.9 599.4,182.9' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='599.4' y1='177.8' x2='599.4' y2='177.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='599.4' cy='177.8' r='2' fill='none' stroke='#840000'/>
+<text x='599.4' y='179.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 599.4 179.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='599.4' y='149.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 599.4 149.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR006</text>
+<text x='599.4' y='211.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 599.4 211.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<polyline points='642.1,155.4 658.4,155.4' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='642.1,149.4 658.4,149.4' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='650.2' y1='137.2' x2='650.2' y2='148.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='650.2' cy='137.2' r='2' fill='none' stroke='#840000'/>
+<line x1='650.2' y1='167.6' x2='650.2' y2='156.5' stroke='#840000' stroke-width='1.4'/>
+<circle cx='650.2' cy='167.6' r='2' fill='none' stroke='#840000'/>
+<text x='650.2' y='124.4' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 650.2 124.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>C2</text>
+<text x='650.2' y='186.4' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 650.2 186.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>100nF</text>
+<polyline points='647.2,121.9 650.2,116.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='650.2,127.0 650.2,116.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='650.2,116.8 653.3,121.9' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='650.2' y1='127.0' x2='650.2' y2='127.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='650.2' cy='127.0' r='2' fill='none' stroke='#840000'/>
+<text x='650.2' y='128.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 650.2 128.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<text x='650.2' y='99.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 650.2 99.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR007</text>
+<text x='650.2' y='161.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 650.2 161.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<polyline points='650.2,177.8 650.2,182.9 655.3,182.9 650.2,188.0 645.2,182.9 650.2,182.9' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='650.2' y1='177.8' x2='650.2' y2='177.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='650.2' cy='177.8' r='2' fill='none' stroke='#840000'/>
+<text x='650.2' y='179.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 650.2 179.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='650.2' y='149.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 650.2 149.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR008</text>
+<text x='650.2' y='211.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 650.2 211.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<line x1='731.5' y1='142.2' x2='731.5' y2='142.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='731.5' cy='142.2' r='2' fill='none' stroke='#840000'/>
+<text x='731.5' y='143.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 731.5 143.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>pwr</text>
+<polyline points='731.5,142.2 731.5,137.2 727.5,134.6 731.5,132.1 735.6,134.6 731.5,137.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<text x='731.5' y='114.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 731.5 114.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>#FLG009</text>
+<text x='731.5' y='176.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 731.5 176.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>PWR_FLAG</text>
+<polyline points='731.5,142.2 731.5,147.3 736.6,147.3 731.5,152.4 726.4,147.3 731.5,147.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='731.5' y1='142.2' x2='731.5' y2='142.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='731.5' cy='142.2' r='2' fill='none' stroke='#840000'/>
+<text x='731.5' y='143.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 731.5 143.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='731.5' y='114.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 731.5 114.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR010</text>
+<text x='731.5' y='176.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 731.5 176.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<line x1='792.5' y1='142.2' x2='792.5' y2='142.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='792.5' cy='142.2' r='2' fill='none' stroke='#840000'/>
+<text x='792.5' y='143.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 792.5 143.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>pwr</text>
+<polyline points='792.5,142.2 792.5,137.2 788.4,134.6 792.5,132.1 796.5,134.6 792.5,137.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<text x='792.5' y='114.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 792.5 114.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>#FLG011</text>
+<text x='792.5' y='176.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 792.5 176.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>PWR_FLAG</text>
+<polyline points='830.1,137.2 833.1,132.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='833.1,142.2 833.1,132.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='833.1,132.1 836.2,137.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='833.1' y1='142.2' x2='833.1' y2='142.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='833.1' cy='142.2' r='2' fill='none' stroke='#840000'/>
+<text x='833.1' y='143.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 833.1 143.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<text x='833.1' y='114.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 833.1 114.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR012</text>
+<text x='833.1' y='176.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 833.1 176.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<line x1='894.1' y1='142.2' x2='894.1' y2='142.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='894.1' cy='142.2' r='2' fill='none' stroke='#840000'/>
+<text x='894.1' y='143.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 894.1 143.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>pwr</text>
+<polyline points='894.1,142.2 894.1,137.2 890.0,134.6 894.1,132.1 898.1,134.6 894.1,137.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<text x='894.1' y='114.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 894.1 114.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>#FLG013</text>
+<text x='894.1' y='176.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 894.1 176.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>PWR_FLAG</text>
+<line x1='995.7' y1='142.2' x2='995.7' y2='142.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='995.7' cy='142.2' r='2' fill='none' stroke='#840000'/>
+<text x='995.7' y='143.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 995.7 143.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>pwr</text>
+<polyline points='995.7,142.2 995.7,137.2 991.6,134.6 995.7,132.1 999.7,134.6 995.7,137.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<text x='995.7' y='114.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 995.7 114.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>#FLG014</text>
+<text x='995.7' y='176.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 995.7 176.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>PWR_FLAG</text>
+<rect x='137.2' y='289.6' width='10.2' height='81.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<circle cx='142.2' cy='365.8' r='2.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='142.2' cy='355.6' r='2.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='142.2' cy='345.4' r='2.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='142.2' cy='335.3' r='2.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.1,364.4 143.6,367.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.1,354.3 143.6,357.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.1,344.1 143.6,347.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.1,334.0 143.6,337.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.1,323.8 143.6,327.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.1,313.6 143.6,317.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.1,303.5 143.6,306.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.1,293.3 143.6,296.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.8,363.7 144.3,367.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.8,353.6 144.3,356.9' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.8,343.4 144.3,346.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.8,333.2 144.3,336.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.8,323.1 144.3,326.4' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.8,312.9 144.3,316.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.8,302.8 144.3,306.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.8,292.6 144.3,296.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='142.2' cy='325.1' r='2.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='142.2' cy='315.0' r='2.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='142.2' cy='304.8' r='2.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='142.2' cy='294.6' r='2.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='121.9' y1='294.6' x2='137.2' y2='294.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='121.9' cy='294.6' r='2' fill='none' stroke='#840000'/>
+<text x='141.7' y='296.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 141.7 296.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_1</text>
+<line x1='121.9' y1='304.8' x2='137.2' y2='304.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='121.9' cy='304.8' r='2' fill='none' stroke='#840000'/>
+<text x='141.7' y='306.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 141.7 306.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_2</text>
+<line x1='121.9' y1='315.0' x2='137.2' y2='315.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='121.9' cy='315.0' r='2' fill='none' stroke='#840000'/>
+<text x='141.7' y='316.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 141.7 316.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_3</text>
+<line x1='121.9' y1='325.1' x2='137.2' y2='325.1' stroke='#840000' stroke-width='1.4'/>
+<circle cx='121.9' cy='325.1' r='2' fill='none' stroke='#840000'/>
+<text x='141.7' y='326.7' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 141.7 326.7)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_4</text>
+<line x1='121.9' y1='335.3' x2='137.2' y2='335.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='121.9' cy='335.3' r='2' fill='none' stroke='#840000'/>
+<text x='141.7' y='336.9' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 141.7 336.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_5</text>
+<line x1='121.9' y1='345.4' x2='137.2' y2='345.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='121.9' cy='345.4' r='2' fill='none' stroke='#840000'/>
+<text x='141.7' y='347.0' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 141.7 347.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_6</text>
+<line x1='121.9' y1='355.6' x2='137.2' y2='355.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='121.9' cy='355.6' r='2' fill='none' stroke='#840000'/>
+<text x='141.7' y='357.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 141.7 357.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_7</text>
+<line x1='121.9' y1='365.8' x2='137.2' y2='365.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='121.9' cy='365.8' r='2' fill='none' stroke='#840000'/>
+<text x='141.7' y='367.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 141.7 367.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_8</text>
+<text x='142.2' y='297.1' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 142.2 297.1)' font-family='Pretendard, Malgun Gothic, sans-serif'>J1</text>
+<text x='142.2' y='359.1' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 142.2 359.1)' font-family='Pretendard, Malgun Gothic, sans-serif'>MCC152</text>
+<polyline points='111.8,315.0 111.8,320.0 116.8,320.0 111.8,325.1 106.7,320.0 111.8,320.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='111.8' y1='315.0' x2='111.8' y2='315.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='111.8' cy='315.0' r='2' fill='none' stroke='#840000'/>
+<text x='111.8' y='316.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 111.8 316.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='111.8' y='287.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 111.8 287.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR015</text>
+<text x='111.8' y='349.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 111.8 349.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<rect x='137.2' y='452.1' width='10.2' height='40.6' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<circle cx='142.2' cy='487.7' r='2.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='142.2' cy='477.5' r='2.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.1,486.4 143.6,489.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.1,476.2 143.6,479.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.1,466.0 143.6,469.4' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.1,455.9 143.6,459.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.8,485.6 144.3,489.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.8,475.5 144.3,478.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.8,465.3 144.3,468.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='140.8,455.2 144.3,458.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='142.2' cy='467.4' r='2.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='142.2' cy='457.2' r='2.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='121.9' y1='457.2' x2='137.2' y2='457.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='121.9' cy='457.2' r='2' fill='none' stroke='#840000'/>
+<text x='141.7' y='458.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 141.7 458.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_1</text>
+<line x1='121.9' y1='467.4' x2='137.2' y2='467.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='121.9' cy='467.4' r='2' fill='none' stroke='#840000'/>
+<text x='141.7' y='469.0' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 141.7 469.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_2</text>
+<line x1='121.9' y1='477.5' x2='137.2' y2='477.5' stroke='#840000' stroke-width='1.4'/>
+<circle cx='121.9' cy='477.5' r='2' fill='none' stroke='#840000'/>
+<text x='141.7' y='479.1' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 141.7 479.1)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_3</text>
+<line x1='121.9' y1='487.7' x2='137.2' y2='487.7' stroke='#840000' stroke-width='1.4'/>
+<circle cx='121.9' cy='487.7' r='2' fill='none' stroke='#840000'/>
+<text x='141.7' y='489.3' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 141.7 489.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_4</text>
+<text x='142.2' y='439.4' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 142.2 439.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>J3</text>
+<text x='142.2' y='501.4' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 142.2 501.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>PUMP_OUT</text>
+<polyline points='111.8,467.4 111.8,472.4 116.8,472.4 111.8,477.5 106.7,472.4 111.8,472.4' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='111.8' y1='467.4' x2='111.8' y2='467.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='111.8' cy='467.4' r='2' fill='none' stroke='#840000'/>
+<text x='111.8' y='469.0' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 111.8 469.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='111.8' y='439.4' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 111.8 439.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR016</text>
+<text x='111.8' y='501.4' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 111.8 501.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<polyline points='111.8,487.7 111.8,492.8 116.8,492.8 111.8,497.8 106.7,492.8 111.8,492.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='111.8' y1='487.7' x2='111.8' y2='487.7' stroke='#840000' stroke-width='1.4'/>
+<circle cx='111.8' cy='487.7' r='2' fill='none' stroke='#840000'/>
+<text x='111.8' y='489.3' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 111.8 489.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='111.8' y='459.7' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 111.8 459.7)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR017</text>
+<text x='111.8' y='521.7' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 111.8 521.7)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<rect x='97.5' y='569.0' width='8.1' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='101.6' y1='563.9' x2='101.6' y2='569.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='101.6' cy='563.9' r='2' fill='none' stroke='#840000'/>
+<line x1='101.6' y1='594.4' x2='101.6' y2='589.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='101.6' cy='594.4' r='2' fill='none' stroke='#840000'/>
+<text x='101.6' y='551.1' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 101.6 551.1)' font-family='Pretendard, Malgun Gothic, sans-serif'>R107</text>
+<text x='101.6' y='613.1' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 101.6 613.1)' font-family='Pretendard, Malgun Gothic, sans-serif'>10k</text>
+<rect x='148.3' y='569.0' width='8.1' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='152.4' y1='563.9' x2='152.4' y2='569.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='152.4' cy='563.9' r='2' fill='none' stroke='#840000'/>
+<line x1='152.4' y1='594.4' x2='152.4' y2='589.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='152.4' cy='594.4' r='2' fill='none' stroke='#840000'/>
+<text x='152.4' y='551.1' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 152.4 551.1)' font-family='Pretendard, Malgun Gothic, sans-serif'>R207</text>
+<text x='152.4' y='613.1' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 152.4 613.1)' font-family='Pretendard, Malgun Gothic, sans-serif'>10k</text>
+<rect x='280.4' y='294.6' width='8.1' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='284.5' y1='289.6' x2='284.5' y2='294.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='284.5' cy='289.6' r='2' fill='none' stroke='#840000'/>
+<line x1='284.5' y1='320.0' x2='284.5' y2='315.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='284.5' cy='320.0' r='2' fill='none' stroke='#840000'/>
+<text x='284.5' y='276.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 284.5 276.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>R101</text>
+<text x='284.5' y='338.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 284.5 338.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>2.49k</text>
+<polyline points='317.0,307.8 333.2,307.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='317.0,301.8 333.2,301.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='325.1' y1='289.6' x2='325.1' y2='300.7' stroke='#840000' stroke-width='1.4'/>
+<circle cx='325.1' cy='289.6' r='2' fill='none' stroke='#840000'/>
+<line x1='325.1' y1='320.0' x2='325.1' y2='308.9' stroke='#840000' stroke-width='1.4'/>
+<circle cx='325.1' cy='320.0' r='2' fill='none' stroke='#840000'/>
+<text x='325.1' y='276.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 325.1 276.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>C101</text>
+<text x='325.1' y='338.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 325.1 338.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>10nF</text>
+<polyline points='325.1,330.2 325.1,335.3 330.2,335.3 325.1,340.4 320.0,335.3 325.1,335.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='325.1' y1='330.2' x2='325.1' y2='330.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='325.1' cy='330.2' r='2' fill='none' stroke='#840000'/>
+<text x='325.1' y='331.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 325.1 331.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='325.1' y='302.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 325.1 302.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR018</text>
+<text x='325.1' y='364.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 325.1 364.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<rect x='361.7' y='294.6' width='8.1' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='365.8' y1='289.6' x2='365.8' y2='294.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='365.8' cy='289.6' r='2' fill='none' stroke='#840000'/>
+<line x1='365.8' y1='320.0' x2='365.8' y2='315.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='365.8' cy='320.0' r='2' fill='none' stroke='#840000'/>
+<text x='365.8' y='276.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 365.8 276.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>R102</text>
+<text x='365.8' y='338.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 365.8 338.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>2.49k 0.1%</text>
+<polyline points='365.8,330.2 365.8,335.3 370.8,335.3 365.8,340.4 360.7,335.3 365.8,335.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='365.8' y1='330.2' x2='365.8' y2='330.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='365.8' cy='330.2' r='2' fill='none' stroke='#840000'/>
+<text x='365.8' y='331.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 365.8 331.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='365.8' y='302.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 365.8 302.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR019</text>
+<text x='365.8' y='364.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 365.8 364.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<polyline points='459.2,307.8 475.5,307.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='459.2,301.8 475.5,301.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='467.4' y1='289.6' x2='467.4' y2='300.7' stroke='#840000' stroke-width='1.4'/>
+<circle cx='467.4' cy='289.6' r='2' fill='none' stroke='#840000'/>
+<line x1='467.4' y1='320.0' x2='467.4' y2='308.9' stroke='#840000' stroke-width='1.4'/>
+<circle cx='467.4' cy='320.0' r='2' fill='none' stroke='#840000'/>
+<text x='467.4' y='276.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 467.4 276.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>C102</text>
+<text x='467.4' y='338.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 467.4 338.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>2.2nF</text>
+<polyline points='467.4,330.2 467.4,335.3 472.4,335.3 467.4,340.4 462.3,335.3 467.4,335.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='467.4' y1='330.2' x2='467.4' y2='330.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='467.4' cy='330.2' r='2' fill='none' stroke='#840000'/>
+<text x='467.4' y='331.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 467.4 331.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='467.4' y='302.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 467.4 302.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR020</text>
+<text x='467.4' y='364.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 467.4 364.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<rect x='579.1' y='274.3' width='61.0' height='81.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='609.6' y1='264.2' x2='609.6' y2='274.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='609.6' cy='264.2' r='2' fill='none' stroke='#840000'/>
+<text x='609.6' y='279.0' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 609.6 279.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>VSP</text>
+<line x1='609.6' y1='365.8' x2='609.6' y2='355.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='609.6' cy='365.8' r='2' fill='none' stroke='#840000'/>
+<text x='609.6' y='354.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 609.6 354.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<line x1='609.6' y1='365.8' x2='609.6' y2='355.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='609.6' cy='365.8' r='2' fill='none' stroke='#840000'/>
+<text x='609.6' y='354.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 609.6 354.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<line x1='650.2' y1='325.1' x2='640.1' y2='325.1' stroke='#840000' stroke-width='1.4'/>
+<circle cx='650.2' cy='325.1' r='2' fill='none' stroke='#840000'/>
+<text x='637.0' y='326.7' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 637.0 326.7)' font-family='Pretendard, Malgun Gothic, sans-serif'>IS</text>
+<line x1='650.2' y1='345.4' x2='640.1' y2='345.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='650.2' cy='345.4' r='2' fill='none' stroke='#840000'/>
+<text x='637.0' y='347.0' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 637.0 347.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>VG</text>
+<line x1='569.0' y1='294.6' x2='579.1' y2='294.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='569.0' cy='294.6' r='2' fill='none' stroke='#840000'/>
+<text x='582.2' y='296.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 582.2 296.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>REGS</text>
+<line x1='569.0' y1='284.5' x2='579.1' y2='284.5' stroke='#840000' stroke-width='1.4'/>
+<circle cx='569.0' cy='284.5' r='2' fill='none' stroke='#840000'/>
+<text x='582.2' y='286.1' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 582.2 286.1)' font-family='Pretendard, Malgun Gothic, sans-serif'>REGF</text>
+<line x1='569.0' y1='315.0' x2='579.1' y2='315.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='569.0' cy='315.0' r='2' fill='none' stroke='#840000'/>
+<text x='582.2' y='316.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 582.2 316.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>VIN</text>
+<line x1='569.0' y1='335.3' x2='579.1' y2='335.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='569.0' cy='335.3' r='2' fill='none' stroke='#840000'/>
+<text x='582.2' y='336.9' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 582.2 336.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>SET</text>
+<line x1='650.2' y1='304.8' x2='640.1' y2='304.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='650.2' cy='304.8' r='2' fill='none' stroke='#840000'/>
+<text x='637.0' y='306.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 637.0 306.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>~{EF}</text>
+<line x1='650.2' y1='284.5' x2='640.1' y2='284.5' stroke='#840000' stroke-width='1.4'/>
+<circle cx='650.2' cy='284.5' r='2' fill='none' stroke='#840000'/>
+<text x='637.0' y='286.1' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 637.0 286.1)' font-family='Pretendard, Malgun Gothic, sans-serif'>OD</text>
+<text x='609.6' y='287.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 609.6 287.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>U101</text>
+<text x='609.6' y='349.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 609.6 349.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>XTR111AIDGQR</text>
+<polyline points='609.6,375.9 609.6,381.0 614.7,381.0 609.6,386.1 604.5,381.0 609.6,381.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='609.6' y1='375.9' x2='609.6' y2='375.9' stroke='#840000' stroke-width='1.4'/>
+<circle cx='609.6' cy='375.9' r='2' fill='none' stroke='#840000'/>
+<text x='609.6' y='377.5' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 609.6 377.5)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='609.6' y='347.9' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 609.6 347.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR021</text>
+<text x='609.6' y='409.9' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 609.6 409.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<rect x='727.5' y='294.6' width='8.1' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='731.5' y1='289.6' x2='731.5' y2='294.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='731.5' cy='289.6' r='2' fill='none' stroke='#840000'/>
+<line x1='731.5' y1='320.0' x2='731.5' y2='315.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='731.5' cy='320.0' r='2' fill='none' stroke='#840000'/>
+<text x='731.5' y='276.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 731.5 276.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>R103</text>
+<text x='731.5' y='338.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 731.5 338.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>5.1</text>
+<polyline points='728.5,274.3 731.5,269.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='731.5,279.4 731.5,269.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='731.5,269.2 734.6,274.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='731.5' y1='279.4' x2='731.5' y2='279.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='731.5' cy='279.4' r='2' fill='none' stroke='#840000'/>
+<text x='731.5' y='281.0' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 731.5 281.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<text x='731.5' y='251.4' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 731.5 251.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR022</text>
+<text x='731.5' y='313.4' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 731.5 313.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<polyline points='764.0,307.8 780.3,307.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='764.0,301.8 780.3,301.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='772.2' y1='289.6' x2='772.2' y2='300.7' stroke='#840000' stroke-width='1.4'/>
+<circle cx='772.2' cy='289.6' r='2' fill='none' stroke='#840000'/>
+<line x1='772.2' y1='320.0' x2='772.2' y2='308.9' stroke='#840000' stroke-width='1.4'/>
+<circle cx='772.2' cy='320.0' r='2' fill='none' stroke='#840000'/>
+<text x='772.2' y='276.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 772.2 276.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>C103</text>
+<text x='772.2' y='338.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 772.2 338.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>100nF</text>
+<polyline points='772.2,330.2 772.2,335.3 777.2,335.3 772.2,340.4 767.1,335.3 772.2,335.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='772.2' y1='330.2' x2='772.2' y2='330.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='772.2' cy='330.2' r='2' fill='none' stroke='#840000'/>
+<text x='772.2' y='331.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 772.2 331.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='772.2' y='302.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 772.2 302.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR023</text>
+<text x='772.2' y='364.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 772.2 364.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<rect x='808.7' y='294.6' width='8.1' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='812.8' y1='289.6' x2='812.8' y2='294.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='812.8' cy='289.6' r='2' fill='none' stroke='#840000'/>
+<line x1='812.8' y1='320.0' x2='812.8' y2='315.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='812.8' cy='320.0' r='2' fill='none' stroke='#840000'/>
+<text x='812.8' y='276.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 812.8 276.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>R106</text>
+<text x='812.8' y='338.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 812.8 338.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>1k</text>
+<rect x='849.4' y='294.6' width='8.1' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='853.4' y1='289.6' x2='853.4' y2='294.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='853.4' cy='289.6' r='2' fill='none' stroke='#840000'/>
+<line x1='853.4' y1='320.0' x2='853.4' y2='315.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='853.4' cy='320.0' r='2' fill='none' stroke='#840000'/>
+<text x='853.4' y='276.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 853.4 276.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>R104</text>
+<text x='853.4' y='338.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 853.4 338.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>15</text>
+<polyline points='957.6,302.3 965.2,294.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='957.6,307.3 965.2,315.0 965.2,315.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='957.6,297.2 957.6,312.4 957.6,312.4' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='964.2,311.9 962.2,313.9 960.1,309.9 964.2,311.9 964.2,311.9' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='960.1' cy='304.8' r='11.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='934.7' y1='304.8' x2='957.6' y2='304.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='934.7' cy='304.8' r='2' fill='none' stroke='#840000'/>
+<text x='964.4' y='306.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 964.4 306.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>B</text>
+<line x1='965.2' y1='325.1' x2='965.2' y2='315.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='965.2' cy='325.1' r='2' fill='none' stroke='#840000'/>
+<text x='965.2' y='313.5' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 965.2 313.5)' font-family='Pretendard, Malgun Gothic, sans-serif'>E</text>
+<line x1='965.2' y1='284.5' x2='965.2' y2='294.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='965.2' cy='284.5' r='2' fill='none' stroke='#840000'/>
+<text x='965.2' y='299.3' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 965.2 299.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>C</text>
+<text x='955.0' y='276.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 955.0 276.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>Q102</text>
+<text x='955.0' y='338.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 955.0 338.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>MMBT2907A</text>
+<polyline points='1067.8,304.8 1056.6,304.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1067.8,297.2 1067.8,312.4' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1069.8,309.9 1069.8,313.9' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1069.8,302.8 1069.8,306.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1069.8,295.7 1069.8,299.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1077.0,294.6 1077.0,297.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1077.0,315.0 1077.0,304.8 1069.8,304.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1069.8,297.7 1080.0,297.7 1080.0,311.9 1069.8,311.9' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1075.9,304.8 1071.9,303.3 1071.9,306.3 1075.9,304.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1078.0,306.8 1078.5,306.3 1081.5,306.3 1082.0,305.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1080.0,306.3 1078.5,303.8 1081.5,303.8 1080.0,306.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1073.4' cy='304.8' r='11.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1077.0' cy='311.9' r='1.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1077.0' cy='297.7' r='1.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1046.5' y1='304.8' x2='1056.6' y2='304.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1046.5' cy='304.8' r='2' fill='none' stroke='#840000'/>
+<text x='1059.7' y='306.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1059.7 306.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>G</text>
+<line x1='1077.0' y1='284.5' x2='1077.0' y2='294.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1077.0' cy='284.5' r='2' fill='none' stroke='#840000'/>
+<text x='1077.0' y='299.3' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1077.0 299.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>D</text>
+<line x1='1077.0' y1='325.1' x2='1077.0' y2='315.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1077.0' cy='325.1' r='2' fill='none' stroke='#840000'/>
+<text x='1077.0' y='313.5' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1077.0 313.5)' font-family='Pretendard, Malgun Gothic, sans-serif'>S</text>
+<text x='1066.8' y='276.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1066.8 276.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>Q101</text>
+<text x='1066.8' y='338.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1066.8 338.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>BSP170P</text>
+<polyline points='838.2,391.2 838.2,401.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='848.4,396.2 838.2,396.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='848.4,391.2 848.4,401.3 838.2,396.2 848.4,391.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='828.0' y1='396.2' x2='838.2' y2='396.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='828.0' cy='396.2' r='2' fill='none' stroke='#840000'/>
+<text x='841.2' y='397.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 841.2 397.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>K</text>
+<line x1='858.5' y1='396.2' x2='848.4' y2='396.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='858.5' cy='396.2' r='2' fill='none' stroke='#840000'/>
+<text x='845.3' y='397.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 845.3 397.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>A</text>
+<text x='843.3' y='368.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 843.3 368.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>D101</text>
+<text x='843.3' y='430.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 843.3 430.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>1N4148W</text>
+<polyline points='814.8,391.2 817.9,386.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='817.9,396.2 817.9,386.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='817.9,386.1 820.9,391.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='817.9' y1='396.2' x2='817.9' y2='396.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='817.9' cy='396.2' r='2' fill='none' stroke='#840000'/>
+<text x='817.9' y='397.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 817.9 397.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<text x='817.9' y='368.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 817.9 368.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR024</text>
+<text x='817.9' y='430.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 817.9 430.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<polyline points='970.3,396.2 960.1,396.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='967.2,391.2 965.2,391.2 965.2,401.3 963.2,401.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='955.0,391.2 955.0,401.3 975.4,391.2 975.4,401.3 955.0,391.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='950.0' y1='396.2' x2='960.1' y2='396.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='950.0' cy='396.2' r='2' fill='none' stroke='#840000'/>
+<text x='963.2' y='397.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 963.2 397.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>A1</text>
+<line x1='980.4' y1='396.2' x2='970.3' y2='396.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='980.4' cy='396.2' r='2' fill='none' stroke='#840000'/>
+<text x='967.2' y='397.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 967.2 397.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>A2</text>
+<text x='965.2' y='368.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 965.2 368.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>D102</text>
+<text x='965.2' y='430.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 965.2 430.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>SMBJ28CA</text>
+<polyline points='990.6,396.2 990.6,401.3 995.7,401.3 990.6,406.4 985.5,401.3 990.6,401.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='990.6' y1='396.2' x2='990.6' y2='396.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='990.6' cy='396.2' r='2' fill='none' stroke='#840000'/>
+<text x='990.6' y='397.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 990.6 397.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='990.6' y='368.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 990.6 368.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR025</text>
+<text x='990.6' y='430.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 990.6 430.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<rect x='1052.6' y='386.1' width='8.1' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='1056.6' y1='381.0' x2='1056.6' y2='386.1' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1056.6' cy='381.0' r='2' fill='none' stroke='#840000'/>
+<line x1='1056.6' y1='411.5' x2='1056.6' y2='406.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1056.6' cy='411.5' r='2' fill='none' stroke='#840000'/>
+<text x='1056.6' y='368.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1056.6 368.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>R105</text>
+<text x='1056.6' y='430.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1056.6 430.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>15</text>
+<polyline points='1089.2,399.3 1105.4,399.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1089.2,393.2 1105.4,393.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1097.3' y1='381.0' x2='1097.3' y2='392.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1097.3' cy='381.0' r='2' fill='none' stroke='#840000'/>
+<line x1='1097.3' y1='411.5' x2='1097.3' y2='400.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1097.3' cy='411.5' r='2' fill='none' stroke='#840000'/>
+<text x='1097.3' y='368.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1097.3 368.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>C105</text>
+<text x='1097.3' y='430.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1097.3 430.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>10nF</text>
+<polyline points='1097.3,421.6 1097.3,426.7 1102.4,426.7 1097.3,431.8 1092.2,426.7 1097.3,426.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1097.3' y1='421.6' x2='1097.3' y2='421.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1097.3' cy='421.6' r='2' fill='none' stroke='#840000'/>
+<text x='1097.3' y='423.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1097.3 423.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='1097.3' y='393.6' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1097.3 393.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR026</text>
+<text x='1097.3' y='455.6' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1097.3 455.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<rect x='280.4' y='508.0' width='8.1' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='284.5' y1='502.9' x2='284.5' y2='508.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='284.5' cy='502.9' r='2' fill='none' stroke='#840000'/>
+<line x1='284.5' y1='533.4' x2='284.5' y2='528.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='284.5' cy='533.4' r='2' fill='none' stroke='#840000'/>
+<text x='284.5' y='490.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 284.5 490.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>R201</text>
+<text x='284.5' y='552.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 284.5 552.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>2.49k</text>
+<polyline points='317.0,521.2 333.2,521.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='317.0,515.1 333.2,515.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='325.1' y1='502.9' x2='325.1' y2='514.1' stroke='#840000' stroke-width='1.4'/>
+<circle cx='325.1' cy='502.9' r='2' fill='none' stroke='#840000'/>
+<line x1='325.1' y1='533.4' x2='325.1' y2='522.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='325.1' cy='533.4' r='2' fill='none' stroke='#840000'/>
+<text x='325.1' y='490.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 325.1 490.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>C201</text>
+<text x='325.1' y='552.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 325.1 552.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>10nF</text>
+<polyline points='325.1,543.6 325.1,548.6 330.2,548.6 325.1,553.7 320.0,548.6 325.1,548.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='325.1' y1='543.6' x2='325.1' y2='543.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='325.1' cy='543.6' r='2' fill='none' stroke='#840000'/>
+<text x='325.1' y='545.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 325.1 545.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='325.1' y='515.6' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 325.1 515.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR027</text>
+<text x='325.1' y='577.6' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 325.1 577.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<rect x='361.7' y='508.0' width='8.1' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='365.8' y1='502.9' x2='365.8' y2='508.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='365.8' cy='502.9' r='2' fill='none' stroke='#840000'/>
+<line x1='365.8' y1='533.4' x2='365.8' y2='528.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='365.8' cy='533.4' r='2' fill='none' stroke='#840000'/>
+<text x='365.8' y='490.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 365.8 490.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>R202</text>
+<text x='365.8' y='552.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 365.8 552.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>2.49k 0.1%</text>
+<polyline points='365.8,543.6 365.8,548.6 370.8,548.6 365.8,553.7 360.7,548.6 365.8,548.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='365.8' y1='543.6' x2='365.8' y2='543.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='365.8' cy='543.6' r='2' fill='none' stroke='#840000'/>
+<text x='365.8' y='545.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 365.8 545.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='365.8' y='515.6' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 365.8 515.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR028</text>
+<text x='365.8' y='577.6' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 365.8 577.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<polyline points='459.2,521.2 475.5,521.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='459.2,515.1 475.5,515.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='467.4' y1='502.9' x2='467.4' y2='514.1' stroke='#840000' stroke-width='1.4'/>
+<circle cx='467.4' cy='502.9' r='2' fill='none' stroke='#840000'/>
+<line x1='467.4' y1='533.4' x2='467.4' y2='522.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='467.4' cy='533.4' r='2' fill='none' stroke='#840000'/>
+<text x='467.4' y='490.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 467.4 490.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>C202</text>
+<text x='467.4' y='552.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 467.4 552.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>2.2nF</text>
+<polyline points='467.4,543.6 467.4,548.6 472.4,548.6 467.4,553.7 462.3,548.6 467.4,548.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='467.4' y1='543.6' x2='467.4' y2='543.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='467.4' cy='543.6' r='2' fill='none' stroke='#840000'/>
+<text x='467.4' y='545.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 467.4 545.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='467.4' y='515.6' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 467.4 515.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR029</text>
+<text x='467.4' y='577.6' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 467.4 577.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<rect x='579.1' y='487.7' width='61.0' height='81.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='609.6' y1='477.5' x2='609.6' y2='487.7' stroke='#840000' stroke-width='1.4'/>
+<circle cx='609.6' cy='477.5' r='2' fill='none' stroke='#840000'/>
+<text x='609.6' y='492.3' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 609.6 492.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>VSP</text>
+<line x1='609.6' y1='579.1' x2='609.6' y2='569.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='609.6' cy='579.1' r='2' fill='none' stroke='#840000'/>
+<text x='609.6' y='567.5' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 609.6 567.5)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<line x1='609.6' y1='579.1' x2='609.6' y2='569.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='609.6' cy='579.1' r='2' fill='none' stroke='#840000'/>
+<text x='609.6' y='567.5' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 609.6 567.5)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<line x1='650.2' y1='538.5' x2='640.1' y2='538.5' stroke='#840000' stroke-width='1.4'/>
+<circle cx='650.2' cy='538.5' r='2' fill='none' stroke='#840000'/>
+<text x='637.0' y='540.1' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 637.0 540.1)' font-family='Pretendard, Malgun Gothic, sans-serif'>IS</text>
+<line x1='650.2' y1='558.8' x2='640.1' y2='558.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='650.2' cy='558.8' r='2' fill='none' stroke='#840000'/>
+<text x='637.0' y='560.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 637.0 560.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>VG</text>
+<line x1='569.0' y1='508.0' x2='579.1' y2='508.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='569.0' cy='508.0' r='2' fill='none' stroke='#840000'/>
+<text x='582.2' y='509.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 582.2 509.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>REGS</text>
+<line x1='569.0' y1='497.8' x2='579.1' y2='497.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='569.0' cy='497.8' r='2' fill='none' stroke='#840000'/>
+<text x='582.2' y='499.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 582.2 499.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>REGF</text>
+<line x1='569.0' y1='528.3' x2='579.1' y2='528.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='569.0' cy='528.3' r='2' fill='none' stroke='#840000'/>
+<text x='582.2' y='529.9' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 582.2 529.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>VIN</text>
+<line x1='569.0' y1='548.6' x2='579.1' y2='548.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='569.0' cy='548.6' r='2' fill='none' stroke='#840000'/>
+<text x='582.2' y='550.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 582.2 550.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>SET</text>
+<line x1='650.2' y1='518.2' x2='640.1' y2='518.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='650.2' cy='518.2' r='2' fill='none' stroke='#840000'/>
+<text x='637.0' y='519.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 637.0 519.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>~{EF}</text>
+<line x1='650.2' y1='497.8' x2='640.1' y2='497.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='650.2' cy='497.8' r='2' fill='none' stroke='#840000'/>
+<text x='637.0' y='499.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 637.0 499.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>OD</text>
+<text x='609.6' y='500.3' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 609.6 500.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>U201</text>
+<text x='609.6' y='562.3' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 609.6 562.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>XTR111AIDGQR</text>
+<polyline points='609.6,589.3 609.6,594.4 614.7,594.4 609.6,599.4 604.5,594.4 609.6,594.4' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='609.6' y1='589.3' x2='609.6' y2='589.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='609.6' cy='589.3' r='2' fill='none' stroke='#840000'/>
+<text x='609.6' y='590.9' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 609.6 590.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='609.6' y='561.3' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 609.6 561.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR030</text>
+<text x='609.6' y='623.3' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 609.6 623.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<rect x='727.5' y='508.0' width='8.1' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='731.5' y1='502.9' x2='731.5' y2='508.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='731.5' cy='502.9' r='2' fill='none' stroke='#840000'/>
+<line x1='731.5' y1='533.4' x2='731.5' y2='528.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='731.5' cy='533.4' r='2' fill='none' stroke='#840000'/>
+<text x='731.5' y='490.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 731.5 490.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>R203</text>
+<text x='731.5' y='552.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 731.5 552.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>5.1</text>
+<polyline points='728.5,487.7 731.5,482.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='731.5,492.8 731.5,482.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='731.5,482.6 734.6,487.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='731.5' y1='492.8' x2='731.5' y2='492.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='731.5' cy='492.8' r='2' fill='none' stroke='#840000'/>
+<text x='731.5' y='494.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 731.5 494.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<text x='731.5' y='464.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 731.5 464.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR031</text>
+<text x='731.5' y='526.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 731.5 526.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<polyline points='764.0,521.2 780.3,521.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='764.0,515.1 780.3,515.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='772.2' y1='502.9' x2='772.2' y2='514.1' stroke='#840000' stroke-width='1.4'/>
+<circle cx='772.2' cy='502.9' r='2' fill='none' stroke='#840000'/>
+<line x1='772.2' y1='533.4' x2='772.2' y2='522.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='772.2' cy='533.4' r='2' fill='none' stroke='#840000'/>
+<text x='772.2' y='490.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 772.2 490.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>C203</text>
+<text x='772.2' y='552.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 772.2 552.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>100nF</text>
+<polyline points='772.2,543.6 772.2,548.6 777.2,548.6 772.2,553.7 767.1,548.6 772.2,548.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='772.2' y1='543.6' x2='772.2' y2='543.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='772.2' cy='543.6' r='2' fill='none' stroke='#840000'/>
+<text x='772.2' y='545.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 772.2 545.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='772.2' y='515.6' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 772.2 515.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR032</text>
+<text x='772.2' y='577.6' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 772.2 577.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<rect x='808.7' y='508.0' width='8.1' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='812.8' y1='502.9' x2='812.8' y2='508.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='812.8' cy='502.9' r='2' fill='none' stroke='#840000'/>
+<line x1='812.8' y1='533.4' x2='812.8' y2='528.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='812.8' cy='533.4' r='2' fill='none' stroke='#840000'/>
+<text x='812.8' y='490.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 812.8 490.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>R206</text>
+<text x='812.8' y='552.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 812.8 552.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>1k</text>
+<rect x='849.4' y='508.0' width='8.1' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='853.4' y1='502.9' x2='853.4' y2='508.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='853.4' cy='502.9' r='2' fill='none' stroke='#840000'/>
+<line x1='853.4' y1='533.4' x2='853.4' y2='528.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='853.4' cy='533.4' r='2' fill='none' stroke='#840000'/>
+<text x='853.4' y='490.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 853.4 490.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>R204</text>
+<text x='853.4' y='552.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 853.4 552.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>15</text>
+<polyline points='957.6,515.6 965.2,508.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='957.6,520.7 965.2,528.3 965.2,528.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='957.6,510.5 957.6,525.8 957.6,525.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='964.2,525.3 962.2,527.3 960.1,523.2 964.2,525.3 964.2,525.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='960.1' cy='518.2' r='11.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='934.7' y1='518.2' x2='957.6' y2='518.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='934.7' cy='518.2' r='2' fill='none' stroke='#840000'/>
+<text x='964.4' y='519.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 964.4 519.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>B</text>
+<line x1='965.2' y1='538.5' x2='965.2' y2='528.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='965.2' cy='538.5' r='2' fill='none' stroke='#840000'/>
+<text x='965.2' y='526.9' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 965.2 526.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>E</text>
+<line x1='965.2' y1='497.8' x2='965.2' y2='508.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='965.2' cy='497.8' r='2' fill='none' stroke='#840000'/>
+<text x='965.2' y='512.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 965.2 512.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>C</text>
+<text x='955.0' y='490.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 955.0 490.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>Q202</text>
+<text x='955.0' y='552.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 955.0 552.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>MMBT2907A</text>
+<polyline points='1067.8,518.2 1056.6,518.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1067.8,510.5 1067.8,525.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1069.8,523.2 1069.8,527.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1069.8,516.1 1069.8,520.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1069.8,509.0 1069.8,513.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1077.0,508.0 1077.0,511.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1077.0,528.3 1077.0,518.2 1069.8,518.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1069.8,511.0 1080.0,511.0 1080.0,525.3 1069.8,525.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1075.9,518.2 1071.9,516.6 1071.9,519.7 1075.9,518.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1078.0,520.2 1078.5,519.7 1081.5,519.7 1082.0,519.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1080.0,519.7 1078.5,517.1 1081.5,517.1 1080.0,519.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1073.4' cy='518.2' r='11.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1077.0' cy='525.3' r='1.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1077.0' cy='511.0' r='1.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1046.5' y1='518.2' x2='1056.6' y2='518.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1046.5' cy='518.2' r='2' fill='none' stroke='#840000'/>
+<text x='1059.7' y='519.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1059.7 519.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>G</text>
+<line x1='1077.0' y1='497.8' x2='1077.0' y2='508.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1077.0' cy='497.8' r='2' fill='none' stroke='#840000'/>
+<text x='1077.0' y='512.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1077.0 512.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>D</text>
+<line x1='1077.0' y1='538.5' x2='1077.0' y2='528.3' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1077.0' cy='538.5' r='2' fill='none' stroke='#840000'/>
+<text x='1077.0' y='526.9' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1077.0 526.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>S</text>
+<text x='1066.8' y='490.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1066.8 490.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>Q201</text>
+<text x='1066.8' y='552.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1066.8 552.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>BSP170P</text>
+<polyline points='838.2,604.5 838.2,614.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='848.4,609.6 838.2,609.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='848.4,604.5 848.4,614.7 838.2,609.6 848.4,604.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='828.0' y1='609.6' x2='838.2' y2='609.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='828.0' cy='609.6' r='2' fill='none' stroke='#840000'/>
+<text x='841.2' y='611.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 841.2 611.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>K</text>
+<line x1='858.5' y1='609.6' x2='848.4' y2='609.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='858.5' cy='609.6' r='2' fill='none' stroke='#840000'/>
+<text x='845.3' y='611.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 845.3 611.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>A</text>
+<text x='843.3' y='581.6' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 843.3 581.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>D201</text>
+<text x='843.3' y='643.6' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 843.3 643.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>1N4148W</text>
+<polyline points='814.8,604.5 817.9,599.4' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='817.9,609.6 817.9,599.4' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='817.9,599.4 820.9,604.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='817.9' y1='609.6' x2='817.9' y2='609.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='817.9' cy='609.6' r='2' fill='none' stroke='#840000'/>
+<text x='817.9' y='611.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 817.9 611.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<text x='817.9' y='581.6' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 817.9 581.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR033</text>
+<text x='817.9' y='643.6' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 817.9 643.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>+24V</text>
+<polyline points='970.3,609.6 960.1,609.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='967.2,604.5 965.2,604.5 965.2,614.7 963.2,614.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='955.0,604.5 955.0,614.7 975.4,604.5 975.4,614.7 955.0,604.5' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='950.0' y1='609.6' x2='960.1' y2='609.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='950.0' cy='609.6' r='2' fill='none' stroke='#840000'/>
+<text x='963.2' y='611.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 963.2 611.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>A1</text>
+<line x1='980.4' y1='609.6' x2='970.3' y2='609.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='980.4' cy='609.6' r='2' fill='none' stroke='#840000'/>
+<text x='967.2' y='611.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 967.2 611.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>A2</text>
+<text x='965.2' y='581.6' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 965.2 581.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>D202</text>
+<text x='965.2' y='643.6' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 965.2 643.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>SMBJ28CA</text>
+<polyline points='990.6,609.6 990.6,614.7 995.7,614.7 990.6,619.8 985.5,614.7 990.6,614.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='990.6' y1='609.6' x2='990.6' y2='609.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='990.6' cy='609.6' r='2' fill='none' stroke='#840000'/>
+<text x='990.6' y='611.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 990.6 611.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='990.6' y='581.6' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 990.6 581.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR034</text>
+<text x='990.6' y='643.6' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 990.6 643.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<rect x='1052.6' y='599.4' width='8.1' height='20.3' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='1056.6' y1='594.4' x2='1056.6' y2='599.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1056.6' cy='594.4' r='2' fill='none' stroke='#840000'/>
+<line x1='1056.6' y1='624.8' x2='1056.6' y2='619.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1056.6' cy='624.8' r='2' fill='none' stroke='#840000'/>
+<text x='1056.6' y='581.6' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1056.6 581.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>R205</text>
+<text x='1056.6' y='643.6' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1056.6 643.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>15</text>
+<polyline points='1089.2,612.6 1105.4,612.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1089.2,606.6 1105.4,606.6' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1097.3' y1='594.4' x2='1097.3' y2='605.5' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1097.3' cy='594.4' r='2' fill='none' stroke='#840000'/>
+<line x1='1097.3' y1='624.8' x2='1097.3' y2='613.7' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1097.3' cy='624.8' r='2' fill='none' stroke='#840000'/>
+<text x='1097.3' y='581.6' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1097.3 581.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>C205</text>
+<text x='1097.3' y='643.6' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1097.3 643.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>10nF</text>
+<polyline points='1097.3,635.0 1097.3,640.1 1102.4,640.1 1097.3,645.2 1092.2,640.1 1097.3,640.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1097.3' y1='635.0' x2='1097.3' y2='635.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1097.3' cy='635.0' r='2' fill='none' stroke='#840000'/>
+<text x='1097.3' y='636.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1097.3 636.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='1097.3' y='607.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1097.3 607.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR035</text>
+<text x='1097.3' y='669.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1097.3 669.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<rect x='1179.7' y='244.4' width='30.5' height='71.1' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1194.9' cy='254.6' r='3.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1194.9' cy='264.8' r='3.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1194.9' cy='274.9' r='3.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1194.9' cy='285.1' r='3.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1194.9' cy='295.2' r='3.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1194.9' cy='305.4' r='3.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1169.5' y1='254.6' x2='1179.7' y2='254.6' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1169.5' cy='254.6' r='2' fill='none' stroke='#840000'/>
+<text x='1182.7' y='256.2' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1182.7 256.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_1</text>
+<line x1='1169.5' y1='264.8' x2='1179.7' y2='264.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1169.5' cy='264.8' r='2' fill='none' stroke='#840000'/>
+<text x='1182.7' y='266.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1182.7 266.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_2</text>
+<line x1='1169.5' y1='274.9' x2='1179.7' y2='274.9' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1169.5' cy='274.9' r='2' fill='none' stroke='#840000'/>
+<text x='1182.7' y='276.5' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1182.7 276.5)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_3</text>
+<line x1='1169.5' y1='285.1' x2='1179.7' y2='285.1' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1169.5' cy='285.1' r='2' fill='none' stroke='#840000'/>
+<text x='1182.7' y='286.7' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1182.7 286.7)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_4</text>
+<line x1='1169.5' y1='295.2' x2='1179.7' y2='295.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1169.5' cy='295.2' r='2' fill='none' stroke='#840000'/>
+<text x='1182.7' y='296.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1182.7 296.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_5</text>
+<line x1='1169.5' y1='305.4' x2='1179.7' y2='305.4' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1169.5' cy='305.4' r='2' fill='none' stroke='#840000'/>
+<text x='1182.7' y='307.0' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1182.7 307.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_6</text>
+<text x='1200.0' y='252.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1200.0 252.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>J4</text>
+<text x='1200.0' y='314.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1200.0 314.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>MCC152 DIO4-7</text>
+<rect x='1329.8' y='235.9' width='20.3' height='8.1' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='1319.7' y1='240.0' x2='1329.8' y2='240.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1319.7' cy='240.0' r='2' fill='none' stroke='#840000'/>
+<line x1='1360.3' y1='240.0' x2='1350.2' y2='240.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1360.3' cy='240.0' r='2' fill='none' stroke='#840000'/>
+<text x='1340.0' y='212.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1340.0 212.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>R301</text>
+<text x='1340.0' y='274.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1340.0 274.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>470</text>
+<rect x='1417.5' y='209.5' width='61.0' height='40.6' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1427.7,219.7 1427.7,240.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1422.6,229.8 1432.8,229.8 1427.7,240.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1463.2,214.6 1463.2,245.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1463.2,229.8 1473.4,219.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1463.2,229.8 1473.4,240.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<text x='1448.0' y='203.8' font-size='3.6' fill='#840000' text-anchor='middle' transform='rotate(0 1448.0 203.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>PC817</text>
+<line x1='1407.4' y1='219.7' x2='1417.5' y2='219.7' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1407.4' cy='219.7' r='2' fill='none' stroke='#840000'/>
+<text x='1420.6' y='221.3' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1420.6 221.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>A</text>
+<line x1='1407.4' y1='240.0' x2='1417.5' y2='240.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1407.4' cy='240.0' r='2' fill='none' stroke='#840000'/>
+<text x='1420.6' y='241.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1420.6 241.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>K</text>
+<line x1='1488.6' y1='240.0' x2='1478.5' y2='240.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1488.6' cy='240.0' r='2' fill='none' stroke='#840000'/>
+<text x='1475.4' y='241.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1475.4 241.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>E</text>
+<line x1='1488.6' y1='219.7' x2='1478.5' y2='219.7' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1488.6' cy='219.7' r='2' fill='none' stroke='#840000'/>
+<text x='1475.4' y='221.3' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1475.4 221.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>C</text>
+<text x='1448.0' y='201.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1448.0 201.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>U301</text>
+<text x='1448.0' y='263.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1448.0 263.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>PC817</text>
+<rect x='1559.7' y='219.7' width='30.5' height='30.5' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1574.9' cy='229.8' r='3.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1574.9' cy='240.0' r='3.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1549.5' y1='229.8' x2='1559.7' y2='229.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1549.5' cy='229.8' r='2' fill='none' stroke='#840000'/>
+<text x='1562.7' y='231.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1562.7 231.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_1</text>
+<line x1='1549.5' y1='240.0' x2='1559.7' y2='240.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1549.5' cy='240.0' r='2' fill='none' stroke='#840000'/>
+<text x='1562.7' y='241.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1562.7 241.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_2</text>
+<text x='1580.0' y='206.9' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1580.0 206.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>J5</text>
+<text x='1580.0' y='268.9' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1580.0 268.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>CONTACT0 (C,E)</text>
+<rect x='1329.8' y='283.9' width='20.3' height='8.1' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='1319.7' y1='288.0' x2='1329.8' y2='288.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1319.7' cy='288.0' r='2' fill='none' stroke='#840000'/>
+<line x1='1360.3' y1='288.0' x2='1350.2' y2='288.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1360.3' cy='288.0' r='2' fill='none' stroke='#840000'/>
+<text x='1340.0' y='260.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1340.0 260.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>R305</text>
+<text x='1340.0' y='322.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1340.0 322.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>1k</text>
+<polyline points='1402.9,282.9 1413.1,288.0 1402.9,293.1 1402.9,282.9' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1413.1,282.9 1413.1,293.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1408.0,280.9 1413.1,275.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1411.6,280.9 1416.6,275.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1392.8' y1='288.0' x2='1402.9' y2='288.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1392.8' cy='288.0' r='2' fill='none' stroke='#840000'/>
+<text x='1406.0' y='289.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1406.0 289.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>A</text>
+<line x1='1423.2' y1='288.0' x2='1413.1' y2='288.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1423.2' cy='288.0' r='2' fill='none' stroke='#840000'/>
+<text x='1410.0' y='289.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1410.0 289.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>K</text>
+<text x='1408.0' y='260.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1408.0 260.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>D301</text>
+<text x='1408.0' y='322.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1408.0 322.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>LED</text>
+<rect x='1329.8' y='371.9' width='20.3' height='8.1' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='1319.7' y1='376.0' x2='1329.8' y2='376.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1319.7' cy='376.0' r='2' fill='none' stroke='#840000'/>
+<line x1='1360.3' y1='376.0' x2='1350.2' y2='376.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1360.3' cy='376.0' r='2' fill='none' stroke='#840000'/>
+<text x='1340.0' y='348.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1340.0 348.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>R302</text>
+<text x='1340.0' y='410.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1340.0 410.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>470</text>
+<rect x='1417.5' y='345.5' width='61.0' height='40.6' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1427.7,355.7 1427.7,376.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1422.6,365.8 1432.8,365.8 1427.7,376.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1463.2,350.6 1463.2,381.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1463.2,365.8 1473.4,355.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1463.2,365.8 1473.4,376.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<text x='1448.0' y='339.8' font-size='3.6' fill='#840000' text-anchor='middle' transform='rotate(0 1448.0 339.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>PC817</text>
+<line x1='1407.4' y1='355.7' x2='1417.5' y2='355.7' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1407.4' cy='355.7' r='2' fill='none' stroke='#840000'/>
+<text x='1420.6' y='357.3' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1420.6 357.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>A</text>
+<line x1='1407.4' y1='376.0' x2='1417.5' y2='376.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1407.4' cy='376.0' r='2' fill='none' stroke='#840000'/>
+<text x='1420.6' y='377.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1420.6 377.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>K</text>
+<line x1='1488.6' y1='376.0' x2='1478.5' y2='376.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1488.6' cy='376.0' r='2' fill='none' stroke='#840000'/>
+<text x='1475.4' y='377.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1475.4 377.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>E</text>
+<line x1='1488.6' y1='355.7' x2='1478.5' y2='355.7' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1488.6' cy='355.7' r='2' fill='none' stroke='#840000'/>
+<text x='1475.4' y='357.3' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1475.4 357.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>C</text>
+<text x='1448.0' y='337.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1448.0 337.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>U302</text>
+<text x='1448.0' y='399.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1448.0 399.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>PC817</text>
+<rect x='1559.7' y='355.7' width='30.5' height='30.5' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1574.9' cy='365.8' r='3.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1574.9' cy='376.0' r='3.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1549.5' y1='365.8' x2='1559.7' y2='365.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1549.5' cy='365.8' r='2' fill='none' stroke='#840000'/>
+<text x='1562.7' y='367.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1562.7 367.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_1</text>
+<line x1='1549.5' y1='376.0' x2='1559.7' y2='376.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1549.5' cy='376.0' r='2' fill='none' stroke='#840000'/>
+<text x='1562.7' y='377.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1562.7 377.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_2</text>
+<text x='1580.0' y='342.9' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1580.0 342.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>J6</text>
+<text x='1580.0' y='404.9' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1580.0 404.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>CONTACT1 (C,E)</text>
+<rect x='1329.8' y='419.9' width='20.3' height='8.1' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='1319.7' y1='424.0' x2='1329.8' y2='424.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1319.7' cy='424.0' r='2' fill='none' stroke='#840000'/>
+<line x1='1360.3' y1='424.0' x2='1350.2' y2='424.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1360.3' cy='424.0' r='2' fill='none' stroke='#840000'/>
+<text x='1340.0' y='396.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1340.0 396.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>R306</text>
+<text x='1340.0' y='458.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1340.0 458.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>1k</text>
+<polyline points='1402.9,418.9 1413.1,424.0 1402.9,429.1 1402.9,418.9' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1413.1,418.9 1413.1,429.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1408.0,416.9 1413.1,411.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1411.6,416.9 1416.6,411.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1392.8' y1='424.0' x2='1402.9' y2='424.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1392.8' cy='424.0' r='2' fill='none' stroke='#840000'/>
+<text x='1406.0' y='425.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1406.0 425.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>A</text>
+<line x1='1423.2' y1='424.0' x2='1413.1' y2='424.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1423.2' cy='424.0' r='2' fill='none' stroke='#840000'/>
+<text x='1410.0' y='425.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1410.0 425.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>K</text>
+<text x='1408.0' y='396.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1408.0 396.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>D302</text>
+<text x='1408.0' y='458.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1408.0 458.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>LED</text>
+<rect x='1329.8' y='507.9' width='20.3' height='8.1' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='1319.7' y1='512.0' x2='1329.8' y2='512.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1319.7' cy='512.0' r='2' fill='none' stroke='#840000'/>
+<line x1='1360.3' y1='512.0' x2='1350.2' y2='512.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1360.3' cy='512.0' r='2' fill='none' stroke='#840000'/>
+<text x='1340.0' y='484.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1340.0 484.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>R303</text>
+<text x='1340.0' y='546.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1340.0 546.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>470</text>
+<rect x='1417.5' y='481.5' width='61.0' height='40.6' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1427.7,491.7 1427.7,512.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1422.6,501.8 1432.8,501.8 1427.7,512.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1463.2,486.6 1463.2,517.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1463.2,501.8 1473.4,491.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1463.2,501.8 1473.4,512.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<text x='1448.0' y='475.8' font-size='3.6' fill='#840000' text-anchor='middle' transform='rotate(0 1448.0 475.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>PC817</text>
+<line x1='1407.4' y1='491.7' x2='1417.5' y2='491.7' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1407.4' cy='491.7' r='2' fill='none' stroke='#840000'/>
+<text x='1420.6' y='493.3' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1420.6 493.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>A</text>
+<line x1='1407.4' y1='512.0' x2='1417.5' y2='512.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1407.4' cy='512.0' r='2' fill='none' stroke='#840000'/>
+<text x='1420.6' y='513.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1420.6 513.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>K</text>
+<line x1='1488.6' y1='512.0' x2='1478.5' y2='512.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1488.6' cy='512.0' r='2' fill='none' stroke='#840000'/>
+<text x='1475.4' y='513.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1475.4 513.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>E</text>
+<line x1='1488.6' y1='491.7' x2='1478.5' y2='491.7' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1488.6' cy='491.7' r='2' fill='none' stroke='#840000'/>
+<text x='1475.4' y='493.3' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1475.4 493.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>C</text>
+<text x='1448.0' y='473.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1448.0 473.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>U303</text>
+<text x='1448.0' y='535.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1448.0 535.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>PC817</text>
+<rect x='1559.7' y='491.7' width='30.5' height='30.5' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1574.9' cy='501.8' r='3.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1574.9' cy='512.0' r='3.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1549.5' y1='501.8' x2='1559.7' y2='501.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1549.5' cy='501.8' r='2' fill='none' stroke='#840000'/>
+<text x='1562.7' y='503.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1562.7 503.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_1</text>
+<line x1='1549.5' y1='512.0' x2='1559.7' y2='512.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1549.5' cy='512.0' r='2' fill='none' stroke='#840000'/>
+<text x='1562.7' y='513.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1562.7 513.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_2</text>
+<text x='1580.0' y='478.9' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1580.0 478.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>J7</text>
+<text x='1580.0' y='540.9' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1580.0 540.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>CONTACT2 (C,E)</text>
+<rect x='1329.8' y='555.9' width='20.3' height='8.1' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='1319.7' y1='560.0' x2='1329.8' y2='560.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1319.7' cy='560.0' r='2' fill='none' stroke='#840000'/>
+<line x1='1360.3' y1='560.0' x2='1350.2' y2='560.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1360.3' cy='560.0' r='2' fill='none' stroke='#840000'/>
+<text x='1340.0' y='532.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1340.0 532.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>R307</text>
+<text x='1340.0' y='594.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1340.0 594.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>1k</text>
+<polyline points='1402.9,554.9 1413.1,560.0 1402.9,565.1 1402.9,554.9' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1413.1,554.9 1413.1,565.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1408.0,552.9 1413.1,547.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1411.6,552.9 1416.6,547.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1392.8' y1='560.0' x2='1402.9' y2='560.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1392.8' cy='560.0' r='2' fill='none' stroke='#840000'/>
+<text x='1406.0' y='561.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1406.0 561.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>A</text>
+<line x1='1423.2' y1='560.0' x2='1413.1' y2='560.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1423.2' cy='560.0' r='2' fill='none' stroke='#840000'/>
+<text x='1410.0' y='561.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1410.0 561.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>K</text>
+<text x='1408.0' y='532.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1408.0 532.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>D303</text>
+<text x='1408.0' y='594.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1408.0 594.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>LED</text>
+<rect x='1329.8' y='643.9' width='20.3' height='8.1' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='1319.7' y1='648.0' x2='1329.8' y2='648.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1319.7' cy='648.0' r='2' fill='none' stroke='#840000'/>
+<line x1='1360.3' y1='648.0' x2='1350.2' y2='648.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1360.3' cy='648.0' r='2' fill='none' stroke='#840000'/>
+<text x='1340.0' y='620.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1340.0 620.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>R304</text>
+<text x='1340.0' y='682.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1340.0 682.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>470</text>
+<rect x='1417.5' y='617.5' width='61.0' height='40.6' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1427.7,627.7 1427.7,648.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1422.6,637.8 1432.8,637.8 1427.7,648.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1463.2,622.6 1463.2,653.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1463.2,637.8 1473.4,627.7' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1463.2,637.8 1473.4,648.0' fill='none' stroke='#840000' stroke-width='1.2'/>
+<text x='1448.0' y='611.8' font-size='3.6' fill='#840000' text-anchor='middle' transform='rotate(0 1448.0 611.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>PC817</text>
+<line x1='1407.4' y1='627.7' x2='1417.5' y2='627.7' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1407.4' cy='627.7' r='2' fill='none' stroke='#840000'/>
+<text x='1420.6' y='629.3' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1420.6 629.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>A</text>
+<line x1='1407.4' y1='648.0' x2='1417.5' y2='648.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1407.4' cy='648.0' r='2' fill='none' stroke='#840000'/>
+<text x='1420.6' y='649.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1420.6 649.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>K</text>
+<line x1='1488.6' y1='648.0' x2='1478.5' y2='648.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1488.6' cy='648.0' r='2' fill='none' stroke='#840000'/>
+<text x='1475.4' y='649.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1475.4 649.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>E</text>
+<line x1='1488.6' y1='627.7' x2='1478.5' y2='627.7' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1488.6' cy='627.7' r='2' fill='none' stroke='#840000'/>
+<text x='1475.4' y='629.3' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1475.4 629.3)' font-family='Pretendard, Malgun Gothic, sans-serif'>C</text>
+<text x='1448.0' y='609.8' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1448.0 609.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>U304</text>
+<text x='1448.0' y='671.8' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1448.0 671.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>PC817</text>
+<rect x='1559.7' y='627.7' width='30.5' height='30.5' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1574.9' cy='637.8' r='3.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<circle cx='1574.9' cy='648.0' r='3.2' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1549.5' y1='637.8' x2='1559.7' y2='637.8' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1549.5' cy='637.8' r='2' fill='none' stroke='#840000'/>
+<text x='1562.7' y='639.4' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1562.7 639.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_1</text>
+<line x1='1549.5' y1='648.0' x2='1559.7' y2='648.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1549.5' cy='648.0' r='2' fill='none' stroke='#840000'/>
+<text x='1562.7' y='649.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1562.7 649.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>Pin_2</text>
+<text x='1580.0' y='614.9' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1580.0 614.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>J8</text>
+<text x='1580.0' y='676.9' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1580.0 676.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>CONTACT3 (C,E)</text>
+<rect x='1329.8' y='691.9' width='20.3' height='8.1' fill='#fff7e0' stroke='#840000' stroke-width='1.2'/>
+<line x1='1319.7' y1='696.0' x2='1329.8' y2='696.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1319.7' cy='696.0' r='2' fill='none' stroke='#840000'/>
+<line x1='1360.3' y1='696.0' x2='1350.2' y2='696.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1360.3' cy='696.0' r='2' fill='none' stroke='#840000'/>
+<text x='1340.0' y='668.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1340.0 668.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>R308</text>
+<text x='1340.0' y='730.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1340.0 730.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>1k</text>
+<polyline points='1402.9,690.9 1413.1,696.0 1402.9,701.1 1402.9,690.9' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1413.1,690.9 1413.1,701.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1408.0,688.9 1413.1,683.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<polyline points='1411.6,688.9 1416.6,683.8' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1392.8' y1='696.0' x2='1402.9' y2='696.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1392.8' cy='696.0' r='2' fill='none' stroke='#840000'/>
+<text x='1406.0' y='697.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1406.0 697.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>A</text>
+<line x1='1423.2' y1='696.0' x2='1413.1' y2='696.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1423.2' cy='696.0' r='2' fill='none' stroke='#840000'/>
+<text x='1410.0' y='697.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1410.0 697.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>K</text>
+<text x='1408.0' y='668.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1408.0 668.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>D304</text>
+<text x='1408.0' y='730.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1408.0 730.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>LED</text>
+<polyline points='1159.4,295.2 1159.4,300.3 1164.4,300.3 1159.4,305.4 1154.3,300.3 1159.4,300.3' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1159.4' y1='295.2' x2='1159.4' y2='295.2' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1159.4' cy='295.2' r='2' fill='none' stroke='#840000'/>
+<text x='1159.4' y='296.8' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1159.4 296.8)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='1159.4' y='267.2' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1159.4 267.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR090</text>
+<text x='1159.4' y='329.2' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1159.4 329.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<polyline points='1397.2,240.0 1397.2,245.1 1402.3,245.1 1397.2,250.2 1392.1,245.1 1397.2,245.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1397.2' y1='240.0' x2='1397.2' y2='240.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1397.2' cy='240.0' r='2' fill='none' stroke='#840000'/>
+<text x='1397.2' y='241.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1397.2 241.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='1397.2' y='212.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1397.2 212.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR091</text>
+<text x='1397.2' y='274.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1397.2 274.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<polyline points='1433.4,288.0 1433.4,293.1 1438.5,293.1 1433.4,298.2 1428.3,293.1 1433.4,293.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1433.4' y1='288.0' x2='1433.4' y2='288.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1433.4' cy='288.0' r='2' fill='none' stroke='#840000'/>
+<text x='1433.4' y='289.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1433.4 289.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='1433.4' y='260.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1433.4 260.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR092</text>
+<text x='1433.4' y='322.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1433.4 322.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<polyline points='1397.2,376.0 1397.2,381.1 1402.3,381.1 1397.2,386.2 1392.1,381.1 1397.2,381.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1397.2' y1='376.0' x2='1397.2' y2='376.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1397.2' cy='376.0' r='2' fill='none' stroke='#840000'/>
+<text x='1397.2' y='377.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1397.2 377.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='1397.2' y='348.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1397.2 348.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR093</text>
+<text x='1397.2' y='410.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1397.2 410.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<polyline points='1433.4,424.0 1433.4,429.1 1438.5,429.1 1433.4,434.2 1428.3,429.1 1433.4,429.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1433.4' y1='424.0' x2='1433.4' y2='424.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1433.4' cy='424.0' r='2' fill='none' stroke='#840000'/>
+<text x='1433.4' y='425.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1433.4 425.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='1433.4' y='396.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1433.4 396.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR094</text>
+<text x='1433.4' y='458.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1433.4 458.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<polyline points='1397.2,512.0 1397.2,517.1 1402.3,517.1 1397.2,522.2 1392.1,517.1 1397.2,517.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1397.2' y1='512.0' x2='1397.2' y2='512.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1397.2' cy='512.0' r='2' fill='none' stroke='#840000'/>
+<text x='1397.2' y='513.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1397.2 513.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='1397.2' y='484.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1397.2 484.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR095</text>
+<text x='1397.2' y='546.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1397.2 546.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<polyline points='1433.4,560.0 1433.4,565.1 1438.5,565.1 1433.4,570.2 1428.3,565.1 1433.4,565.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1433.4' y1='560.0' x2='1433.4' y2='560.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1433.4' cy='560.0' r='2' fill='none' stroke='#840000'/>
+<text x='1433.4' y='561.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1433.4 561.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='1433.4' y='532.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1433.4 532.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR096</text>
+<text x='1433.4' y='594.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1433.4 594.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<polyline points='1397.2,648.0 1397.2,653.1 1402.3,653.1 1397.2,658.2 1392.1,653.1 1397.2,653.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1397.2' y1='648.0' x2='1397.2' y2='648.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1397.2' cy='648.0' r='2' fill='none' stroke='#840000'/>
+<text x='1397.2' y='649.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1397.2 649.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='1397.2' y='620.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1397.2 620.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR097</text>
+<text x='1397.2' y='682.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1397.2 682.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<polyline points='1433.4,696.0 1433.4,701.1 1438.5,701.1 1433.4,706.2 1428.3,701.1 1433.4,701.1' fill='none' stroke='#840000' stroke-width='1.2'/>
+<line x1='1433.4' y1='696.0' x2='1433.4' y2='696.0' stroke='#840000' stroke-width='1.4'/>
+<circle cx='1433.4' cy='696.0' r='2' fill='none' stroke='#840000'/>
+<text x='1433.4' y='697.6' font-size='3.2' fill='#555' text-anchor='middle' transform='rotate(0 1433.4 697.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<text x='1433.4' y='668.0' font-size='4.6' fill='#0000a0' text-anchor='middle' transform='rotate(0 1433.4 668.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>#PWR098</text>
+<text x='1433.4' y='730.0' font-size='4.0' fill='#006000' text-anchor='middle' transform='rotate(0 1433.4 730.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>GND</text>
+<line x1='121.9' y1='152.4' x2='111.8' y2='152.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='121.9' y1='162.6' x2='111.8' y2='162.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='223.5' y1='137.2' x2='223.5' y2='127.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='223.5' y1='167.6' x2='223.5' y2='177.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='340.4' y1='152.4' x2='330.2' y2='152.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='370.8' y1='152.4' x2='381.0' y2='152.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='482.6' y1='152.4' x2='472.4' y2='152.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='513.1' y1='152.4' x2='523.2' y2='152.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='599.4' y1='137.2' x2='599.4' y2='127.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='599.4' y1='167.6' x2='599.4' y2='177.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='650.2' y1='137.2' x2='650.2' y2='127.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='650.2' y1='167.6' x2='650.2' y2='177.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='792.5' y1='142.2' x2='833.1' y2='142.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='894.1' y1='142.2' x2='934.7' y2='142.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='995.7' y1='142.2' x2='1036.3' y2='142.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='121.9' y1='294.6' x2='111.8' y2='294.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='121.9' y1='304.8' x2='111.8' y2='304.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='121.9' y1='315.0' x2='111.8' y2='315.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='121.9' y1='325.1' x2='111.8' y2='325.1' stroke='#006000' stroke-width='1.6'/>
+<line x1='121.9' y1='335.3' x2='111.8' y2='335.3' stroke='#006000' stroke-width='1.6'/>
+<line x1='121.9' y1='345.4' x2='111.8' y2='345.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='121.9' y1='355.6' x2='111.8' y2='355.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='121.9' y1='365.8' x2='111.8' y2='365.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='121.9' y1='457.2' x2='111.8' y2='457.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='121.9' y1='467.4' x2='111.8' y2='467.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='121.9' y1='477.5' x2='111.8' y2='477.5' stroke='#006000' stroke-width='1.6'/>
+<line x1='121.9' y1='487.7' x2='111.8' y2='487.7' stroke='#006000' stroke-width='1.6'/>
+<line x1='101.6' y1='563.9' x2='101.6' y2='553.7' stroke='#006000' stroke-width='1.6'/>
+<line x1='101.6' y1='594.4' x2='101.6' y2='604.5' stroke='#006000' stroke-width='1.6'/>
+<line x1='152.4' y1='563.9' x2='152.4' y2='553.7' stroke='#006000' stroke-width='1.6'/>
+<line x1='152.4' y1='594.4' x2='152.4' y2='604.5' stroke='#006000' stroke-width='1.6'/>
+<line x1='284.5' y1='289.6' x2='284.5' y2='279.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='284.5' y1='320.0' x2='284.5' y2='330.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='325.1' y1='289.6' x2='325.1' y2='279.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='325.1' y1='320.0' x2='325.1' y2='330.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='365.8' y1='289.6' x2='365.8' y2='279.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='365.8' y1='320.0' x2='365.8' y2='330.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='467.4' y1='289.6' x2='467.4' y2='279.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='467.4' y1='320.0' x2='467.4' y2='330.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='609.6' y1='264.2' x2='609.6' y2='254.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='650.2' y1='325.1' x2='660.4' y2='325.1' stroke='#006000' stroke-width='1.6'/>
+<line x1='650.2' y1='345.4' x2='660.4' y2='345.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='569.0' y1='294.6' x2='558.8' y2='294.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='569.0' y1='284.5' x2='558.8' y2='284.5' stroke='#006000' stroke-width='1.6'/>
+<line x1='569.0' y1='315.0' x2='558.8' y2='315.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='569.0' y1='335.3' x2='558.8' y2='335.3' stroke='#006000' stroke-width='1.6'/>
+<line x1='650.2' y1='304.8' x2='660.4' y2='304.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='650.2' y1='284.5' x2='660.4' y2='284.5' stroke='#006000' stroke-width='1.6'/>
+<line x1='609.6' y1='365.8' x2='609.6' y2='375.9' stroke='#006000' stroke-width='1.6'/>
+<line x1='731.5' y1='289.6' x2='731.5' y2='279.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='731.5' y1='320.0' x2='731.5' y2='330.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='772.2' y1='289.6' x2='772.2' y2='279.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='772.2' y1='320.0' x2='772.2' y2='330.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='812.8' y1='289.6' x2='812.8' y2='279.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='812.8' y1='320.0' x2='812.8' y2='330.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='853.4' y1='289.6' x2='853.4' y2='279.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='853.4' y1='320.0' x2='853.4' y2='330.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='934.7' y1='304.8' x2='924.6' y2='304.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='965.2' y1='325.1' x2='965.2' y2='335.3' stroke='#006000' stroke-width='1.6'/>
+<line x1='965.2' y1='284.5' x2='965.2' y2='274.3' stroke='#006000' stroke-width='1.6'/>
+<line x1='1046.5' y1='304.8' x2='1036.3' y2='304.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='1077.0' y1='284.5' x2='1077.0' y2='274.3' stroke='#006000' stroke-width='1.6'/>
+<line x1='1077.0' y1='325.1' x2='1077.0' y2='335.3' stroke='#006000' stroke-width='1.6'/>
+<line x1='828.0' y1='396.2' x2='817.9' y2='396.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='858.5' y1='396.2' x2='868.7' y2='396.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='950.0' y1='396.2' x2='939.8' y2='396.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='980.4' y1='396.2' x2='990.6' y2='396.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='1056.6' y1='381.0' x2='1056.6' y2='370.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='1056.6' y1='411.5' x2='1056.6' y2='421.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='1097.3' y1='381.0' x2='1097.3' y2='370.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='1097.3' y1='411.5' x2='1097.3' y2='421.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='284.5' y1='502.9' x2='284.5' y2='492.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='284.5' y1='533.4' x2='284.5' y2='543.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='325.1' y1='502.9' x2='325.1' y2='492.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='325.1' y1='533.4' x2='325.1' y2='543.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='365.8' y1='502.9' x2='365.8' y2='492.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='365.8' y1='533.4' x2='365.8' y2='543.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='467.4' y1='502.9' x2='467.4' y2='492.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='467.4' y1='533.4' x2='467.4' y2='543.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='609.6' y1='477.5' x2='609.6' y2='467.4' stroke='#006000' stroke-width='1.6'/>
+<line x1='650.2' y1='538.5' x2='660.4' y2='538.5' stroke='#006000' stroke-width='1.6'/>
+<line x1='650.2' y1='558.8' x2='660.4' y2='558.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='569.0' y1='508.0' x2='558.8' y2='508.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='569.0' y1='497.8' x2='558.8' y2='497.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='569.0' y1='528.3' x2='558.8' y2='528.3' stroke='#006000' stroke-width='1.6'/>
+<line x1='569.0' y1='548.6' x2='558.8' y2='548.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='650.2' y1='518.2' x2='660.4' y2='518.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='650.2' y1='497.8' x2='660.4' y2='497.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='609.6' y1='579.1' x2='609.6' y2='589.3' stroke='#006000' stroke-width='1.6'/>
+<line x1='731.5' y1='502.9' x2='731.5' y2='492.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='731.5' y1='533.4' x2='731.5' y2='543.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='772.2' y1='502.9' x2='772.2' y2='492.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='772.2' y1='533.4' x2='772.2' y2='543.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='812.8' y1='502.9' x2='812.8' y2='492.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='812.8' y1='533.4' x2='812.8' y2='543.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='853.4' y1='502.9' x2='853.4' y2='492.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='853.4' y1='533.4' x2='853.4' y2='543.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='934.7' y1='518.2' x2='924.6' y2='518.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='965.2' y1='538.5' x2='965.2' y2='548.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='965.2' y1='497.8' x2='965.2' y2='487.7' stroke='#006000' stroke-width='1.6'/>
+<line x1='1046.5' y1='518.2' x2='1036.3' y2='518.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='1077.0' y1='497.8' x2='1077.0' y2='487.7' stroke='#006000' stroke-width='1.6'/>
+<line x1='1077.0' y1='538.5' x2='1077.0' y2='548.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='828.0' y1='609.6' x2='817.9' y2='609.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='858.5' y1='609.6' x2='868.7' y2='609.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='950.0' y1='609.6' x2='939.8' y2='609.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='980.4' y1='609.6' x2='990.6' y2='609.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='1056.6' y1='594.4' x2='1056.6' y2='584.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='1056.6' y1='624.8' x2='1056.6' y2='635.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1097.3' y1='594.4' x2='1097.3' y2='584.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='1097.3' y1='624.8' x2='1097.3' y2='635.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1169.5' y1='254.6' x2='1149.2' y2='254.6' stroke='#006000' stroke-width='1.6'/>
+<line x1='1169.5' y1='264.8' x2='1149.2' y2='264.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='1169.5' y1='274.9' x2='1149.2' y2='274.9' stroke='#006000' stroke-width='1.6'/>
+<line x1='1169.5' y1='285.1' x2='1149.2' y2='285.1' stroke='#006000' stroke-width='1.6'/>
+<line x1='1169.5' y1='295.2' x2='1159.4' y2='295.2' stroke='#006000' stroke-width='1.6'/>
+<line x1='1319.7' y1='240.0' x2='1299.4' y2='240.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1360.3' y1='240.0' x2='1370.5' y2='240.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1407.4' y1='219.7' x2='1397.2' y2='219.7' stroke='#006000' stroke-width='1.6'/>
+<line x1='1407.4' y1='240.0' x2='1397.2' y2='240.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1488.6' y1='219.7' x2='1498.8' y2='219.7' stroke='#006000' stroke-width='1.6'/>
+<line x1='1488.6' y1='240.0' x2='1498.8' y2='240.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1549.5' y1='229.8' x2='1539.4' y2='229.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='1549.5' y1='240.0' x2='1539.4' y2='240.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1319.7' y1='288.0' x2='1299.4' y2='288.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1360.3' y1='288.0' x2='1370.5' y2='288.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1392.8' y1='288.0' x2='1382.6' y2='288.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1423.2' y1='288.0' x2='1433.4' y2='288.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1319.7' y1='376.0' x2='1299.4' y2='376.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1360.3' y1='376.0' x2='1370.5' y2='376.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1407.4' y1='355.7' x2='1397.2' y2='355.7' stroke='#006000' stroke-width='1.6'/>
+<line x1='1407.4' y1='376.0' x2='1397.2' y2='376.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1488.6' y1='355.7' x2='1498.8' y2='355.7' stroke='#006000' stroke-width='1.6'/>
+<line x1='1488.6' y1='376.0' x2='1498.8' y2='376.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1549.5' y1='365.8' x2='1539.4' y2='365.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='1549.5' y1='376.0' x2='1539.4' y2='376.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1319.7' y1='424.0' x2='1299.4' y2='424.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1360.3' y1='424.0' x2='1370.5' y2='424.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1392.8' y1='424.0' x2='1382.6' y2='424.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1423.2' y1='424.0' x2='1433.4' y2='424.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1319.7' y1='512.0' x2='1299.4' y2='512.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1360.3' y1='512.0' x2='1370.5' y2='512.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1407.4' y1='491.7' x2='1397.2' y2='491.7' stroke='#006000' stroke-width='1.6'/>
+<line x1='1407.4' y1='512.0' x2='1397.2' y2='512.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1488.6' y1='491.7' x2='1498.8' y2='491.7' stroke='#006000' stroke-width='1.6'/>
+<line x1='1488.6' y1='512.0' x2='1498.8' y2='512.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1549.5' y1='501.8' x2='1539.4' y2='501.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='1549.5' y1='512.0' x2='1539.4' y2='512.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1319.7' y1='560.0' x2='1299.4' y2='560.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1360.3' y1='560.0' x2='1370.5' y2='560.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1392.8' y1='560.0' x2='1382.6' y2='560.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1423.2' y1='560.0' x2='1433.4' y2='560.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1319.7' y1='648.0' x2='1299.4' y2='648.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1360.3' y1='648.0' x2='1370.5' y2='648.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1407.4' y1='627.7' x2='1397.2' y2='627.7' stroke='#006000' stroke-width='1.6'/>
+<line x1='1407.4' y1='648.0' x2='1397.2' y2='648.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1488.6' y1='627.7' x2='1498.8' y2='627.7' stroke='#006000' stroke-width='1.6'/>
+<line x1='1488.6' y1='648.0' x2='1498.8' y2='648.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1549.5' y1='637.8' x2='1539.4' y2='637.8' stroke='#006000' stroke-width='1.6'/>
+<line x1='1549.5' y1='648.0' x2='1539.4' y2='648.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1319.7' y1='696.0' x2='1299.4' y2='696.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1360.3' y1='696.0' x2='1370.5' y2='696.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1392.8' y1='696.0' x2='1382.6' y2='696.0' stroke='#006000' stroke-width='1.6'/>
+<line x1='1423.2' y1='696.0' x2='1433.4' y2='696.0' stroke='#006000' stroke-width='1.6'/>
+<text x='71.1' y='91.4' font-size='4.7' fill='#222' text-anchor='start' transform='rotate(0 71.1 91.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>24 V input: polyfuse, reverse-polarity Schottky, TVS, bulk caps (all caps 50 V X7R)</text>
+<text x='61.0' y='264.2' font-size='5.8' fill='#222' text-anchor='start' transform='rotate(0 61.0 264.2)' font-family='Pretendard, Malgun Gothic, sans-serif'>To MCC 152 (screw terminals)</text>
+<text x='61.0' y='426.7' font-size='5.8' fill='#222' text-anchor='start' transform='rotate(0 61.0 426.7)' font-family='Pretendard, Malgun Gothic, sans-serif'>To pumps (4-20 mA)</text>
+<text x='71.1' y='533.4' font-size='5.8' fill='#222' text-anchor='start' transform='rotate(0 71.1 533.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>EF pull-ups to MCC 152 VIO</text>
+<text x='264.2' y='213.4' font-size='5.8' fill='#222' text-anchor='start' transform='rotate(0 264.2 213.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>Channel A: MCC 152 AO -> XTR111 -> 4-20 mA (pump1 / pump3)</text>
+<text x='264.2' y='228.6' font-size='5.8' fill='#222' text-anchor='start' transform='rotate(0 264.2 228.6)' font-family='Pretendard, Malgun Gothic, sans-serif'>I_OUT = 10 x V_IN / RSET   (1 V = 4 mA, 5 V = 20 mA)</text>
+<text x='264.2' y='426.7' font-size='5.8' fill='#222' text-anchor='start' transform='rotate(0 264.2 426.7)' font-family='Pretendard, Malgun Gothic, sans-serif'>Channel B: MCC 152 AO -> XTR111 -> 4-20 mA (pump2 / pump4)</text>
+<text x='264.2' y='442.0' font-size='5.8' fill='#222' text-anchor='start' transform='rotate(0 264.2 442.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>I_OUT = 10 x V_IN / RSET   (1 V = 4 mA, 5 V = 20 mA)</text>
+<text x='61.0' y='690.9' font-size='4.7' fill='#222' text-anchor='start' transform='rotate(0 61.0 690.9)' font-family='Pretendard, Malgun Gothic, sans-serif'>OD: High (or open) = output off (fail-safe), Low = on.  EF: Low = open loop / load too high / no headroom.</text>
+<text x='61.0' y='706.1' font-size='4.7' fill='#222' text-anchor='start' transform='rotate(0 61.0 706.1)' font-family='Pretendard, Malgun Gothic, sans-serif'>Q1/Q2/R104: XTR111 datasheet Fig. 6-5a current limit (about 37 mA).  R105/C105: output filter.  D101: clamp to +24V.</text>
+<text x='61.0' y='721.4' font-size='4.7' fill='#222' text-anchor='start' transform='rotate(0 61.0 721.4)' font-family='Pretendard, Malgun Gothic, sans-serif'>XTR111 exposed pad (pin 11) = GND, solder with thermal vias.  Q101 drain copper pour for heat.</text>
+<text x='1160.0' y='120.0' font-size='4.7' fill='#222' text-anchor='start' transform='rotate(0 1160.0 120.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>rev B 추가: DIO4~7 → 470 Ω → PC817 → 무전압 접점 출력 ×4  (펄스·Pause). 접점 C → 펌프 신호선(External contact 흰 / Pause 갈), E → 펌프 GND(검정)</text>
+<text x='1160.0' y='140.0' font-size='4.7' fill='#222' text-anchor='start' transform='rotate(0 1160.0 140.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>보드 a (주소 2): DIO4 P-101 펄스 · DIO5 P-102 펄스 · DIO6 P-103 펄스 · DIO7 P-101 Pause      보드 b (주소 3): DIO4 P-102 Pause · DIO5 P-103 Pause · DIO6/7 예비</text>
+<text x='1160.0' y='160.0' font-size='4.7' fill='#222' text-anchor='start' transform='rotate(0 1160.0 160.0)' font-family='Pretendard, Malgun Gothic, sans-serif'>DIO 소스 전류 약 4.5 mA (3.3 V − 1.2 V)/470. MCC 152 DIO 소싱 10 mA 안. 펄스 20 ms, 접점 닫힘 = DIO High. 아날로그 모드(OD/EF, DIO0~3)와 같은 보드에서 공존.</text></svg>

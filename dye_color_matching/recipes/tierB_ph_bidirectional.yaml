@@ -1,0 +1,10 @@
+# 양방향 pH 제어: NaOH(P-103, 아날로그) + HCl(P-104, 펄스 접점). 7 → 10.5 → 8.0 스텝, 그 뒤 염기성 외란 대신 산 부하 제거 시험.
+name: tierB_ph_bidirectional
+reactor: {heel_mL: 2000, rpm: 300}
+ph: {initial: 7.0, buffers: [[0.005, 6.35]], naoh_pump: P-103, naoh_mol_L: 0.1, acid_pump: P-104, acid_mol_L: 0.1}
+steps:
+  - {step: stir, rpm: 300}
+  - {step: ph_control, pump: P-103, acid_pump: P-104, setpoint: 10.5, seconds: 300, label: up}
+  - {step: ph_control, pump: P-103, acid_pump: P-104, setpoint: 8.0, seconds: 400, label: down}
+  - {step: ph_control, pump: P-103, acid_pump: P-104, setpoint: 10.0, seconds: 400, mode: relay, relay_d: 2.0, label: autotune}
+  - {step: stop}
