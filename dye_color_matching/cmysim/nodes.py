@@ -184,6 +184,24 @@ class SimHAL(HAL):
 
 
 # ------------------------------------------------------------------ I/O 노드
+class RelayHybridHAL:
+    """SimHAL 위에 얹어, 밸브와 운전 허가만 실제 릴레이(MCP23017Relays)로 내보낸다. MCC 보드 없이 릴레이 HAT 만 있을 때 사용."""
+    def __init__(self, plant, mcp, relays: dict):
+        self._sim = SimHAL(plant); self.mcp = mcp; self.relays = dict(relays)
+    def __getattr__(self, name):                    # 나머지는 전부 시뮬레이션 HAL 로
+        return getattr(self._sim, name)
+    def valve(self, vid, on):
+        self._sim.valve(vid, on)
+        r = self.relays.get(vid)
+        if r is not None:
+            for k in (r if isinstance(r, list) else [r]): self.mcp.set(int(k), bool(on))
+    def run_enable(self, on):
+        self._sim.run_enable(on)
+        r = self.relays.get("RUN_ENABLE")
+        if r is not None:
+            for k in (r if isinstance(r, list) else [r]): self.mcp.set(int(k), bool(on))
+
+
 class IONode:
     """실시간 책임: 명령 적용, 인터록, 스트로크 계수 도징, 워치독, 텔레메트리."""
 

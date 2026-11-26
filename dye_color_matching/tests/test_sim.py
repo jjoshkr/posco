@@ -816,3 +816,27 @@ def test_mcp23017_relay_mapping_and_hal_valves():
     hal.run_enable(True); assert b1.pin_level(7) == 1 and b2.pin_level(4) == 1 and b2.pin_level(5) == 1
     hal.io.pulse_ms = 0.0; fdh.LOG.clear(); assert hal.pulse("P-103") and fdh.LOG[:2] == [(0, "dio", 6, 1), (0, "dio", 6, 0)]   # 기본 주소: mcc152#1 = 0
     hal.close(); assert bus.log[-1][2] == 0 and b1.pin_level(7) == 0   # 릴레이 전부 OFF, Pause 열림
+
+
+def test_relay_ctl_sim_and_hybrid_hal():
+    """relay_ctl: 토큰 해석, ON/OFF 가 칩 래치에 반영, 되읽기 정상. RelayHybridHAL: 밸브 명령이 릴레이로."""
+    from cmysim import relay_ctl
+    bus = relay_ctl.SimBus(present=(0x20, 0x24))
+    assert relay_ctl.scan(bus) == [0x20, 0x24]
+    ctl = relay_ctl.RelayCtl(bus, 0x20, 0x24, {"XV-101": 1, "XV-102": 2, "XV-103": 3}, sim=True)
+    assert ctl.resolve("XV-102") == [2] and ctl.resolve("1-3") == [1, 2, 3] and ctl.resolve("inst") == [1, 2, 3] and len(ctl.resolve("all")) == 32
+    ctl.set(1, True); ctl.set(17, True)
+    assert bus.reg[0x20][relay_ctl.OLATB] & 1 and bus.reg[0x24][relay_ctl.OLATB] & 1 and ctl.readback() == []
+    bus.reg[0x20][relay_ctl.OLATB] = 0                       # 통신 오류 흉내 → 되읽기가 잡아냄
+    assert any("릴레이 1" in s for s in ctl.readback())
+    ctl.all_off(); assert not any(ctl.state.values())
+    assert relay_ctl.main(["--sim", "hold", "XV-101", "0"]) == 0
+    # 하이브리드 HAL
+    from cmysim.daqhats_hal import MCP23017Relays
+    from cmysim.nodes import RelayHybridHAL, SimPlant
+    from cmysim.config import rig_prominent_feeder
+    b2 = relay_ctl.SimBus(present=(0x20, 0x24)); mcp = MCP23017Relays({"addr_u1": 0x20, "addr_u2": 0x24, "relays": {"XV-101": 1, "XV-102": 2, "XV-103": 3}, "rst_gpio": None}, bus=b2)
+    hal = RelayHybridHAL(SimPlant(rig_prominent_feeder()), mcp, {"XV-101": 1, "XV-102": 2, "XV-103": 3})
+    hal.valve("XV-102", True); assert b2.reg[0x20][relay_ctl.OLATB] == 0b010 and hal.p.valves["XV-102"].coil
+    hal.valve("XV-102", False); assert b2.reg[0x20][relay_ctl.OLATB] == 0
+    assert hal.read_ph() > 0                                   # 나머지는 시뮬레이션으로 위임

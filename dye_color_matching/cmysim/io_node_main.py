@@ -99,6 +99,12 @@ def cmd_run(a, io: IOConfig):
                   f"heel {cfg.reactor.heel_mL} mL rpm {cfg.reactor.rpm} pH0 {cfg.reactor.ph}")
         cfg.dac.calibrated = True
         plant = SimPlant(cfg); hal = SimHAL(plant)
+        if a.relay_only:                                   # 공정·펌프·센서는 시뮬레이션, 밸브·운전허가만 실제 릴레이 HAT
+            from .daqhats_hal import MCP23017Relays
+            from .nodes import RelayHybridHAL
+            mcfg = dict(io.mcp23017 or {"addr_u1": 0x20, "addr_u2": 0x24, "relays": {"XV-101": 1, "XV-102": 2, "XV-103": 3, "XV-104": 4}})
+            hal = RelayHybridHAL(plant, MCP23017Relays(mcfg), mcfg.get("relays", {}))
+            print("relay-only: 밸브·운전허가는 실제 릴레이 HAT(I2C) 로, 나머지는 시뮬레이션.", mcfg.get("relays"))
         print(f"보드 없이 시뮬레이션 공정으로 I/O 노드를 돌립니다 (AI 노드 연동 시험용). 시간 배율 {scale:g}")
     else:
         if a.time_scale != 1.0:
@@ -167,6 +173,7 @@ def main(argv=None):
     p.add_argument("--sim-camera", action="store_true", help="--sim 에서 카메라 관측(ROI RGB)을 텔레메트리에 실어 AI 노드가 telemetry 카메라로 보게 함")
     p.add_argument("--time-scale", type=float, default=1.0, help="--sim 전용: 시뮬레이션 시간 가속 (텔레메트리 t 도 가속된 시간)")
     p.add_argument("--recipe", help="--sim 전용: 레시피의 반응기·탱크 역할(naoh/acid/cacl2/na2co3)을 시뮬레이션 공정에 적용")
+    p.add_argument("--relay-only", action="store_true", help="--sim 과 함께: 밸브(XV)·운전허가만 실제 릴레이 HAT(MCP23017, io_node.json 의 mcp23017)로 구동. MCC 보드 없이 릴레이 동작 확인용")
     p.add_argument("--pump-mode", choices=("analog", "pulse"), default=None, help="P-101~103 제어 방식 (기본: io_node.json 의 pump_mode)")
     p.add_argument("--log", default="io_log.csv"); p.add_argument("--cmd-port", type=int, default=5555); p.add_argument("--tele-port", type=int, default=5556)
     p.add_argument("--verbose", "-v", action="store_true")
